@@ -18,24 +18,56 @@ app.get("/api/characters/siblings", async (req, res) => {
   }
 
   try {
-    const response = await axios.get(
+    // 형제 캐릭터 데이터 가져오기
+    const siblingsResponse = await axios.get(
       `https://developer-lostark.game.onstove.com/characters/${encodeURIComponent(
         name
       )}/siblings`,
       {
         headers: {
           Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
-          Accept: "application/json",
         },
       }
     );
 
-    res.json(response.data); // 응답 데이터를 프론트엔드로 전달
-  } catch (error) {
-    console.error(
-      "Error fetching character data:",
-      error.response?.data || error.message
+    const siblings = siblingsResponse.data;
+
+    // 각 캐릭터의 프로필 이미지 가져오기
+    const detailedSiblings = await Promise.all(
+      siblings.map(async (char) => {
+        try {
+          const profileResponse = await axios.get(
+            `https://developer-lostark.game.onstove.com/armories/characters/${encodeURIComponent(
+              char.CharacterName
+            )}/profiles`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+              },
+            }
+          );
+
+          // 응답 데이터가 null인지 확인
+          return {
+            ...char,
+            CharacterImage: profileResponse.data?.CharacterImage || null, // 기본값 null
+          };
+        } catch (err) {
+          console.error(
+            `Error fetching profile for ${char.CharacterName}:`,
+            err.response?.data || err.message
+          );
+          return {
+            ...char,
+            CharacterImage: null, // 실패한 경우 기본값 설정
+          };
+        }
+      })
     );
+
+    res.json(detailedSiblings); // 프론트엔드로 데이터 전달
+  } catch (error) {
+    console.error("Error fetching character siblings:", error.message);
     res.status(500).json({ error: "Failed to fetch character data" });
   }
 });
