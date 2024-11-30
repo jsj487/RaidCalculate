@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
+import RaidTable from "../components/RaidTable";
 
 const Container = styled.div`
   min-height: 100vh;
@@ -199,26 +200,32 @@ export default function MainPage() {
         </ServerList>
       )}
       {selectedServer && (
-        <CharacterRow>
-          {filteredCharacters.map((char, index) => (
-            <CharacterCard key={index}>
-              <CharacterImage
-                src={char.CharacterImage || "/img/default-character.png"}
-                alt={char.CharacterName}
-              />
-              <CharacterName>{char.CharacterName}</CharacterName>
-              <p>아이템 레벨: {char.ItemAvgLevel}</p>
-              <p>전투 레벨: {char.CharacterLevel}</p>
-              <p>클래스: {char.CharacterClassName}</p>
-              {/* 박스 추가 */}
-              <CharacterBox>
-                <ImageBox /> {/* 왼쪽 이미지 박스 */}
-                <BoxContent>박스 내용</BoxContent>
-              </CharacterBox>
-            </CharacterCard>
-          ))}
-        </CharacterRow>
+        <>
+          <CharacterRow>
+            {filteredCharacters.map((char, index) => (
+              <CharacterCard key={index}>
+                <CharacterImage
+                  src={char.CharacterImage || "/img/default-character.png"}
+                  alt={char.CharacterName}
+                />
+                <CharacterName>{char.CharacterName}</CharacterName>
+                <p>아이템 레벨: {char.ItemAvgLevel}</p>
+                <p>전투 레벨: {char.CharacterLevel}</p>
+                <p>클래스: {char.CharacterClassName}</p>
+                <CharacterBox>
+                  <ImageBox />
+                  <BoxContent>박스 내용</BoxContent>
+                </CharacterBox>
+              </CharacterCard>
+            ))}
+          </CharacterRow>
+
+          {/* 선택된 서버와 캐릭터 데이터를 전달 */}
+          <RaidTable server={selectedServer} characters={filteredCharacters} />
+        </>
       )}
     </Container>
   );
 }
+
+export {};
