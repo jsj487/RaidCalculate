@@ -1,10 +1,12 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import App from "./pages/App";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+const container = document.getElementById("root");
+
+if (container) {
+  const root = createRoot(container); // createRoot로 React 애플리케이션 초기화
+  root.render(<App />);
+} else {
+  console.error("Root container not found");
+}

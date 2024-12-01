@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import RaidTable from "../components/RaidTable";
@@ -72,7 +72,7 @@ const CharacterCard = styled.div`
 
 const CharacterImage = styled.img`
   width: 100%;
-  height: 200px;
+  height: 270px;
   object-fit: cover;
   border-radius: 8px;
 `;
@@ -112,14 +112,66 @@ const BoxContent = styled.div`
   color: #333;
 `;
 
-export default function MainPage() {
-  const [search, setSearch] = useState("");
-  const [servers, setServers] = useState<string[]>([]);
-  const [selectedServer, setSelectedServer] = useState<string | null>(null);
-  const [characters, setCharacters] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+const TotalGoldBox = styled.div`
+  margin: 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  background: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
 
+const MainPage = () => {
+  // 기존 상태와 동일, 토글 상태를 추가
+  const [toggleStates, setToggleStates] = useState<{ [key: string]: number }>(
+    () => {
+      const storedStates = localStorage.getItem("toggleStates");
+      return storedStates ? JSON.parse(storedStates) : {};
+    }
+  );
+
+  const [search, setSearch] = useState(() => {
+    return localStorage.getItem("search") || "";
+  });
+  const [servers, setServers] = useState<string[]>([]);
+  const [selectedServer, setSelectedServer] = useState<string | null>(() => {
+    return localStorage.getItem("selectedServer");
+  });
+  const [characters, setCharacters] = useState<any[]>(() => {
+    const storedCharacters = localStorage.getItem("characters");
+    return storedCharacters ? JSON.parse(storedCharacters) : [];
+  });
+  const [goldRewards, setGoldRewards] = useState<number[]>(() => {
+    const storedGoldRewards = localStorage.getItem("goldRewards");
+    return storedGoldRewards ? JSON.parse(storedGoldRewards) : [];
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Local Storage 저장
+  React.useEffect(() => {
+    localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
+  }, [toggleStates]);
+
+  React.useEffect(() => {
+    localStorage.setItem("search", search);
+  }, [search]);
+
+  React.useEffect(() => {
+    localStorage.setItem("selectedServer", selectedServer || "");
+  }, [selectedServer]);
+
+  React.useEffect(() => {
+    localStorage.setItem("characters", JSON.stringify(characters));
+  }, [characters]);
+
+  React.useEffect(() => {
+    localStorage.setItem("goldRewards", JSON.stringify(goldRewards));
+  }, [goldRewards]);
+
+  // 검색 핸들러
   const handleSearch = async () => {
     if (!search.trim()) {
       setError("닉네임을 입력해주세요.");
@@ -168,9 +220,26 @@ export default function MainPage() {
     .sort(
       (a, b) =>
         parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-        parseFloat(a.ItemAvgLevel.replace(/,/g, "")) // ItemAvgLevel 기준 내림차순
+        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
     )
-    .slice(0, 6); // 상위 6개 추출
+    .slice(0, 6);
+
+  const updateGold = (charIndex: number, gold: number) => {
+    setGoldRewards((prevRewards) =>
+      prevRewards.map((reward, index) =>
+        index === charIndex ? reward + gold : reward
+      )
+    );
+  };
+
+  const handleToggle = (key: string, newState: number) => {
+    setToggleStates((prevStates) => ({
+      ...prevStates,
+      [key]: newState,
+    }));
+  };
+
+  const totalGold = goldRewards.reduce((sum, reward) => sum + reward, 0);
 
   return (
     <Container>
@@ -214,18 +283,25 @@ export default function MainPage() {
                 <p>클래스: {char.CharacterClassName}</p>
                 <CharacterBox>
                   <ImageBox />
-                  <BoxContent>박스 내용</BoxContent>
+                  <BoxContent>골드: {goldRewards[index] || 0}</BoxContent>
                 </CharacterBox>
               </CharacterCard>
             ))}
           </CharacterRow>
-
-          {/* 선택된 서버와 캐릭터 데이터를 전달 */}
-          <RaidTable server={selectedServer} characters={filteredCharacters} />
+          <TotalGoldBox>총 골드: {totalGold}</TotalGoldBox>
+          <RaidTable
+            server={selectedServer}
+            characters={filteredCharacters}
+            onToggle={(charIndex, gold) => {
+              updateGold(charIndex, gold);
+            }}
+            toggleStates={toggleStates} // 추가
+            setToggleStates={handleToggle} // 추가
+          />
         </>
       )}
     </Container>
   );
-}
+};
 
-export {};
+export default MainPage;

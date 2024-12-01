@@ -1,9 +1,9 @@
 import styled from "styled-components";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import React from "react";
 
 const TableContainer = styled.div`
   width: 100%;
-  margin-top: 20px;
   background-color: #2d2d2d;
   color: white;
   border-radius: 8px;
@@ -21,7 +21,7 @@ const TableHeader = styled.th`
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
-  white-space: nowrap; /* 헤더 텍스트 줄바꿈 방지 */
+  white-space: nowrap;
 `;
 
 const TableRow = styled.tr`
@@ -39,7 +39,7 @@ const TableCell = styled.td`
 const ToggleContainer = styled.div`
   display: flex;
   justify-content: center;
-  gap: 5px; /* 버튼 간 간격 */
+  gap: 5px;
 `;
 
 const ToggleButton = styled.div<{ state: number }>`
@@ -48,7 +48,7 @@ const ToggleButton = styled.div<{ state: number }>`
   cursor: pointer;
   background-color: ${(props) =>
     props.state === 0 ? "#555" : props.state === 1 ? "#00f" : "#f00"};
-  transition: background-color 0.3s ease; /* 부드러운 전환 효과 추가 */
+  transition: background-color 0.3s ease;
 
   &:hover {
     background-color: ${(props) =>
@@ -57,77 +57,128 @@ const ToggleButton = styled.div<{ state: number }>`
 `;
 
 interface RaidTableProps {
-  characters: any[]; // 캐릭터 데이터
-  server: string | null; // 서버 데이터 추가
+  characters: any[];
+  server: string | null;
+  onToggle: (charIndex: number, gold: number) => void;
+  toggleStates: { [key: string]: number }; // 추가
+  setToggleStates: (key: string, newState: number) => void; // 추가
 }
 
-function RaidTable({ characters, server }: RaidTableProps) {
-  // 레이드 데이터 정의
-  const raidData = [
-    { name: "아브렐슈드", maxPhases: 2, levels: ["하드", "노말"] },
-    { name: "에기르", maxPhases: 2, levels: ["하드", "노말"] },
-    { name: "에기드나", maxPhases: 2, levels: ["하드", "노말"] },
+function RaidTable({
+  characters,
+  server,
+  onToggle,
+  toggleStates,
+  setToggleStates,
+}: RaidTableProps) {
+  const raidValues: Record<
+    string,
+    Record<string, Array<{ clearGold: number; bonusGold: number }>>
+  > = {
+    // 예시 데이터
+    "카제로스 아브렐슈드": {
+      하드: [
+        { clearGold: 10000, bonusGold: 4500 },
+        { clearGold: 20500, bonusGold: 7200 },
+      ],
+      노말: [
+        { clearGold: 8500, bonusGold: 3800 },
+        { clearGold: 16500, bonusGold: 5200 },
+      ],
+    },
+  };
+
+  const raidCategories = [
+    {
+      category: "카제로스 레이드",
+      raids: [
+        { name: "카제로스 아브렐슈드", maxPhases: 2, levels: ["하드", "노말"] },
+      ],
+    },
   ];
 
-  // 상태 관리: 토글 상태를 저장
-  const [toggleStates, setToggleStates] = useState<{
-    [key: string]: number;
-  }>({});
+  const handleToggleClick = (key: string, charIndex: number, phase: number) => {
+    const currentState = toggleStates[key] || 0;
+    const newState = currentState === 2 ? 0 : currentState + 1;
 
-  const handleToggle = (key: string) => {
-    setToggleStates((prevStates) => ({
-      ...prevStates,
-      [key]: (prevStates[key] || 0) === 2 ? 0 : (prevStates[key] || 0) + 1,
-    }));
+    const [raidName, raidLevel] = key.split("-").slice(0, 2);
+    const { clearGold, bonusGold } = raidValues[raidName]?.[raidLevel]?.[
+      phase
+    ] || { clearGold: 0, bonusGold: 0 };
+
+    const goldChange =
+      newState === 1
+        ? clearGold
+        : newState === 2
+        ? -bonusGold
+        : -(clearGold - bonusGold);
+
+    setToggleStates(key, newState);
+    onToggle(charIndex, goldChange); // 골드 업데이트 전달
   };
 
   return (
     <TableContainer>
-      <h2>{server} 레이드 테이블</h2> {/* 서버 이름 표시 */}
-      <Table>
-        <thead>
-          <TableRow>
-            <TableHeader>레이드 이름</TableHeader>
-            <TableHeader>난이도</TableHeader>
-            {characters.map((char, index) => (
-              <TableHeader key={index}>{char.CharacterName}</TableHeader>
-            ))}
-          </TableRow>
-        </thead>
-        <tbody>
-          {raidData.map((raid) => (
-            <>
-              {raid.levels.map((level) => (
-                <TableRow key={`${raid.name}-${level}`}>
-                  {level === "하드" && (
-                    <TableCell rowSpan={raid.levels.length}>
-                      {raid.name}
-                    </TableCell>
-                  )}
-                  <TableCell>{level}</TableCell>
-
-                  {characters.map((_, charIndex) => (
-                    <TableCell key={`${raid.name}-${level}-${charIndex}`}>
-                      <ToggleContainer>
-                        {Array.from({ length: raid.maxPhases }, (_, phase) => {
-                          const toggleKey = `${raid.name}-${level}-${charIndex}-${phase}`;
-                          return (
-                            <ToggleButton
-                              key={toggleKey}
-                              state={toggleStates[toggleKey] || 0}
-                              onClick={() => handleToggle(toggleKey)}
-                            />
-                          );
-                        })}
-                      </ToggleContainer>
-                    </TableCell>
+      {raidCategories.map((category) => (
+        <React.Fragment key={category.category}>
+          <h2>{category.category}</h2>
+          <Table>
+            <thead>
+              <TableRow>
+                <TableHeader>레이드 이름</TableHeader>
+                <TableHeader>난이도</TableHeader>
+                {characters.map((char, index) => (
+                  <TableHeader key={index}>{char.CharacterName}</TableHeader>
+                ))}
+              </TableRow>
+            </thead>
+            <tbody>
+              {category.raids.map((raid) => (
+                <React.Fragment key={raid.name}>
+                  {raid.levels.map((level, levelIndex) => (
+                    <TableRow key={`${raid.name}-${level}`}>
+                      {levelIndex === 0 && (
+                        <TableCell rowSpan={raid.levels.length}>
+                          {raid.name}
+                        </TableCell>
+                      )}
+                      <TableCell>{level}</TableCell>
+                      {characters.map((_, charIndex) => (
+                        <TableCell key={`${raid.name}-${level}-${charIndex}`}>
+                          <ToggleContainer>
+                            {Array.from(
+                              {
+                                length:
+                                  raidValues[raid.name]?.[level]?.length || 0,
+                              },
+                              (_, phase) => {
+                                const toggleKey = `${raid.name}-${level}-${charIndex}-${phase}`;
+                                return (
+                                  <ToggleButton
+                                    key={toggleKey}
+                                    state={toggleStates[toggleKey] || 0}
+                                    onClick={() =>
+                                      handleToggleClick(
+                                        toggleKey,
+                                        charIndex,
+                                        phase
+                                      )
+                                    }
+                                  />
+                                );
+                              }
+                            )}
+                          </ToggleContainer>
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
+                </React.Fragment>
               ))}
-            </>
-          ))}
-        </tbody>
-      </Table>
+            </tbody>
+          </Table>
+        </React.Fragment>
+      ))}
     </TableContainer>
   );
 }
