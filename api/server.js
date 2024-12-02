@@ -2,7 +2,6 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config({ path: "./.env" });
 
 const app = express();
 app.use(cors());
@@ -13,13 +12,12 @@ const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
 
 // 캐릭터 검색 API 라우트
 app.get("/api/characters/siblings", async (req, res) => {
-  const { name } = req.query; // 프론트엔드에서 전달된 캐릭터 이름
+  const { name } = req.query;
   if (!name) {
     return res.status(400).json({ error: "Character name is required" });
   }
 
   try {
-    // 형제 캐릭터 데이터 가져오기
     const siblingsResponse = await axios.get(
       `https://developer-lostark.game.onstove.com/characters/${encodeURIComponent(
         name
@@ -33,7 +31,6 @@ app.get("/api/characters/siblings", async (req, res) => {
 
     const siblings = siblingsResponse.data;
 
-    // 각 캐릭터의 프로필 이미지 가져오기
     const detailedSiblings = await Promise.all(
       siblings.map(async (char) => {
         try {
@@ -48,25 +45,21 @@ app.get("/api/characters/siblings", async (req, res) => {
             }
           );
 
-          // 응답 데이터가 null인지 확인
           return {
             ...char,
-            CharacterImage: profileResponse.data?.CharacterImage || null, // 기본값 null
+            CharacterImage: profileResponse.data?.CharacterImage || null,
           };
         } catch (err) {
           console.error(
             `Error fetching profile for ${char.CharacterName}:`,
             err.response?.data || err.message
           );
-          return {
-            ...char,
-            CharacterImage: null, // 실패한 경우 기본값 설정
-          };
+          return { ...char, CharacterImage: null };
         }
       })
     );
 
-    res.json(detailedSiblings); // 프론트엔드로 데이터 전달
+    res.json(detailedSiblings);
   } catch (error) {
     console.error("Error fetching character siblings:", error.message);
     res.status(500).json({ error: "Failed to fetch character data" });
@@ -75,10 +68,18 @@ app.get("/api/characters/siblings", async (req, res) => {
 
 // 정적 파일 제공 (React 빌드 결과물)
 app.use(express.static(path.join(__dirname, "../build")));
+console.log("Serving static files from:", path.join(__dirname, "../build"));
 
 // React의 라우팅을 처리 (SPA 지원)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../build", "index.html"));
+  const filePath = path.join(__dirname, "../build", "index.html");
+  console.log("Serving index.html from:", filePath);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("Error serving index.html:", err);
+      res.status(500).send("Error serving the application.");
+    }
+  });
 });
 
 // 서버 실행
