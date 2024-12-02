@@ -74,11 +74,11 @@ app.get("/api/characters/siblings", async (req, res) => {
 });
 
 // 정적 파일 제공 (React 빌드 결과물)
-app.use(express.static(path.join(__dirname, "build")));
+app.use(express.static(path.join(__dirname, "../build")));
 
 // React의 라우팅을 처리 (SPA 지원)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
 
 // 서버 실행
