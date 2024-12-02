@@ -50,5 +50,8 @@
     "@types/react-router-dom": "^5.3.3",
     "gh-pages": "^6.2.0"
   },
-  "homepage": "https://raid-calculate.onrender.com"
+  "homepage": "https://raid-calculate.onrender.com",
+  "engines": {
+    "node": "16.x"
+  }
 }
