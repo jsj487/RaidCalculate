@@ -1,13 +1,14 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config({ path: "./.env" });
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 5000; // 백엔드 서버 포트
+const PORT = process.env.PORT || 5000; // 배포 환경에서 사용할 포트
 const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
 
 // 캐릭터 검색 API 라우트
@@ -25,7 +26,7 @@ app.get("/api/characters/siblings", async (req, res) => {
       )}/siblings`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+          Authorization: `Bearer ${LOST_ARK_API_KEY}`,
         },
       }
     );
@@ -42,7 +43,7 @@ app.get("/api/characters/siblings", async (req, res) => {
             )}/profiles`,
             {
               headers: {
-                Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+                Authorization: `Bearer ${LOST_ARK_API_KEY}`,
               },
             }
           );
@@ -72,9 +73,15 @@ app.get("/api/characters/siblings", async (req, res) => {
   }
 });
 
-console.log("LOST_ARK_API_KEY:", process.env.LOST_ARK_API_KEY);
+// 정적 파일 제공 (React 빌드 결과물)
+app.use(express.static(path.join(__dirname, "build")));
 
-// 백엔드 서버 실행
+// React의 라우팅을 처리 (SPA 지원)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+// 서버 실행
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
