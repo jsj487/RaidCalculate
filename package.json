@@ -50,5 +50,5 @@
     "@types/react-router-dom": "^5.3.3",
     "gh-pages": "^6.2.0"
   },
-  "homepage": "https://jsj487.github.io/RaidCalculate"
+  "homepage": "https://raid-calculate.vercel.app/"
 }
