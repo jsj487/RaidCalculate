@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { useState, useEffect } from "react";
 import React from "react";
 
 const TableContainer = styled.div`
@@ -60,61 +59,67 @@ interface RaidTableProps {
   characters: any[];
   server: string | null;
   onToggle: (charIndex: number, gold: number) => void;
-  toggleStates: { [key: string]: number }; // 추가
-  setToggleStates: (key: string, newState: number) => void; // 추가
+  toggleStates: { [key: string]: number };
+  setToggleStates: (key: string, newState: number) => void;
+  raidValues: Record<
+    string,
+    Record<string, Array<{ clearGold: number; bonusGold: number }>>
+  >; // MainPage에서 전달받음
 }
 
 function RaidTable({
   characters,
-  server,
   onToggle,
   toggleStates,
   setToggleStates,
+  raidValues, // props로 가져오기
 }: RaidTableProps) {
-  const raidValues: Record<
-    string,
-    Record<string, Array<{ clearGold: number; bonusGold: number }>>
-  > = {
-    // 예시 데이터
-    "카제로스 아브렐슈드": {
-      하드: [
-        { clearGold: 10000, bonusGold: 4500 },
-        { clearGold: 20500, bonusGold: 7200 },
-      ],
-      노말: [
-        { clearGold: 8500, bonusGold: 3800 },
-        { clearGold: 16500, bonusGold: 5200 },
-      ],
-    },
-  };
-
   const raidCategories = [
     {
       category: "카제로스 레이드",
       raids: [
         { name: "카제로스 아브렐슈드", maxPhases: 2, levels: ["하드", "노말"] },
+        { name: "에기르", maxPhases: 2, levels: ["하드", "노말"] },
+        { name: "에키드나", maxPhases: 2, levels: ["하드", "노말"] },
+      ],
+    },
+    {
+      category: "에픽 레이드",
+      raids: [{ name: "베히모스", maxPhases: 2, levels: ["노말"] }],
+    },
+    {
+      category: "군단장 레이드",
+      raids: [
+        {
+          name: "카멘",
+          maxPhases: 4, // 하드 4관문 반영
+          levels: ["하드", "노말"],
+        },
+        { name: "일리아칸", maxPhases: 3, levels: ["하드", "노말"] },
+        { name: "군단장 아브렐슈드", maxPhases: 4, levels: ["하드", "노말"] },
+        { name: "쿠크세이튼", maxPhases: 3, levels: ["노말"] },
+        { name: "비아키스", maxPhases: 2, levels: ["하드", "노말"] },
+        { name: "발탄", maxPhases: 2, levels: ["하드", "노말"] },
+      ],
+    },
+    {
+      category: "어비스 던전",
+      raids: [
+        { name: "혼돈의 상하탑", maxPhases: 3, levels: ["하드", "노말"] },
+        { name: "카양겔", maxPhases: 3, levels: ["하드", "노말"] },
       ],
     },
   ];
 
-  const handleToggleClick = (key: string, charIndex: number, phase: number) => {
+  const handleToggleClick = (key: string, charIndex: number) => {
     const currentState = toggleStates[key] || 0;
     const newState = currentState === 2 ? 0 : currentState + 1;
 
-    const [raidName, raidLevel] = key.split("-").slice(0, 2);
-    const { clearGold, bonusGold } = raidValues[raidName]?.[raidLevel]?.[
-      phase
-    ] || { clearGold: 0, bonusGold: 0 };
-
-    const goldChange =
-      newState === 1
-        ? clearGold
-        : newState === 2
-        ? -bonusGold
-        : -(clearGold - bonusGold);
-
+    // 상태 업데이트
     setToggleStates(key, newState);
-    onToggle(charIndex, goldChange); // 골드 업데이트 전달
+
+    // 골드 업데이트 전달 (newState와 관련된 처리는 MainPage.tsx에서 처리)
+    onToggle(charIndex, newState);
   };
 
   return (
@@ -158,11 +163,7 @@ function RaidTable({
                                     key={toggleKey}
                                     state={toggleStates[toggleKey] || 0}
                                     onClick={() =>
-                                      handleToggleClick(
-                                        toggleKey,
-                                        charIndex,
-                                        phase
-                                      )
+                                      handleToggleClick(toggleKey, charIndex)
                                     }
                                   />
                                 );
