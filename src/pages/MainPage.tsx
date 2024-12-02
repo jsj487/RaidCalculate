@@ -98,7 +98,8 @@ const ImageBox = styled.div`
   height: 30px;
   margin-right: 10px;
   border-radius: 8px;
-  background-image: url("/img/gold.png"); /* 이미지 경로 */
+  background-image: url(${process.env
+    .PUBLIC_URL}/img/gold.png); /* 동적 경로 설정 */
   background-size: contain; /* 비율 유지하며 박스 크기에 맞춤 */
   background-repeat: no-repeat; /* 이미지 반복 방지 */
   background-position: center; /* 이미지 중앙 정렬 */
