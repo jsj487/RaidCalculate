@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/RaidCalculate/static/js/main.bfd78715.js",
+    "index.html": "/RaidCalculate/index.html",
+    "main.bfd78715.js.map": "/RaidCalculate/static/js/main.bfd78715.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.bfd78715.js"
+  ]
+}
