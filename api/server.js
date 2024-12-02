@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
@@ -67,14 +68,15 @@ app.get("/api/characters/siblings", async (req, res) => {
 });
 
 // 정적 파일 제공 (React 빌드 결과물)
-app.use(express.static(path.join(__dirname, "../build")));
-console.log("Serving static files from:", path.join(__dirname, "../build"));
+const buildPath = path.join(__dirname, "../build");
+app.use(express.static(buildPath));
+console.log("Serving static files from:", buildPath);
 
 // React의 라우팅을 처리 (SPA 지원)
 app.get("*", (req, res) => {
-  const filePath = path.join(__dirname, "../build", "index.html");
-  console.log("Serving index.html from:", filePath);
-  res.sendFile(filePath, (err) => {
+  const indexPath = path.join(buildPath, "index.html");
+  console.log("Serving index.html from:", indexPath);
+  res.sendFile(indexPath, (err) => {
     if (err) {
       console.error("Error serving index.html:", err);
       res.status(500).send("Error serving the application.");

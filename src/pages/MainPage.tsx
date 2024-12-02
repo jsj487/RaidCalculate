@@ -133,6 +133,11 @@ const MainPage = () => {
     }
   );
 
+  const BASE_URL =
+    process.env.NODE_ENV === "production"
+      ? "https://raidcalculate.onrender.com/api"
+      : "http://localhost:5000/api";
+
   const [search, setSearch] = useState(() => {
     return localStorage.getItem("search") || "";
   });
@@ -319,10 +324,9 @@ const MainPage = () => {
     setError(null);
 
     try {
-      const response = await axios.get(
-        "http://localhost:5000/api/characters/siblings",
-        { params: { name: search } }
-      );
+      const response = await axios.get(`${BASE_URL}/characters/siblings`, {
+        params: { name: search },
+      });
 
       type CharacterData = {
         ServerName: string;
