@@ -10,6 +10,10 @@ const Container = styled.div`
   align-items: center;
   padding: 16px;
   background: #f0f0f0;
+
+  @media (max-width: 768px) {
+    padding: 8px;
+  }
 `;
 
 const SearchBox = styled.div`
@@ -19,6 +23,11 @@ const SearchBox = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   max-width: 500px;
   background: rgba(255, 255, 255, 0.9);
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    margin-top: 30px;
+  }
 `;
 
 const Input = styled.input`
@@ -59,6 +68,12 @@ const CharacterRow = styled.div`
   justify-content: center;
   gap: 20px;
   margin-top: 20px;
+  flex-wrap: wrap; /* 반응형: 카드가 줄 바꿈되도록 설정 */
+
+  @media (max-width: 768px) {
+    gap: 10px;
+    margin-top: 10px;
+  }
 `;
 
 const CharacterCard = styled.div`
@@ -68,6 +83,11 @@ const CharacterCard = styled.div`
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 10px;
+
+  @media (max-width: 768px) {
+    width: 150px;
+    padding: 8px;
+  }
 `;
 
 const CharacterImage = styled.img`
@@ -75,6 +95,10 @@ const CharacterImage = styled.img`
   height: 270px;
   object-fit: cover;
   border-radius: 8px;
+
+  @media (max-width: 768px) {
+    height: 200px;
+  }
 `;
 
 const CharacterName = styled.h3`
@@ -122,6 +146,11 @@ const TotalGoldBox = styled.div`
   padding: 10px 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+    padding: 8px 16px;
+  }
 `;
 
 const MainPage = () => {

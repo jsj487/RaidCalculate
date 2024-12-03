@@ -7,11 +7,21 @@ const TableContainer = styled.div`
   color: white;
   border-radius: 8px;
   padding: 20px;
+  overflow-x: auto; /* 가로 스크롤 가능하도록 설정 */
+
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px; /* 작은 화면에서 테이블이 줄어들지 않도록 설정 */
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
 `;
 
 const TableHeader = styled.th`
@@ -20,7 +30,12 @@ const TableHeader = styled.th`
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
-  white-space: nowrap;
+  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+
+  @media (max-width: 768px) {
+    padding: 5px;
+    font-size: 10px;
+  }
 `;
 
 const TableRow = styled.tr`
@@ -33,12 +48,21 @@ const TableCell = styled.td`
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
+
+  @media (max-width: 768px) {
+    padding: 5px;
+    font-size: 10px;
+  }
 `;
 
 const ToggleContainer = styled.div`
   display: flex;
   justify-content: center;
   gap: 5px;
+
+  @media (max-width: 768px) {
+    gap: 3px;
+  }
 `;
 
 const ToggleButton = styled.div<{ state: number }>`
@@ -49,9 +73,9 @@ const ToggleButton = styled.div<{ state: number }>`
     props.state === 0 ? "#555" : props.state === 1 ? "#00f" : "#f00"};
   transition: background-color 0.3s ease;
 
-  &:hover {
-    background-color: ${(props) =>
-      props.state === 0 ? "#777" : props.state === 1 ? "#3399ff" : "#ff6666"};
+  @media (max-width: 768px) {
+    width: 20px;
+    height: 20px;
   }
 `;
 
