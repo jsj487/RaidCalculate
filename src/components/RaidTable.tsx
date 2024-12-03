@@ -1,5 +1,6 @@
 import styled from "styled-components";
-import React from "react";
+import React, { useState } from "react";
+import { IoIosRefresh } from "react-icons/io"; // React Icons import 추가
 
 const TableContainer = styled.div`
   width: 100%;
@@ -7,17 +8,47 @@ const TableContainer = styled.div`
   color: white;
   border-radius: 8px;
   padding: 20px;
-  overflow-x: auto; /* 가로 스크롤 가능하도록 설정 */
+  overflow-x: auto;
+  text-align: center; /* 중앙 정렬 */
 
   @media (max-width: 768px) {
     padding: 10px;
   }
 `;
 
+const Title = styled.div`
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 40px;
+  font-weight: 700;
+  color: white;
+`;
+
+const Instructions = styled.p`
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #ddd;
+  text-align: center;
+  border: 1px dashed #ddd; /* 점선 테두리 */
+  border-radius: 8px; /* 모서리를 둥글게 */
+  padding: 10px; /* 글자 주변 공간 */
+  display: inline-block; /* 글자 주변 크기로 테두리 설정 */
+  margin: 0 auto; /* 수평 중앙 정렬 */
+`;
+
+const Icon = styled.span<{ color: string }>`
+  display: inline-block;
+  width: 16px; /* 도형의 너비 */
+  height: 16px; /* 도형의 높이 */
+  background-color: ${(props) => props.color}; /* 도형 색상 */
+  vertical-align: middle; /* 텍스트와 수평 맞춤 */
+  margin-right: 5px; /* 텍스트와 간격 */
+`;
+
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px; /* 작은 화면에서 테이블이 줄어들지 않도록 설정 */
+  min-width: 800px;
 
   @media (max-width: 768px) {
     font-size: 12px;
@@ -25,12 +56,13 @@ const Table = styled.table`
 `;
 
 const TableHeader = styled.th`
+  position: relative; /* ResetIcon의 absolute 위치 기준 설정 */
   background-color: #444;
   color: white;
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
-  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+  white-space: nowrap;
 
   @media (max-width: 768px) {
     padding: 5px;
@@ -71,11 +103,44 @@ const ToggleButton = styled.div<{ state: number }>`
   cursor: pointer;
   background-color: ${(props) =>
     props.state === 0 ? "#555" : props.state === 1 ? "#00f" : "#f00"};
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 
   @media (max-width: 768px) {
     width: 20px;
     height: 20px;
+  }
+
+  &:hover {
+    transform: scale(1.1); /* hover 시 버튼 크기 확대 효과 */
+  }
+`;
+
+const ResetButton = styled.button`
+  background: #565656;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 20px;
+  cursor: pointer;
+
+  &:hover {
+    background: #3e3e3e;
+  }
+`;
+
+const ResetIcon = styled(IoIosRefresh)`
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: white; /* 아이콘 색상 */
+  font-size: 24px; /* 아이콘 크기 */
+  transition: transform 0.5s ease-in-out;
+
+  &:hover {
+    transform: translateY(-50%) rotate(360deg); /* hover 시 360도 회전 */
   }
 `;
 
@@ -88,7 +153,7 @@ interface RaidTableProps {
   raidValues: Record<
     string,
     Record<string, Array<{ clearGold: number; bonusGold: number }>>
-  >; // MainPage에서 전달받음
+  >;
 }
 
 function RaidTable({
@@ -96,8 +161,12 @@ function RaidTable({
   onToggle,
   toggleStates,
   setToggleStates,
-  raidValues, // props로 가져오기
+  raidValues,
 }: RaidTableProps) {
+  const [characterRaidCounts, setCharacterRaidCounts] = useState<{
+    [charIndex: number]: Set<string>;
+  }>({}); // 캐릭터별 선택한 레이드 집합
+
   const raidCategories = [
     {
       category: "카제로스 레이드",
@@ -116,7 +185,7 @@ function RaidTable({
       raids: [
         {
           name: "카멘",
-          maxPhases: 4, // 하드 4관문 반영
+          maxPhases: 4,
           levels: ["하드", "노말"],
         },
         { name: "일리아칸", maxPhases: 3, levels: ["하드", "노말"] },
@@ -135,19 +204,86 @@ function RaidTable({
     },
   ];
 
-  const handleToggleClick = (key: string, charIndex: number) => {
+  const handleToggleClick = (
+    key: string,
+    charIndex: number,
+    raidName: string
+  ) => {
     const currentState = toggleStates[key] || 0;
     const newState = currentState === 2 ? 0 : currentState + 1;
 
-    // 상태 업데이트
-    setToggleStates(key, newState);
+    // 레이드가 선택됐는지 확인
+    const isSelected = newState > 0;
 
-    // 골드 업데이트 전달 (newState와 관련된 처리는 MainPage.tsx에서 처리)
+    // 현재 캐릭터의 레이드 집합
+    const currentRaidSet = characterRaidCounts[charIndex] || new Set<string>();
+
+    // 선택 상태 변경 처리
+    if (isSelected && !currentRaidSet.has(raidName)) {
+      if (currentRaidSet.size >= 3) {
+        // 이미 3개의 레이드를 선택한 경우
+        alert("이미 3가지 레이드를 선택했습니다!");
+        return;
+      }
+      // 레이드 추가
+      currentRaidSet.add(raidName);
+    } else if (!isSelected && currentRaidSet.has(raidName)) {
+      // 선택 취소 시 레이드 제거
+      currentRaidSet.delete(raidName);
+    }
+
+    // 상태 업데이트
+    setCharacterRaidCounts({
+      ...characterRaidCounts,
+      [charIndex]: currentRaidSet,
+    });
+
+    // 토글 상태 업데이트
+    setToggleStates(key, newState);
     onToggle(charIndex, newState);
+  };
+
+  // 모든 상태 초기화
+  const resetAll = () => {
+    // confirm 창 띄우기
+    const isConfirmed = window.confirm("표를 전부 초기화 하겠습니까?");
+    if (isConfirmed) {
+      // 초기화 수행
+      Object.keys(toggleStates).forEach((key) => {
+        setToggleStates(key, 0); // 모든 상태를 0으로 초기화
+      });
+    }
+  };
+
+  // 특정 캐릭터 열 초기화
+  const resetCharacterColumn = (charIndex: number) => {
+    Object.keys(toggleStates).forEach((key) => {
+      if (key.includes(`-${charIndex}-`)) {
+        setToggleStates(key, 0); // 해당 캐릭터 열의 상태를 0으로 초기화
+      }
+    });
   };
 
   return (
     <TableContainer>
+      <Title>주간 레이드</Title>
+      <Instructions>
+        사각형은 각 레이드에 관문을 의미합니다. 사각형 색에 따라 레이드 클리어
+        상태를 알 수 있습니다.
+        <br />
+        <Icon color="blue" /> - 클리어 골드, <Icon color="red" /> - 더 보기 한
+        골드
+      </Instructions>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "10px",
+        }}
+      >
+        <ResetButton onClick={resetAll}>초기화</ResetButton>
+      </div>
       {raidCategories.map((category) => (
         <React.Fragment key={category.category}>
           <h2>{category.category}</h2>
@@ -157,10 +293,16 @@ function RaidTable({
                 <TableHeader>레이드 이름</TableHeader>
                 <TableHeader>난이도</TableHeader>
                 {characters.map((char, index) => (
-                  <TableHeader key={index}>{char.CharacterName}</TableHeader>
+                  <TableHeader key={index}>
+                    {char.CharacterName}
+                    {category.category === "카제로스 레이드" && (
+                      <ResetIcon onClick={() => resetCharacterColumn(index)} />
+                    )}
+                  </TableHeader>
                 ))}
               </TableRow>
             </thead>
+
             <tbody>
               {category.raids.map((raid) => (
                 <React.Fragment key={raid.name}>
@@ -187,7 +329,11 @@ function RaidTable({
                                     key={toggleKey}
                                     state={toggleStates[toggleKey] || 0}
                                     onClick={() =>
-                                      handleToggleClick(toggleKey, charIndex)
+                                      handleToggleClick(
+                                        toggleKey,
+                                        charIndex,
+                                        raid.name
+                                      )
                                     }
                                   />
                                 );

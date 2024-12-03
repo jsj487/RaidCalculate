@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import RaidTable from "../components/RaidTable";
+import Modal from "../components/Modal"; // Modal 컴포넌트 import
 
 const Container = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
-  background: #f0f0f0;
+  padding: 20px;
+  background-color: #383838; /* 추천 배경색 */
 
   @media (max-width: 768px) {
     padding: 8px;
@@ -146,11 +147,6 @@ const TotalGoldBox = styled.div`
   padding: 10px 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-  @media (max-width: 768px) {
-    font-size: 16px;
-    padding: 8px 16px;
-  }
 `;
 
 const MainPage = () => {
@@ -184,6 +180,7 @@ const MainPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalImage, setModalImage] = useState<string | null>(null);
 
   const raidValues: Record<
     string,
@@ -451,6 +448,7 @@ const MainPage = () => {
         {loading && <p>검색 중...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
       </SearchBox>
+
       {servers.length > 0 && (
         <ServerList>
           {servers.map((server) => (
@@ -464,6 +462,7 @@ const MainPage = () => {
           ))}
         </ServerList>
       )}
+
       {selectedServer && (
         <>
           <CharacterRow>
@@ -472,6 +471,11 @@ const MainPage = () => {
                 <CharacterImage
                   src={char.CharacterImage || "/img/default-character.png"}
                   alt={char.CharacterName}
+                  onClick={() =>
+                    setModalImage(
+                      char.CharacterImage || "/img/default-character.png"
+                    )
+                  }
                 />
                 <CharacterName>{char.CharacterName}</CharacterName>
                 <p>아이템 레벨: {char.ItemAvgLevel}</p>
@@ -496,6 +500,14 @@ const MainPage = () => {
             raidValues={raidValues} // 추가
           />
         </>
+      )}
+
+      {/* 모달 렌더링 */}
+      {modalImage && (
+        <Modal
+          image={modalImage}
+          onClose={() => setModalImage(null)} // 모달 닫기
+        />
       )}
     </Container>
   );
