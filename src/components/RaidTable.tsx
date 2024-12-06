@@ -248,10 +248,13 @@ function RaidTable({
     // confirm 창 띄우기
     const isConfirmed = window.confirm("표를 전부 초기화 하겠습니까?");
     if (isConfirmed) {
-      // 초기화 수행
+      // 모든 토글 상태 초기화
       Object.keys(toggleStates).forEach((key) => {
         setToggleStates(key, 0); // 모든 상태를 0으로 초기화
       });
+
+      // 캐릭터별 레이드 선택 상태 초기화
+      setCharacterRaidCounts({});
     }
   };
 
@@ -261,6 +264,13 @@ function RaidTable({
       if (key.includes(`-${charIndex}-`)) {
         setToggleStates(key, 0); // 해당 캐릭터 열의 상태를 0으로 초기화
       }
+    });
+
+    // 해당 캐릭터의 레이드 선택 상태 초기화
+    setCharacterRaidCounts((prev) => {
+      const updated = { ...prev };
+      delete updated[charIndex]; // 해당 캐릭터의 상태 삭제
+      return updated;
     });
   };
 
