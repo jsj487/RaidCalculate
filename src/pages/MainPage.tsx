@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
+import { keyframes } from "styled-components";
+
+import RaidValues from "../components/RaidValue";
 import RaidTable from "../components/RaidTable";
-import Modal from "../components/Modal"; // Modal 컴포넌트 import
+import Modal from "../components/Modal";
+
+const slideIn = keyframes`
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+`;
 
 const Container = styled.div`
   min-height: 100vh;
@@ -31,22 +43,30 @@ const SearchBox = styled.div`
   }
 `;
 
+const InputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* 컨테이너 너비를 버튼과 일치시키기 */
+  gap: 10px; /* 요소 간 간격 설정 */
+`;
+
 const Input = styled.input`
-  width: 100%;
+  width: 100%; /* 부모 컨테이너의 너비를 따라감 */
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  margin-bottom: 10px;
+  box-sizing: border-box; /* 패딩 포함한 너비 계산 */
 `;
 
 const Button = styled.button`
-  width: 100%;
+  width: 100%; /* 부모 컨테이너의 너비를 따라감 */
   padding: 10px;
   background: #007bff;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+
   &:hover {
     background: #0056b3;
   }
@@ -133,6 +153,54 @@ const ImageBox = styled.div`
   justify-content: center;
 `;
 
+const CharacterListModalWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 999;
+`;
+
+const CharacterListModal = styled.div`
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-color: #2d2d2d;
+  color: white;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+`;
+
+const CharacterListItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+  background: #444;
+  cursor: pointer;
+
+  &:hover {
+    background: #555;
+  }
+`;
+
+const Checkbox = styled.input.attrs({ type: "checkbox" })`
+  margin-left: 10px;
+  cursor: pointer;
+`;
+
 const BoxContent = styled.div`
   font-size: 14px;
   color: #333;
@@ -182,140 +250,46 @@ const MainPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
 
-  const raidValues: Record<
-    string,
-    Record<string, Array<{ clearGold: number; bonusGold: number }>>
-  > = {
-    // 카제로스 레이드
-    "카제로스 아브렐슈드": {
-      하드: [
-        { clearGold: 10000, bonusGold: 5500 }, // 1관문
-        { clearGold: 20500, bonusGold: 13300 }, // 2관문
-      ],
-      노말: [
-        { clearGold: 8500, bonusGold: 4700 }, // 1관문
-        { clearGold: 16500, bonusGold: 11300 }, // 2관문
-      ],
-    },
-    에기르: {
-      하드: [
-        { clearGold: 9000, bonusGold: 4900 },
-        { clearGold: 18500, bonusGold: 11900 },
-      ],
-      노말: [
-        { clearGold: 7500, bonusGold: 4300 },
-        { clearGold: 15500, bonusGold: 10200 },
-      ],
-    },
-    에키드나: {
-      하드: [
-        { clearGold: 6000, bonusGold: 3200 },
-        { clearGold: 12500, bonusGold: 8400 },
-      ],
-      노말: [
-        { clearGold: 5000, bonusGold: 2800 },
-        { clearGold: 9500, bonusGold: 6100 },
-      ],
-    },
-    // 에픽 레이드
-    베히모스: {
-      노말: [
-        { clearGold: 7000, bonusGold: 3900 },
-        { clearGold: 14500, bonusGold: 9600 },
-      ],
-    },
-    // 군단장 레이드
-    카멘: {
-      하드: [
-        { clearGold: 5000, bonusGold: 3000 },
-        { clearGold: 6000, bonusGold: 3600 },
-        { clearGold: 9000, bonusGold: 6200 },
-        { clearGold: 21000, bonusGold: 17400 },
-      ],
-      노말: [
-        { clearGold: 3500, bonusGold: 2000 },
-        { clearGold: 4000, bonusGold: 2200 },
-        { clearGold: 5500, bonusGold: 3000 },
-      ],
-    },
-    일리아칸: {
-      하드: [
-        { clearGold: 1500, bonusGold: 900 },
-        { clearGold: 2500, bonusGold: 1800 },
-        { clearGold: 3500, bonusGold: 2550 },
-      ],
-      노말: [
-        { clearGold: 1000, bonusGold: 550 },
-        { clearGold: 1800, bonusGold: 1250 },
-        { clearGold: 2600, bonusGold: 1850 },
-      ],
-    },
-    "군단장 아브렐슈드": {
-      하드: [
-        { clearGold: 1200, bonusGold: 800 },
-        { clearGold: 1200, bonusGold: 800 },
-        { clearGold: 1200, bonusGold: 1100 },
-        { clearGold: 2000, bonusGold: 1200 },
-      ],
-      노말: [
-        { clearGold: 1000, bonusGold: 750 },
-        { clearGold: 1000, bonusGold: 700 },
-        { clearGold: 1000, bonusGold: 600 },
-        { clearGold: 1600, bonusGold: 1000 },
-      ],
-    },
-    쿠크세이튼: {
-      노말: [
-        { clearGold: 600, bonusGold: 300 },
-        { clearGold: 900, bonusGold: 400 },
-        { clearGold: 1500, bonusGold: 800 },
-      ],
-    },
-    비아키스: {
-      하드: [
-        { clearGold: 900, bonusGold: 400 },
-        { clearGold: 1500, bonusGold: 850 },
-      ],
-      노말: [
-        { clearGold: 600, bonusGold: 300 },
-        { clearGold: 1000, bonusGold: 550 },
-      ],
-    },
-    발탄: {
-      하드: [
-        { clearGold: 700, bonusGold: 250 },
-        { clearGold: 1100, bonusGold: 500 },
-      ],
-      노말: [
-        { clearGold: 500, bonusGold: 200 },
-        { clearGold: 700, bonusGold: 300 },
-      ],
-    },
-    // 어비스 던전
-    "혼돈의 상하탑": {
-      하드: [
-        { clearGold: 3000, bonusGold: 1800 },
-        { clearGold: 4000, bonusGold: 2550 },
-        { clearGold: 6000, bonusGold: 4000 },
-      ],
-      노말: [
-        { clearGold: 1500, bonusGold: 900 },
-        { clearGold: 2000, bonusGold: 1350 },
-        { clearGold: 3000, bonusGold: 2000 },
-      ],
-    },
-    카양겔: {
-      하드: [
-        { clearGold: 1000, bonusGold: 650 },
-        { clearGold: 1600, bonusGold: 1100 },
-        { clearGold: 2200, bonusGold: 1500 },
-      ],
-      노말: [
-        { clearGold: 800, bonusGold: 500 },
-        { clearGold: 1200, bonusGold: 800 },
-        { clearGold: 1600, bonusGold: 1100 },
-      ],
-    },
+  const [isCharacterListModalOpen, setCharacterListModalOpen] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
+    null
+  );
+  const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
+    const storedActiveCharacters = localStorage.getItem("activeCharacters");
+    if (storedActiveCharacters) {
+      return JSON.parse(storedActiveCharacters);
+    }
+    return [...characters]
+      .sort(
+        (a, b) =>
+          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+      )
+      .slice(0, 6)
+      .map((char) => char.CharacterName);
+  });
+
+  useEffect(() => {
+    localStorage.setItem("activeCharacters", JSON.stringify(activeCharacters));
+  }, [activeCharacters]);
+
+  const sortedCharacters = [...characters].sort(
+    (a, b) =>
+      parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+      parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+  );
+
+  const toggleCharacterListModal = () => {
+    setCharacterListModalOpen(!isCharacterListModalOpen);
+  };
+
+  const handleCharacterToggle = (characterName: string) => {
+    setActiveCharacters(
+      (prev) =>
+        prev.includes(characterName)
+          ? prev.filter((name) => name !== characterName) // 비활성화
+          : [...prev, characterName] // 활성화
+    );
   };
 
   // Local Storage 저장
@@ -378,6 +352,14 @@ const MainPage = () => {
     }
   };
 
+  const handleSearchKeyPress = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter") {
+      handleSearch(); // 엔터 키를 누르면 검색 함수 호출
+    }
+  };
+
   const handleServerSelect = (server: string) => {
     setSelectedServer(server);
   };
@@ -393,32 +375,6 @@ const MainPage = () => {
 
   const totalGold = goldRewards.reduce((sum, reward) => sum + reward, 0);
 
-  const calculateGoldFromToggleStates = () => {
-    const calculatedRewards = Array(characters.length).fill(0);
-
-    Object.keys(toggleStates).forEach((key) => {
-      const [raidName, raidLevel, charIndexStr, phaseStr] = key.split("-");
-      const charIndex = parseInt(charIndexStr, 10);
-      const phase = parseInt(phaseStr, 10);
-
-      const { clearGold, bonusGold } = raidValues[raidName]?.[raidLevel]?.[
-        phase
-      ] || {
-        clearGold: 0,
-        bonusGold: 0,
-      };
-
-      const state = toggleStates[key];
-      if (state === 1) {
-        calculatedRewards[charIndex] += clearGold;
-      } else if (state === 2) {
-        calculatedRewards[charIndex] += bonusGold;
-      }
-    });
-
-    return calculatedRewards;
-  };
-
   const handleToggle = (key: string, newState: number) => {
     setToggleStates((prevStates) => ({
       ...prevStates,
@@ -427,24 +383,33 @@ const MainPage = () => {
   };
 
   useEffect(() => {
-    // 항상 toggleStates에 따라 goldRewards 재계산
-    const recalculatedRewards = calculateGoldFromToggleStates();
-    console.log("Recalculated goldRewards:", recalculatedRewards);
-    setGoldRewards(recalculatedRewards);
-    localStorage.setItem("goldRewards", JSON.stringify(recalculatedRewards));
-  }, [toggleStates]); // toggleStates가 변경될 때마다 실행
+    if (isCharacterListModalOpen) {
+      document.body.style.overflow = "hidden"; // 스크롤 비활성화
+    } else {
+      document.body.style.overflow = "auto"; // 스크롤 활성화
+    }
+
+    // Cleanup: 컴포넌트 언마운트 시 스크롤 활성화
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isCharacterListModalOpen]);
 
   return (
     <Container>
       <SearchBox>
         <h1>Lost Ark 캐릭터 검색</h1>
-        <Input
-          type="text"
-          placeholder="닉네임 입력"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Button onClick={handleSearch}>검색</Button>
+        <InputContainer>
+          <Input
+            type="text"
+            placeholder="닉네임 입력"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyPress} // 엔터 키 이벤트 핸들러 추가
+          />
+
+          <Button onClick={handleSearch}>검색</Button>
+        </InputContainer>
         {loading && <p>검색 중...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
       </SearchBox>
@@ -466,28 +431,37 @@ const MainPage = () => {
       {selectedServer && (
         <>
           <CharacterRow>
-            {filteredCharacters.map((char, index) => (
-              <CharacterCard key={index}>
-                <CharacterImage
-                  src={char.CharacterImage || "/img/default-character.png"}
-                  alt={char.CharacterName}
-                  onClick={() =>
-                    setModalImage(
-                      char.CharacterImage || "/img/default-character.png"
-                    )
-                  }
-                />
-                <CharacterName>{char.CharacterName}</CharacterName>
-                <p>아이템 레벨: {char.ItemAvgLevel}</p>
-                <p>전투 레벨: {char.CharacterLevel}</p>
-                <p>클래스: {char.CharacterClassName}</p>
-                <CharacterBox>
-                  <ImageBox />
-                  <BoxContent>골드: {goldRewards[index] || 0}</BoxContent>
-                </CharacterBox>
-              </CharacterCard>
-            ))}
+            {activeCharacters
+              .map((activeName) =>
+                characters.find((char) => char.CharacterName === activeName)
+              )
+              .filter((char) => char) // 유효한 캐릭터만 필터링
+              .map((char, index) => (
+                <CharacterCard key={index} onClick={toggleCharacterListModal}>
+                  <CharacterImage
+                    src={char?.CharacterImage || "/img/default-character.png"}
+                    alt={char?.CharacterName || "No Character Selected"}
+                    onClick={(e) => {
+                      e.stopPropagation(); // 부모 이벤트 전파 방지
+                      setModalImage(
+                        char?.CharacterImage || "/img/default-character.png"
+                      );
+                    }}
+                  />
+                  <CharacterName>
+                    {char?.CharacterName || "캐릭터 선택"}
+                  </CharacterName>
+                  <p>아이템 레벨: {char?.ItemAvgLevel || "N/A"}</p>
+                  <p>전투 레벨: {char?.CharacterLevel || "N/A"}</p>
+                  <p>클래스: {char?.CharacterClassName || "N/A"}</p>
+                  <CharacterBox>
+                    <ImageBox />
+                    <BoxContent>골드: {goldRewards[index] || 0}</BoxContent>
+                  </CharacterBox>
+                </CharacterCard>
+              ))}
           </CharacterRow>
+
           <TotalGoldBox>총 골드: {totalGold}</TotalGoldBox>
           <RaidTable
             server={selectedServer}
@@ -497,9 +471,26 @@ const MainPage = () => {
             }}
             toggleStates={toggleStates}
             setToggleStates={handleToggle}
-            raidValues={raidValues} // 추가
+            raidValues={RaidValues} // 추가
           />
         </>
+      )}
+
+      {isCharacterListModalOpen && (
+        <CharacterListModalWrapper onClick={toggleCharacterListModal}>
+          <CharacterListModal onClick={(e) => e.stopPropagation()}>
+            <h2>캐릭터 목록</h2>
+            {sortedCharacters.map((char, index) => (
+              <CharacterListItem key={index}>
+                {char.CharacterName} (아이템 레벨: {char.ItemAvgLevel})
+                <Checkbox
+                  checked={activeCharacters.includes(char.CharacterName)}
+                  onChange={() => handleCharacterToggle(char.CharacterName)}
+                />
+              </CharacterListItem>
+            ))}
+          </CharacterListModal>
+        </CharacterListModalWrapper>
       )}
 
       {/* 모달 렌더링 */}
