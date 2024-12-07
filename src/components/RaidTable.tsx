@@ -147,9 +147,9 @@ const ResetIcon = styled(IoIosRefresh)`
 interface RaidTableProps {
   characters: any[];
   server: string | null;
-  onToggle: (charIndex: number, gold: number) => void;
   toggleStates: { [key: string]: number };
   setToggleStates: (key: string, newState: number) => void;
+  setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   raidValues: Record<
     string,
     Record<string, Array<{ clearGold: number; bonusGold: number }>>
@@ -158,14 +158,14 @@ interface RaidTableProps {
 
 function RaidTable({
   characters,
-  onToggle,
   toggleStates,
   setToggleStates,
+  setGoldRewards, // 추가
   raidValues,
 }: RaidTableProps) {
   const [characterRaidCounts, setCharacterRaidCounts] = useState<{
-    [charIndex: number]: Set<string>;
-  }>({}); // 캐릭터별 선택한 레이드 집합
+    [characterName: string]: Set<string>;
+  }>({});
 
   const raidCategories = [
     {
@@ -206,55 +206,73 @@ function RaidTable({
 
   const handleToggleClick = (
     key: string,
-    charIndex: number,
-    raidName: string
+    displayedCharIndex: number,
+    raidName: string,
+    level: string,
+    phase: number
   ) => {
     const currentState = toggleStates[key] || 0;
     const newState = currentState === 2 ? 0 : currentState + 1;
 
-    // 레이드가 선택됐는지 확인
-    const isSelected = newState > 0;
+    const characterName = characters[displayedCharIndex]?.CharacterName;
+    if (!characterName) return;
 
-    // 현재 캐릭터의 레이드 집합
-    const currentRaidSet = characterRaidCounts[charIndex] || new Set<string>();
+    // 현재 활성화된 레이드 이름 추적
+    setCharacterRaidCounts((prevCounts) => {
+      const activeRaids = prevCounts[characterName] || new Set<string>();
+      const updatedRaids = new Set(activeRaids);
 
-    // 선택 상태 변경 처리
-    if (isSelected && !currentRaidSet.has(raidName)) {
-      if (currentRaidSet.size >= 3) {
-        // 이미 3개의 레이드를 선택한 경우
-        alert("이미 3가지 레이드를 선택했습니다!");
-        return;
+      // 상태에 따라 레이드 추가/삭제
+      if (newState > 0) {
+        updatedRaids.add(raidName); // 레이드 추가
+      } else {
+        updatedRaids.delete(raidName); // 레이드 삭제
       }
-      // 레이드 추가
-      currentRaidSet.add(raidName);
-    } else if (!isSelected && currentRaidSet.has(raidName)) {
-      // 선택 취소 시 레이드 제거
-      currentRaidSet.delete(raidName);
-    }
 
-    // 상태 업데이트
-    setCharacterRaidCounts({
-      ...characterRaidCounts,
-      [charIndex]: currentRaidSet,
+      // 경고 조건 확인
+      if (updatedRaids.size > 3) {
+        alert(`${characterName}는 레이드 4개 이상을 진행할 수 없습니다.`);
+        return prevCounts; // 상태 업데이트 중단
+      }
+
+      // 상태 업데이트 진행
+      setToggleStates(key, newState);
+
+      // 골드 업데이트
+      const raidData = raidValues[raidName]?.[level]?.[phase];
+      if (raidData) {
+        setGoldRewards((prevRewards) => {
+          const updatedRewards = { ...prevRewards };
+          const currentReward = updatedRewards[characterName] || 0;
+          const additionalGold =
+            newState === 1
+              ? raidData.clearGold
+              : newState === 2
+              ? raidData.bonusGold
+              : -raidData.clearGold - raidData.bonusGold;
+
+          updatedRewards[characterName] = Math.max(
+            0,
+            currentReward + additionalGold
+          );
+          return updatedRewards;
+        });
+      }
+
+      // 업데이트된 레이드 반환
+      return { ...prevCounts, [characterName]: updatedRaids };
     });
-
-    // 토글 상태 업데이트
-    setToggleStates(key, newState);
-    onToggle(charIndex, newState);
   };
 
   // 모든 상태 초기화
   const resetAll = () => {
-    // confirm 창 띄우기
     const isConfirmed = window.confirm("표를 전부 초기화 하겠습니까?");
     if (isConfirmed) {
-      // 모든 토글 상태 초기화
       Object.keys(toggleStates).forEach((key) => {
-        setToggleStates(key, 0); // 모든 상태를 0으로 초기화
+        setToggleStates(key, 0);
       });
-
-      // 캐릭터별 레이드 선택 상태 초기화
-      setCharacterRaidCounts({});
+      localStorage.setItem("toggleStates", JSON.stringify({}));
+      setCharacterRaidCounts({}); // 레이드 이름 초기화
     }
   };
 
@@ -333,7 +351,7 @@ function RaidTable({
                                   raidValues[raid.name]?.[level]?.length || 0,
                               },
                               (_, phase) => {
-                                const toggleKey = `${raid.name}-${level}-${charIndex}-${phase}`;
+                                const toggleKey = `${raid.name}-${level}-${characters[charIndex]?.CharacterName}-${phase}`;
                                 return (
                                   <ToggleButton
                                     key={toggleKey}
@@ -342,7 +360,9 @@ function RaidTable({
                                       handleToggleClick(
                                         toggleKey,
                                         charIndex,
-                                        raid.name
+                                        raid.name,
+                                        level,
+                                        phase
                                       )
                                     }
                                   />

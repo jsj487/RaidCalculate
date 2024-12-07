@@ -189,7 +189,7 @@ const CharacterListItem = styled.div`
   padding: 10px;
   border-radius: 4px;
   background: #444;
-  cursor: pointer;
+  cursor: pointer; /* 클릭 가능하도록 커서 스타일 변경 */
 
   &:hover {
     background: #555;
@@ -204,6 +204,30 @@ const Checkbox = styled.input.attrs({ type: "checkbox" })`
 const BoxContent = styled.div`
   font-size: 14px;
   color: #333;
+`;
+
+const GoldInputBox = styled.div`
+  margin: 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  background: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const GoldInput = styled.input`
+  width: 100px;
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: right;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const TotalGoldBox = styled.div`
@@ -242,18 +266,29 @@ const MainPage = () => {
     const storedCharacters = localStorage.getItem("characters");
     return storedCharacters ? JSON.parse(storedCharacters) : [];
   });
-  const [goldRewards, setGoldRewards] = useState<number[]>(() => {
+  const [goldRewards, setGoldRewards] = useState<Record<string, number>>(() => {
     const storedGoldRewards = localStorage.getItem("goldRewards");
-    return storedGoldRewards ? JSON.parse(storedGoldRewards) : [];
+    return storedGoldRewards ? JSON.parse(storedGoldRewards) : {};
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
 
   const [isCharacterListModalOpen, setCharacterListModalOpen] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
-    null
-  );
+
+  const [consumedGold, setConsumedGold] = useState<number>(() => {
+    const storedConsumedGold = localStorage.getItem("consumedGold");
+    return storedConsumedGold ? parseInt(storedConsumedGold, 10) : 0;
+  });
+  const handleConsumedGoldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10) || 0;
+    setConsumedGold(value);
+  };
+  useEffect(() => {
+    localStorage.setItem("consumedGold", consumedGold.toString());
+  }, [consumedGold]);
+
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
     if (storedActiveCharacters) {
@@ -364,23 +399,91 @@ const MainPage = () => {
     setSelectedServer(server);
   };
 
-  const filteredCharacters = characters
-    .filter((char) => char.ServerName === selectedServer)
+  const filteredCharacters = activeCharacters
+    .map((activeName) =>
+      characters.find((char) => char.CharacterName === activeName)
+    )
+    .filter((char) => char) // 유효한 캐릭터만 포함
     .sort(
       (a, b) =>
         parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
         parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-    )
-    .slice(0, 6);
+    );
 
-  const totalGold = goldRewards.reduce((sum, reward) => sum + reward, 0);
+  useEffect(() => {
+    // activeCharacters를 ItemAvgLevel 순으로 정렬
+    const sortedActiveCharacters = [...activeCharacters].sort(
+      (aName, bName) => {
+        const charA = characters.find((char) => char.CharacterName === aName);
+        const charB = characters.find((char) => char.CharacterName === bName);
+
+        const levelA = parseFloat(charA?.ItemAvgLevel.replace(/,/g, "") || "0");
+        const levelB = parseFloat(charB?.ItemAvgLevel.replace(/,/g, "") || "0");
+
+        return levelB - levelA; // 내림차순 정렬
+      }
+    );
+
+    // 상태가 실제로 변경될 때만 업데이트
+    if (
+      JSON.stringify(activeCharacters) !==
+      JSON.stringify(sortedActiveCharacters)
+    ) {
+      setActiveCharacters(sortedActiveCharacters); // 정렬된 결과로 업데이트
+    }
+  }, [characters]); // activeCharacters 제거
+
+  const totalGold = Object.values(goldRewards).reduce(
+    (sum, reward) => sum + reward,
+    0
+  );
 
   const handleToggle = (key: string, newState: number) => {
-    setToggleStates((prevStates) => ({
-      ...prevStates,
-      [key]: newState,
-    }));
+    setToggleStates((prevStates) => {
+      const updatedStates = { ...prevStates, [key]: newState };
+      return updatedStates;
+    });
   };
+
+  // 골드 보상 계산 함수
+  const calculateGoldRewards = () => {
+    const newGoldRewards: Record<string, number> = {};
+
+    activeCharacters.forEach((activeName) => {
+      const charIndex = characters.findIndex(
+        (char) => char.CharacterName === activeName
+      );
+
+      if (charIndex !== -1) {
+        const totalGold = Object.keys(toggleStates).reduce((sum, key) => {
+          const [raidName, raidLevel, charName, phase] = key.split("-");
+          if (charName === activeName) {
+            const phaseIndex = parseInt(phase, 10);
+            const raidData = RaidValues[raidName]?.[raidLevel]?.[phaseIndex];
+
+            if (raidData) {
+              if (toggleStates[key] === 1) {
+                sum += raidData.clearGold;
+              } else if (toggleStates[key] === 2) {
+                sum += raidData.bonusGold;
+              }
+            }
+          }
+          return sum;
+        }, 0);
+
+        newGoldRewards[activeName] = totalGold;
+      }
+    });
+
+    console.log("New Gold Rewards:", newGoldRewards);
+    setGoldRewards(newGoldRewards);
+  };
+
+  // toggleStates 변경 시 골드 계산 실행
+  useEffect(() => {
+    calculateGoldRewards();
+  }, [toggleStates, activeCharacters]); // 의존성 배열 추가
 
   useEffect(() => {
     if (isCharacterListModalOpen) {
@@ -394,6 +497,8 @@ const MainPage = () => {
       document.body.style.overflow = "auto";
     };
   }, [isCharacterListModalOpen]);
+
+  const netGold = totalGold - consumedGold;
 
   return (
     <Container>
@@ -431,47 +536,47 @@ const MainPage = () => {
       {selectedServer && (
         <>
           <CharacterRow>
-            {activeCharacters
-              .map((activeName) =>
-                characters.find((char) => char.CharacterName === activeName)
-              )
-              .filter((char) => char) // 유효한 캐릭터만 필터링
-              .map((char, index) => (
-                <CharacterCard key={index} onClick={toggleCharacterListModal}>
-                  <CharacterImage
-                    src={char?.CharacterImage || "/img/default-character.png"}
-                    alt={char?.CharacterName || "No Character Selected"}
-                    onClick={(e) => {
-                      e.stopPropagation(); // 부모 이벤트 전파 방지
-                      setModalImage(
-                        char?.CharacterImage || "/img/default-character.png"
-                      );
-                    }}
-                  />
-                  <CharacterName>
-                    {char?.CharacterName || "캐릭터 선택"}
-                  </CharacterName>
-                  <p>아이템 레벨: {char?.ItemAvgLevel || "N/A"}</p>
-                  <p>전투 레벨: {char?.CharacterLevel || "N/A"}</p>
-                  <p>클래스: {char?.CharacterClassName || "N/A"}</p>
-                  <CharacterBox>
-                    <ImageBox />
-                    <BoxContent>골드: {goldRewards[index] || 0}</BoxContent>
-                  </CharacterBox>
-                </CharacterCard>
-              ))}
+            {filteredCharacters.map((char, index) => (
+              <CharacterCard key={index}>
+                <CharacterImage
+                  src={char?.CharacterImage || "/img/default-character.png"}
+                  alt={char?.CharacterName || "No Character Selected"}
+                />
+                <CharacterName>
+                  {char?.CharacterName || "캐릭터 선택"}
+                </CharacterName>
+                <p>아이템 레벨: {char?.ItemAvgLevel || "N/A"}</p>
+                <p>전투 레벨: {char?.CharacterLevel || "N/A"}</p>
+                <p>클래스: {char?.CharacterClassName || "N/A"}</p>
+                <CharacterBox>
+                  <ImageBox />
+                  <BoxContent>
+                    골드: {goldRewards[char.CharacterName] || 0}
+                  </BoxContent>
+                </CharacterBox>
+              </CharacterCard>
+            ))}
           </CharacterRow>
 
-          <TotalGoldBox>총 골드: {totalGold}</TotalGoldBox>
+          <Button onClick={toggleCharacterListModal}>캐릭터 추가</Button>
+
+          <GoldInputBox>
+            <label htmlFor="consumedGold">소비 골드:</label>
+            <GoldInput
+              id="consumedGold"
+              value={consumedGold}
+              onChange={handleConsumedGoldChange}
+            />
+          </GoldInputBox>
+
+          <TotalGoldBox>총 순이익 골드: {netGold}</TotalGoldBox>
           <RaidTable
             server={selectedServer}
             characters={filteredCharacters}
-            onToggle={(charIndex, gold) => {
-              console.log("charIndex:", charIndex, "gold:", gold);
-            }}
             toggleStates={toggleStates}
             setToggleStates={handleToggle}
-            raidValues={RaidValues} // 추가
+            setGoldRewards={setGoldRewards} // MainPage의 상태를 전달
+            raidValues={RaidValues}
           />
         </>
       )}
@@ -481,11 +586,17 @@ const MainPage = () => {
           <CharacterListModal onClick={(e) => e.stopPropagation()}>
             <h2>캐릭터 목록</h2>
             {sortedCharacters.map((char, index) => (
-              <CharacterListItem key={index}>
-                {char.CharacterName} (아이템 레벨: {char.ItemAvgLevel})
+              <CharacterListItem
+                key={index}
+                onClick={() => handleCharacterToggle(char.CharacterName)}
+              >
+                <div>
+                  {char.CharacterName} - {char.ItemAvgLevel}
+                </div>
                 <Checkbox
                   checked={activeCharacters.includes(char.CharacterName)}
                   onChange={() => handleCharacterToggle(char.CharacterName)}
+                  onClick={(e) => e.stopPropagation()} // 부모의 onClick 이벤트와 겹치지 않도록 방지
                 />
               </CharacterListItem>
             ))}
