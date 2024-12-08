@@ -249,10 +249,11 @@ const TotalGoldBox = styled.div`
 `;
 
 const MainPage = () => {
+  /** Context 데이터 */
   const { servers, characters, selectedServer, setSelectedServer } =
-    useLayoutContext(); // Context 사용
+    useLayoutContext();
 
-  // 기존 상태와 동일, 토글 상태를 추가
+  /** 상태 관리 */
   const [toggleStates, setToggleStates] = useState<{ [key: string]: number }>(
     () => {
       const storedStates = localStorage.getItem("toggleStates");
@@ -277,18 +278,6 @@ const MainPage = () => {
     const storedExtraGold = localStorage.getItem("extraGold");
     return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
   });
-
-  const handleImageClick = (image: string) => {
-    setModalImage(image);
-  };
-
-  useEffect(() => {
-    localStorage.setItem("consumedGold", consumedGold.toString());
-  }, [consumedGold]);
-  useEffect(() => {
-    localStorage.setItem("extraGold", extraGold.toString());
-  }, [extraGold]);
-
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
     if (storedActiveCharacters) {
@@ -304,61 +293,17 @@ const MainPage = () => {
       .map((char) => char.CharacterName);
   });
 
+  /**useEffect */
+  useEffect(() => {
+    localStorage.setItem("consumedGold", consumedGold.toString());
+  }, [consumedGold]);
+  useEffect(() => {
+    localStorage.setItem("extraGold", extraGold.toString());
+  }, [extraGold]);
+
   useEffect(() => {
     localStorage.setItem("activeCharacters", JSON.stringify(activeCharacters));
   }, [activeCharacters]);
-
-  const sortedCharacters = [...characters].sort(
-    (a, b) =>
-      parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-      parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-  );
-
-  const toggleCharacterListModal = () => {
-    setCharacterListModalOpen(!isCharacterListModalOpen);
-  };
-
-  const handleCharacterToggle = (characterName: string) => {
-    setActiveCharacters(
-      (prev) =>
-        prev.includes(characterName)
-          ? prev.filter((name) => name !== characterName) // 비활성화
-          : [...prev, characterName] // 활성화
-    );
-  };
-
-  // Local Storage 저장
-  React.useEffect(() => {
-    localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
-  }, [toggleStates]);
-
-  React.useEffect(() => {
-    localStorage.setItem("selectedServer", selectedServer || "");
-  }, [selectedServer]);
-
-  React.useEffect(() => {
-    localStorage.setItem("characters", JSON.stringify(characters));
-  }, [characters]);
-
-  React.useEffect(() => {
-    localStorage.setItem("goldRewards", JSON.stringify(goldRewards));
-  }, [goldRewards]);
-
-  const handleServerSelect = (server: string) => {
-    setSelectedServer(server);
-  };
-
-  const filteredCharacters = activeCharacters
-    .map((activeName) =>
-      characters.find((char) => char.CharacterName === activeName)
-    )
-    .filter((char) => char) // 유효한 캐릭터만 포함
-    .sort(
-      (a, b) =>
-        parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-    );
-
   useEffect(() => {
     // activeCharacters를 ItemAvgLevel 순으로 정렬
     const sortedActiveCharacters = [...activeCharacters].sort(
@@ -381,11 +326,95 @@ const MainPage = () => {
       setActiveCharacters(sortedActiveCharacters); // 정렬된 결과로 업데이트
     }
   }, [characters]); // activeCharacters 제거
+  useEffect(() => {
+    if (selectedServer) {
+      const newActiveCharacters = characters
+        .filter((char) => char.ServerName === selectedServer)
+        .sort(
+          (a, b) =>
+            parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+            parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+        )
+        .slice(0, 6)
+        .map((char) => char.CharacterName);
+
+      setActiveCharacters(newActiveCharacters);
+    }
+  }, [selectedServer, characters]);
+
+  useEffect(() => {
+    calculateGoldRewards();
+  }, [toggleStates, activeCharacters]); // 의존성 배열 추가
+
+  useEffect(() => {
+    if (isCharacterListModalOpen) {
+      document.body.style.overflow = "hidden"; // 스크롤 비활성화
+    } else {
+      document.body.style.overflow = "auto"; // 스크롤 활성화
+    }
+
+    // Cleanup: 컴포넌트 언마운트 시 스크롤 활성화
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isCharacterListModalOpen]);
 
   const totalGold = Object.values(goldRewards).reduce(
     (sum, reward) => sum + reward,
     0
   );
+
+  // Local Storage 저장
+  React.useEffect(() => {
+    localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
+  }, [toggleStates]);
+
+  React.useEffect(() => {
+    localStorage.setItem("selectedServer", selectedServer || "");
+  }, [selectedServer]);
+
+  React.useEffect(() => {
+    localStorage.setItem("characters", JSON.stringify(characters));
+  }, [characters]);
+
+  React.useEffect(() => {
+    localStorage.setItem("goldRewards", JSON.stringify(goldRewards));
+  }, [goldRewards]);
+
+  /** 이벤트 핸들러 */
+  const handleImageClick = (image: string) => {
+    setModalImage(image);
+  };
+
+  const toggleCharacterListModal = () => {
+    setCharacterListModalOpen(!isCharacterListModalOpen);
+  };
+
+  const handleCharacterToggle = (characterName: string) => {
+    setActiveCharacters(
+      (prev) =>
+        prev.includes(characterName)
+          ? prev.filter((name) => name !== characterName) // 비활성화
+          : [...prev, characterName] // 활성화
+    );
+  };
+
+  const handleServerSelect = (server: string) => {
+    setSelectedServer(server);
+
+    // 서버 변경 시 해당 서버의 캐릭터로 활성 캐릭터 초기화
+    const newActiveCharacters = characters
+      .filter((char) => char.ServerName === server)
+      .sort(
+        (a, b) =>
+          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+      )
+      .slice(0, 6)
+      .map((char) => char.CharacterName);
+
+    setActiveCharacters(newActiveCharacters);
+  };
 
   const handleToggle = (key: string, newState: number) => {
     setToggleStates((prevStates) => {
@@ -394,7 +423,24 @@ const MainPage = () => {
     });
   };
 
-  // 골드 보상 계산 함수
+  /** 필터링 및 계산 */
+  const filteredCharacters = characters
+    .filter((char) => char.ServerName === selectedServer) // 선택된 서버의 캐릭터만 필터링
+    .sort(
+      (a, b) =>
+        parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+    )
+    .filter((char) => activeCharacters.includes(char.CharacterName)); // 활성 캐릭터 필터링
+
+  const filteredModalCharacters = characters
+    .filter((char) => char.ServerName === selectedServer) // 선택된 서버의 캐릭터만 필터링
+    .sort(
+      (a, b) =>
+        parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+    );
+
   const calculateGoldRewards = () => {
     const newGoldRewards: Record<string, number> = {};
 
@@ -425,27 +471,10 @@ const MainPage = () => {
       }
     });
 
-    console.log("New Gold Rewards:", newGoldRewards);
     setGoldRewards(newGoldRewards);
   };
 
   // toggleStates 변경 시 골드 계산 실행
-  useEffect(() => {
-    calculateGoldRewards();
-  }, [toggleStates, activeCharacters]); // 의존성 배열 추가
-
-  useEffect(() => {
-    if (isCharacterListModalOpen) {
-      document.body.style.overflow = "hidden"; // 스크롤 비활성화
-    } else {
-      document.body.style.overflow = "auto"; // 스크롤 활성화
-    }
-
-    // Cleanup: 컴포넌트 언마운트 시 스크롤 활성화
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isCharacterListModalOpen]);
 
   const netGold = totalGold - consumedGold + extraGold;
 
@@ -534,7 +563,7 @@ const MainPage = () => {
         <CharacterListModalWrapper onClick={toggleCharacterListModal}>
           <CharacterListModal onClick={(e) => e.stopPropagation()}>
             <h2>캐릭터 목록</h2>
-            {sortedCharacters.map((char, index) => (
+            {filteredModalCharacters.map((char, index) => (
               <CharacterListItem
                 key={index}
                 onClick={() => handleCharacterToggle(char.CharacterName)}

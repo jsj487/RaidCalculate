@@ -310,7 +310,7 @@ function RaidTable({
           marginBottom: "10px",
         }}
       >
-        <ResetButton onClick={resetAll}>초기화</ResetButton>
+        <ResetButton onClick={resetAll}>전체 초기화</ResetButton>
       </div>
       {raidCategories.map((category) => (
         <React.Fragment key={category.category}>

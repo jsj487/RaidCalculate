@@ -13,11 +13,23 @@ const Header = styled.header`
   align-items: center;
   padding: 10px 50px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* 작은 화면에서 레이아웃 변경 */
+    gap: 10px;
+  }
+`;
+
+const HeaderCenter = styled.div`
+  display: flex;
+  justify-content: center;
+  flex: 1; /* 가운데 정렬 */
+  position: relative;
 `;
 
 const Nav = styled.nav`
   display: flex;
-  gap: 15px;
+  gap: 40px;
 `;
 
 const NavLink = styled(Link)<{ isActive: boolean }>`
@@ -196,34 +208,34 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       >
         <Header>
           <h1>ArkLator</h1>
-          <SearchInput
-            type="text"
-            placeholder="닉네임 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyPress}
-          />
+          <HeaderCenter>
+            <SearchInput
+              type="text"
+              placeholder="닉네임 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleSearchKeyPress}
+            />
+          </HeaderCenter>
           <Nav>
-            <NavLink
-              to="/"
-              isActive={location.pathname === "/"} // 현재 경로 비교
-            >
+            <NavLink to="/" isActive={location.pathname === "/"}>
               주간 레이드 계산기
             </NavLink>
             <NavLink
               to="/accessory-simulator"
-              isActive={location.pathname === "/accessory-simulator"} // 현재 경로 비교
+              isActive={location.pathname === "/accessory-simulator"}
             >
               장신구 연마 시뮬
             </NavLink>
             <NavLink
               to="/more-tools"
-              isActive={location.pathname === "/more-tools"} // 현재 경로 비교
+              isActive={location.pathname === "/more-tools"}
             >
               더보기 계산기
             </NavLink>
           </Nav>
         </Header>
+
         {loading && <p>검색 중...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
         <main style={{ flex: 1 }}>{children}</main>
