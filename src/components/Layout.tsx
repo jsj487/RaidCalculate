@@ -32,8 +32,8 @@ const Nav = styled.nav`
   gap: 40px;
 `;
 
-const NavLink = styled(Link)<{ isActive: boolean }>`
-  color: ${(props) => (props.isActive ? "white" : "rgba(255, 255, 255, 0.5)")};
+const NavLink = styled(Link)<{ $isActive: boolean }>`
+  color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.5)")};
   text-decoration: none;
   font-size: 16px;
   font-weight: 700;
@@ -218,18 +218,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             />
           </HeaderCenter>
           <Nav>
-            <NavLink to="/" isActive={location.pathname === "/"}>
+            <NavLink to="/" $isActive={location.pathname === "/"}>
               주간 레이드 계산기
             </NavLink>
             <NavLink
               to="/accessory-simulator"
-              isActive={location.pathname === "/accessory-simulator"}
+              $isActive={location.pathname === "/accessory-simulator"}
             >
               장신구 연마 시뮬
             </NavLink>
             <NavLink
               to="/more-tools"
-              isActive={location.pathname === "/more-tools"}
+              $isActive={location.pathname === "/more-tools"}
             >
               더보기 계산기
             </NavLink>

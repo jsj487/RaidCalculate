@@ -150,6 +150,7 @@ const PlusIcon = styled(FaUserPlus)`
   font-size: 48px; /* 아이콘 크기 */
   color: #ffffff;
   margin-bottom: 8px;
+  transition: all 0.3s;
 `;
 
 const CharacterListModalWrapper = styled.div`

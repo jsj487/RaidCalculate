@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IoIosRefresh } from "react-icons/io"; // React Icons import 추가
 
 const TableContainer = styled.div`
@@ -148,7 +148,7 @@ interface RaidTableProps {
   characters: any[];
   server: string | null;
   toggleStates: { [key: string]: number };
-  setToggleStates: (key: string, newState: number) => void;
+  setToggleStates: (key: string, newState: number) => void; // 함수 타입 정의
   setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   raidValues: Record<
     string,
@@ -160,7 +160,7 @@ function RaidTable({
   characters,
   toggleStates,
   setToggleStates,
-  setGoldRewards, // 추가
+  setGoldRewards,
   raidValues,
 }: RaidTableProps) {
   const [characterRaidCounts, setCharacterRaidCounts] = useState<{
@@ -212,7 +212,7 @@ function RaidTable({
     phase: number
   ) => {
     const currentState = toggleStates[key] || 0;
-    const newState = currentState === 2 ? 0 : currentState + 1;
+    const newState = (currentState + 1) % 3;
 
     const characterName = characters[displayedCharIndex]?.CharacterName;
     if (!characterName) return;
