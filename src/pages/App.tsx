@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Layout from "../components/Layout";
 import MainPage from "./MainPage";
 import { createGlobalStyle } from "styled-components";
 
@@ -19,10 +20,12 @@ function App() {
     <>
       <GlobalStyle /> {/* 전역 스타일 추가 */}
       <Router basename={basename}>
-        <Routes>
-          {/* MainPage 경로 */}
-          <Route path="/" element={<MainPage />} />
-        </Routes>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<MainPage />} />
+            {/* 다른 라우트도 여기에 추가 */}
+          </Routes>
+        </Layout>
       </Router>
     </>
   );

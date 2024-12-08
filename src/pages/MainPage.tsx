@@ -3,6 +3,9 @@ import axios from "axios";
 import styled from "styled-components";
 import { keyframes } from "styled-components";
 
+import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
+
+import { useLayoutContext } from "../components/Layout"; // Context 가져오기
 import RaidValues from "../components/RaidValue";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
@@ -27,35 +30,6 @@ const Container = styled.div`
   @media (max-width: 768px) {
     padding: 8px;
   }
-`;
-
-const SearchBox = styled.div`
-  margin-top: 50px;
-  padding: 32px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  background: rgba(255, 255, 255, 0.9);
-
-  @media (max-width: 768px) {
-    padding: 20px;
-    margin-top: 30px;
-  }
-`;
-
-const InputContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%; /* 컨테이너 너비를 버튼과 일치시키기 */
-  gap: 10px; /* 요소 간 간격 설정 */
-`;
-
-const Input = styled.input`
-  width: 100%; /* 부모 컨테이너의 너비를 따라감 */
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box; /* 패딩 포함한 너비 계산 */
 `;
 
 const Button = styled.button`
@@ -153,6 +127,29 @@ const ImageBox = styled.div`
   justify-content: center;
 `;
 
+const AddCharacterButton = styled(CharacterCard)`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #383838;
+  border: 2px dashed #ffffff; /* 점선 테두리 */
+  cursor: pointer;
+
+  &:hover {
+    border-color: #ffffff6b; /* 호버 시 색상 변경 */
+  }
+
+  &:hover svg {
+    color: #ffffff6b;
+  }
+`;
+
+const PlusIcon = styled(FaUserPlus)`
+  font-size: 48px; /* 아이콘 크기 */
+  color: #ffffff;
+  margin-bottom: 8px;
+`;
+
 const CharacterListModalWrapper = styled.div`
   position: fixed;
   top: 0;
@@ -242,6 +239,9 @@ const TotalGoldBox = styled.div`
 `;
 
 const MainPage = () => {
+  const { servers, characters, selectedServer, setSelectedServer } =
+    useLayoutContext(); // Context 사용
+
   // 기존 상태와 동일, 토글 상태를 추가
   const [toggleStates, setToggleStates] = useState<{ [key: string]: number }>(
     () => {
@@ -250,29 +250,11 @@ const MainPage = () => {
     }
   );
 
-  const BASE_URL =
-    process.env.NODE_ENV === "production"
-      ? "https://raidcalculate.onrender.com/api"
-      : "http://localhost:5000/api";
-
-  const [search, setSearch] = useState(() => {
-    return localStorage.getItem("search") || "";
-  });
-  const [servers, setServers] = useState<string[]>([]);
-  const [selectedServer, setSelectedServer] = useState<string | null>(() => {
-    return localStorage.getItem("selectedServer");
-  });
-  const [characters, setCharacters] = useState<any[]>(() => {
-    const storedCharacters = localStorage.getItem("characters");
-    return storedCharacters ? JSON.parse(storedCharacters) : [];
-  });
   const [goldRewards, setGoldRewards] = useState<Record<string, number>>(() => {
     const storedGoldRewards = localStorage.getItem("goldRewards");
     return storedGoldRewards ? JSON.parse(storedGoldRewards) : {};
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
 
   const [isCharacterListModalOpen, setCharacterListModalOpen] = useState(false);
@@ -333,10 +315,6 @@ const MainPage = () => {
   }, [toggleStates]);
 
   React.useEffect(() => {
-    localStorage.setItem("search", search);
-  }, [search]);
-
-  React.useEffect(() => {
     localStorage.setItem("selectedServer", selectedServer || "");
   }, [selectedServer]);
 
@@ -347,53 +325,6 @@ const MainPage = () => {
   React.useEffect(() => {
     localStorage.setItem("goldRewards", JSON.stringify(goldRewards));
   }, [goldRewards]);
-
-  // 검색 핸들러
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      setError("닉네임을 입력해주세요.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(`${BASE_URL}/characters/siblings`, {
-        params: { name: search },
-      });
-
-      type CharacterData = {
-        ServerName: string;
-        CharacterName: string;
-        CharacterClassName: string;
-        CharacterLevel: number;
-        ItemAvgLevel: string;
-        CharacterImage?: string;
-      };
-
-      const serverList = Array.from(
-        new Set(
-          (response.data as CharacterData[]).map((char) => char.ServerName)
-        )
-      );
-      setServers(serverList);
-      setCharacters(response.data);
-      setSelectedServer(null);
-    } catch (err) {
-      setError("캐릭터 데이터를 불러오는 데 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchKeyPress = (
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      handleSearch(); // 엔터 키를 누르면 검색 함수 호출
-    }
-  };
 
   const handleServerSelect = (server: string) => {
     setSelectedServer(server);
@@ -502,23 +433,6 @@ const MainPage = () => {
 
   return (
     <Container>
-      <SearchBox>
-        <h1>Lost Ark 캐릭터 검색</h1>
-        <InputContainer>
-          <Input
-            type="text"
-            placeholder="닉네임 입력"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyPress} // 엔터 키 이벤트 핸들러 추가
-          />
-
-          <Button onClick={handleSearch}>검색</Button>
-        </InputContainer>
-        {loading && <p>검색 중...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </SearchBox>
-
       {servers.length > 0 && (
         <ServerList>
           {servers.map((server) => (
@@ -556,9 +470,10 @@ const MainPage = () => {
                 </CharacterBox>
               </CharacterCard>
             ))}
+            <AddCharacterButton onClick={toggleCharacterListModal}>
+              <PlusIcon />
+            </AddCharacterButton>
           </CharacterRow>
-
-          <Button onClick={toggleCharacterListModal}>캐릭터 추가</Button>
 
           <GoldInputBox>
             <label htmlFor="consumedGold">소비 골드:</label>

@@ -231,7 +231,7 @@ function RaidTable({
 
       // 경고 조건 확인
       if (updatedRaids.size > 3) {
-        alert(`${characterName}는 레이드 4개 이상을 진행할 수 없습니다.`);
+        alert(`${characterName}는 더 이상 레이드를 진행하지 못 합니다.`);
         return prevCounts; // 상태 업데이트 중단
       }
 
