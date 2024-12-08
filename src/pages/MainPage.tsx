@@ -90,6 +90,7 @@ const CharacterImage = styled.img`
   height: 270px;
   object-fit: cover;
   border-radius: 8px;
+  cursor: pointer;
 
   @media (max-width: 768px) {
     height: 200px;
@@ -134,6 +135,7 @@ const AddCharacterButton = styled(CharacterCard)`
   background-color: #383838;
   border: 2px dashed #ffffff; /* 점선 테두리 */
   cursor: pointer;
+  transition: all 0.3s;
 
   &:hover {
     border-color: #ffffff6b; /* 호버 시 색상 변경 */
@@ -176,6 +178,7 @@ const CharacterListModal = styled.div`
   flex-direction: column;
   padding: 20px;
   overflow-y: auto;
+  animation: ${slideIn} 0.5s ease-out;
 `;
 
 const CharacterListItem = styled.div`
@@ -203,8 +206,13 @@ const BoxContent = styled.div`
   color: #333;
 `;
 
-const GoldInputBox = styled.div`
+const GoldBoxContainer = styled.div`
+  display: flex;
+  gap: 20px; /* 두 박스 간 간격 */
   margin: 20px 0;
+`;
+
+const GoldBox = styled.div`
   font-size: 18px;
   font-weight: bold;
   color: #333;
@@ -214,7 +222,9 @@ const GoldInputBox = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 10px; /* 레이블과 입력 필드 간 간격 */
+  justify-content: space-between; /* 레이블과 입력 필드 정렬 */
+  width: fit-content;
 `;
 
 const GoldInput = styled.input`
@@ -263,13 +273,21 @@ const MainPage = () => {
     const storedConsumedGold = localStorage.getItem("consumedGold");
     return storedConsumedGold ? parseInt(storedConsumedGold, 10) : 0;
   });
-  const handleConsumedGoldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10) || 0;
-    setConsumedGold(value);
+  const [extraGold, setExtraGold] = useState<number>(() => {
+    const storedExtraGold = localStorage.getItem("extraGold");
+    return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
+  });
+
+  const handleImageClick = (image: string) => {
+    setModalImage(image);
   };
+
   useEffect(() => {
     localStorage.setItem("consumedGold", consumedGold.toString());
   }, [consumedGold]);
+  useEffect(() => {
+    localStorage.setItem("extraGold", extraGold.toString());
+  }, [extraGold]);
 
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
@@ -429,7 +447,7 @@ const MainPage = () => {
     };
   }, [isCharacterListModalOpen]);
 
-  const netGold = totalGold - consumedGold;
+  const netGold = totalGold - consumedGold + extraGold;
 
   return (
     <Container>
@@ -455,6 +473,7 @@ const MainPage = () => {
                 <CharacterImage
                   src={char?.CharacterImage || "/img/default-character.png"}
                   alt={char?.CharacterName || "No Character Selected"}
+                  onClick={() => handleImageClick(char?.CharacterImage || "")}
                 />
                 <CharacterName>
                   {char?.CharacterName || "캐릭터 선택"}
@@ -475,14 +494,29 @@ const MainPage = () => {
             </AddCharacterButton>
           </CharacterRow>
 
-          <GoldInputBox>
-            <label htmlFor="consumedGold">소비 골드:</label>
-            <GoldInput
-              id="consumedGold"
-              value={consumedGold}
-              onChange={handleConsumedGoldChange}
-            />
-          </GoldInputBox>
+          <GoldBoxContainer>
+            <GoldBox>
+              <label htmlFor="consumedGold">소비 골드:</label>
+              <GoldInput
+                id="consumedGold"
+                value={consumedGold}
+                onChange={(e) =>
+                  setConsumedGold(parseInt(e.target.value, 10) || 0)
+                }
+              />
+            </GoldBox>
+
+            <GoldBox>
+              <label htmlFor="extraGold">추가 골드:</label>
+              <GoldInput
+                id="extraGold"
+                value={extraGold}
+                onChange={(e) =>
+                  setExtraGold(parseInt(e.target.value, 10) || 0)
+                }
+              />
+            </GoldBox>
+          </GoldBoxContainer>
 
           <TotalGoldBox>총 순이익 골드: {netGold}</TotalGoldBox>
           <RaidTable

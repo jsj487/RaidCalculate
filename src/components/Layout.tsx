@@ -1,16 +1,17 @@
 import React, { useState, createContext, useContext, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
 
 const Header = styled.header`
-  width: 100%;
   background-color: #2d2d2d;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 10px 50px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
@@ -19,26 +20,36 @@ const Nav = styled.nav`
   gap: 15px;
 `;
 
-const NavLink = styled.a`
-  color: white;
+const NavLink = styled(Link)<{ isActive: boolean }>`
+  color: ${(props) => (props.isActive ? "white" : "rgba(255, 255, 255, 0.5)")};
   text-decoration: none;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
+  transition: color 0.2s;
 
   &:hover {
-    text-decoration: underline;
+    color: white;
   }
 `;
 
 const SearchInput = styled.input`
-  padding: 5px 10px;
+  width: 600px; /* 너비 지정 */
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem; /* 아이콘 공간을 위해 오른쪽 패딩 조정 */
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 16px;
+  background-image: url(${process.env
+    .PUBLIC_URL}/img/search.png); /* 아이콘 경로 설정 */
+  background-repeat: no-repeat;
+  background-size: 20px; /* 아이콘 크기 */
+  background-position: right 10px center; /* 아이콘 위치 조정 */
+
+  @media (max-width: 768px) {
+    width: 200px; /* 작은 화면에서는 너비를 줄임 */
+  }
 `;
 
 const Footer = styled.footer`
-  width: 100%;
   background-color: #2d2d2d;
   color: white;
   text-align: center;
@@ -71,6 +82,7 @@ export const useLayoutContext = () => {
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation(); // 현재 경로 가져오기
 
   const BASE_URL =
     process.env.NODE_ENV === "production"
@@ -192,9 +204,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             onKeyDown={handleSearchKeyPress}
           />
           <Nav>
-            <NavLink href="#weekly-raid-calculator">주간 레이드 계산기</NavLink>
-            <NavLink href="#accessory-simulator">장신구 연마 시뮬</NavLink>
-            <NavLink href="#more-tools">더보기 계산기</NavLink>
+            <NavLink
+              to="/"
+              isActive={location.pathname === "/"} // 현재 경로 비교
+            >
+              주간 레이드 계산기
+            </NavLink>
+            <NavLink
+              to="/accessory-simulator"
+              isActive={location.pathname === "/accessory-simulator"} // 현재 경로 비교
+            >
+              장신구 연마 시뮬
+            </NavLink>
+            <NavLink
+              to="/more-tools"
+              isActive={location.pathname === "/more-tools"} // 현재 경로 비교
+            >
+              더보기 계산기
+            </NavLink>
           </Nav>
         </Header>
         {loading && <p>검색 중...</p>}
@@ -203,7 +230,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         <Footer>
           <p>© 2024 ArkLator. 모든 권리 보유.</p>
-          <p>문의: support@arklator.com</p>
+          <p>문의: jsj487@naver.com</p>
         </Footer>
       </div>
     </LayoutContext.Provider>
