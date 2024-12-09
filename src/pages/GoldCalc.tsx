@@ -508,9 +508,14 @@ const MainPage = () => {
                 <CharacterName>
                   {char?.CharacterName || "캐릭터 선택"}
                 </CharacterName>
-                <p>아이템 레벨: {char?.ItemAvgLevel || "N/A"}</p>
-                <p>전투 레벨: {char?.CharacterLevel || "N/A"}</p>
-                <p>클래스: {char?.CharacterClassName || "N/A"}</p>
+                <p>
+                  <strong>아이템 레벨: </strong>
+                  {char?.ItemAvgLevel || "N/A"}
+                </p>
+                <p>
+                  <strong>전투 레벨: </strong>
+                  {char?.CharacterLevel || "N/A"}
+                </p>
                 <CharacterBox>
                   <ImageBox />
                   <BoxContent>

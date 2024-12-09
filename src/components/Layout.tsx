@@ -1,9 +1,11 @@
 import React, { useState, createContext, useContext, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
+import "@fontsource/acme";
+
+import SearchBar from "../components/SearchBar";
 
 const Header = styled.header`
   background-color: #2d2d2d;
@@ -11,7 +13,7 @@ const Header = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 50px;
+  padding: 25px 50px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 
   @media (max-width: 768px) {
@@ -25,6 +27,19 @@ const HeaderCenter = styled.div`
   justify-content: center;
   flex: 1; /* 가운데 정렬 */
   position: relative;
+`;
+
+const LogoLink = styled(Link)`
+  color: white;
+  text-decoration: none;
+  font-size: 35px;
+  font-weight: bold;
+  font-family: "acme";
+
+  transition: color 0.2s;
+  &:hover {
+    color: rgba(255, 255, 255, 0.5);
+  }
 `;
 
 const Nav = styled.nav`
@@ -44,23 +59,6 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
   }
 `;
 
-const SearchInput = styled.input`
-  width: 600px; /* 너비 지정 */
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem; /* 아이콘 공간을 위해 오른쪽 패딩 조정 */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  background-image: url(${process.env
-    .PUBLIC_URL}/img/search.png); /* 아이콘 경로 설정 */
-  background-repeat: no-repeat;
-  background-size: 20px; /* 아이콘 크기 */
-  background-position: right 10px center; /* 아이콘 위치 조정 */
-
-  @media (max-width: 768px) {
-    width: 200px; /* 작은 화면에서는 너비를 줄임 */
-  }
-`;
-
 const Footer = styled.footer`
   background-color: #2d2d2d;
   color: white;
@@ -72,10 +70,10 @@ const Footer = styled.footer`
 
 type LayoutContextType = {
   search: string;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
   servers: string[];
   characters: any[];
   selectedServer: string | null;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
   setSelectedServer: React.Dispatch<React.SetStateAction<string | null>>;
   handleSearch: () => Promise<void>;
   loading: boolean;
@@ -160,19 +158,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       localStorage.setItem("servers", JSON.stringify(serverList));
       localStorage.setItem("characters", JSON.stringify(response.data));
 
-      navigate(`/`); // MainPage로 이동
+      navigate(`/GoldCalc`); // MainPage로 이동
     } catch {
       setError("캐릭터 데이터를 불러오는 데 실패했습니다.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSearchKeyPress = (
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      handleSearch();
     }
   };
 
@@ -207,18 +197,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
         <Header>
-          <h1>ArkLator</h1>
+          <LogoLink to="/">ArkLator</LogoLink>
           <HeaderCenter>
-            <SearchInput
-              type="text"
-              placeholder="닉네임 검색"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={handleSearchKeyPress}
-            />
+            {location.pathname !== "/" && ( // "/" 경로에서는 Header를 숨김
+              <SearchBar
+                ismainpage={false} // 메인 페이지 아님
+                search={search}
+                setSearch={setSearch}
+                handleSearch={handleSearch}
+              />
+            )}
           </HeaderCenter>
           <Nav>
-            <NavLink to="/" $isActive={location.pathname === "/"}>
+            <NavLink
+              to="/GoldCalc"
+              $isActive={location.pathname === "/GoldCalc"}
+            >
               주간 레이드 계산기
             </NavLink>
             <NavLink

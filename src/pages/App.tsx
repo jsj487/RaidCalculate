@@ -1,7 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Layout from "../components/Layout";
-import MainPage from "./MainPage";
+import Main from "./Main";
+import GoldCalc from "./GoldCalc";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
@@ -22,7 +23,8 @@ function App() {
       <Router basename={basename}>
         <Layout>
           <Routes>
-            <Route path="/" element={<MainPage />} />
+            <Route path="/" element={<Main />} />
+            <Route path="/GoldCalc" element={<GoldCalc />} />
             {/* 다른 라우트도 여기에 추가 */}
           </Routes>
         </Layout>
