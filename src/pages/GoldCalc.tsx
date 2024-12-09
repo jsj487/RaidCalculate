@@ -49,13 +49,32 @@ const Button = styled.button`
 const ServerList = styled.div`
   margin-top: 20px;
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
 `;
 
-const ServerButton = styled(Button)<{ selected: boolean }>`
-  background: ${(props) => (props.selected ? "#0056b3" : "#007bff")};
+const ServerButton = styled.button<{ selected: boolean }>`
+  background: ${(props) => (props.selected ? "#3a3a3a" : "#1e1e1e")};
+  color: ${(props) => (props.selected ? "#fff" : "#ccc")};
+  border: ${(props) =>
+    props.selected ? "1px solid #a7a7a7" : "1px solid #444"};
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    color: white;
+    border-color: #a7a7a7;
+    transform: translateY(-2px); /* 살짝 떠오르는 효과 */
+  }
+
+  &:active {
+    transform: translateY(0); /* 클릭 시 원래 위치로 돌아감 */
+  }
 `;
 
 const CharacterRow = styled.div`

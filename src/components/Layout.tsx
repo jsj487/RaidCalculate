@@ -230,7 +230,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </Nav>
         </Header>
 
-        {loading && <p>검색 중...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
         <main style={{ flex: 1 }}>{children}</main>
 

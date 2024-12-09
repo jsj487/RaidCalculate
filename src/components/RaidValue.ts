@@ -108,7 +108,7 @@ const RaidValues: Record<
     ],
   },
   // 어비스 던전
-  "혼돈의 상하탑": {
+  "혼돈의 상아탑": {
     하드: [
       { clearGold: 3000, bonusGold: 1800 },
       { clearGold: 4000, bonusGold: 2550 },

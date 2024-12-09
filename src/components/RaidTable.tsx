@@ -198,7 +198,7 @@ function RaidTable({
     {
       category: "어비스 던전",
       raids: [
-        { name: "혼돈의 상하탑", maxPhases: 3, levels: ["하드", "노말"] },
+        { name: "혼돈의 상아탑", maxPhases: 3, levels: ["하드", "노말"] },
         { name: "카양겔", maxPhases: 3, levels: ["하드", "노말"] },
       ],
     },
