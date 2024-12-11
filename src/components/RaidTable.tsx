@@ -4,6 +4,7 @@ import { IoIosRefresh } from "react-icons/io"; // React Icons import 추가
 
 const TableContainer = styled.div`
   width: 100%;
+  height: calc(100vh - 100px); /* 화면 높이에서 상단 여백을 뺀 값 */
   background-color: #2d2d2d;
   color: white;
   border-radius: 8px;
@@ -13,13 +14,14 @@ const TableContainer = styled.div`
   position: relative;
 
   /* 스크롤바 숨기기 */
-  -ms-overflow-style: none !important; /* IE and Edge */
-  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
   ::-webkit-scrollbar {
-    display: none !important; /* Chrome, Safari, Opera */
+    display: none; /* Chrome, Safari, Opera */
   }
 
   @media (max-width: 768px) {
+    height: calc(100vh - 80px); /* 모바일에서 적응 */
     padding: 10px;
   }
 `;

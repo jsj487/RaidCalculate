@@ -32,109 +32,86 @@ const Container = styled.div`
   }
 `;
 
-const ServerListContainer = styled.div`
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+const DropdownContainer = styled.div`
+  position: relative;
+  display: inline-block;
+  width: 300px;
 `;
 
-const ServerList = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isCollapsed",
-})<{ isCollapsed: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  max-height: ${(props) => (props.isCollapsed ? "0px" : "300px")};
-  overflow: hidden;
-  transition: max-height 0.6s ease-in-out;
-`;
-
-const ServerButton = styled.div<{ selected: boolean }>`
+const SelectedServer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isOpen",
+})<{ isOpen: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: ${(props) => (props.selected ? "#444" : "#383838")};
+  background: #383838;
   color: white;
-  border: 2px solid ${(props) => (props.selected ? "#dedede" : "#444")};
-  border-radius: 8px;
+  border: 1px solid #444;
+  border-bottom: 1px solid #444;
+  border-radius: ${(props) => (props.isOpen ? "8px 8px 0 0" : "8px")};
   padding: 10px 20px;
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  width: 300px;
+  margin: 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease-in-out;
+  width: 260px;
 
   &:hover {
     background: #505050;
-    transform: translateY(-2px);
   }
 
-  &:active {
-    background: #2d2d2d;
-    transform: translateY(0);
-  }
-
-  span {
-    font-size: 16px;
+  /* Arrow Icon 스타일링 */
+  svg {
+    font-size: 16px; /* 아이콘 크기 조정 */
+    margin-left: 10px; /* 텍스트와 아이콘 간 간격 */
   }
 `;
 
-const CharacterCount = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: #ccc; /* 텍스트 색상 */
+const ServerList = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isVisible",
+})<{ isVisible: boolean }>`
+  display: ${(props) => (props.isVisible ? "block" : "none")};
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #383838;
+  border: ${(props) => (props.isVisible ? "1px solid #444" : "none")};
+  border-top: none; /* 선택된 항목과 드롭다운 리스트 연결 */
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 
-  .character-icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-image: url(${process.env
-      .PUBLIC_URL}/img/character.png); /* 이미지 경로 */
-    background-size: cover; /* 이미지를 박스에 맞춤 */
-    background-position: center; /* 중앙 정렬 */
-  }
+  div {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
 
-  .character-count {
-    display: flex;
-    align-items: center; /* 숫자와 아이콘 수직 정렬 */
-    justify-content: center; /* 숫자와 아이콘 수평 정렬 */
-    min-width: 20px; /* 숫자의 최소 너비를 지정 */
-    text-align: center; /* 숫자 가운데 정렬 */
+    &:hover {
+      background: #505050;
+    }
   }
 `;
 
-const ToggleButton = styled.button<{ rotation: number }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #007bff;
+const ServerItem = styled.li`
+  list-style: none;
+  padding: 10px 20px;
   color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.6s ease-in-out;
 
   &:hover {
-    background-color: #0056b3;
-  }
+    border-radius: 0 0 8px 8px;
 
-  &:active {
-    background-color: #003f8a;
+    background: #505050;
   }
+`;
 
-  svg {
-    font-size: 24px;
-    transition: transform 0.6s ease-in-out; /* 회전 애니메이션 */
-    transform: rotate(${(props) => props.rotation}deg); /* 누적 회전 */
-  }
+const ArrowIcon = styled(IoIosArrowDown)<{ isOpen: boolean }>`
+  transition: transform 0.3s ease-in-out;
+  transform: ${(props) => (props.isOpen ? "rotate(180deg)" : "rotate(0deg)")};
 `;
 
 const CharacterRow = styled.div`
@@ -328,30 +305,60 @@ const TotalGoldBox = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
-const RaidTableTriggerArea = styled.div`
+const MenuButton = styled.div<{ isOpen: boolean }>`
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: 30px;
+  height: 100px;
+  background-color: rgba(255, 255, 255, 0.8); /* 반투명 밝은 배경색 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1100;
+  border-radius: 0 5px 5px 0; /* 둥근 모서리 */
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 1); /* 호버 시 더 밝게 */
+  }
+
+  img {
+    width: 20px; /* 아이콘 크기 */
+    transform: ${({ isOpen }) => (isOpen ? "rotate(180deg)" : "rotate(0deg)")};
+    transition: transform 0.3s ease;
+  }
+
+  /* 그림자 추가로 가시성 개선 */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+`;
+
+const MenuPanel = styled.div<{ isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: ${({ isOpen }) => (isOpen ? "0" : "-90vw")};
+  width: 90vw;
+  height: 100%;
+  background-color: #2d2d2d;
+  transition: left 0.3s ease-in-out;
+  z-index: 1000;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+`;
+
+const Overlay = styled.div<{ isOpen: boolean }>`
+  display: ${({ isOpen }) => (isOpen ? "block" : "none")};
   position: fixed;
   top: 0;
   left: 0;
-  width: 20px; /* 감지 영역 너비 */
-  height: 100vh; /* 화면 전체 높이 */
-  z-index: 1000;
-  background: transparent; /* 보이지 않게 설정 */
-  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 `;
 
-const RaidTableModalWrapper = styled.div<{ isVisible: boolean }>`
-  position: fixed;
-  top: 0;
-  left: ${(props) => (props.isVisible ? "0" : "-90vw")}; /* 보여질 때 위치 */
-  width: 90vw; /* 레이드 테이블 너비 */
-  height: 100vh;
-  background-color: #2d2d2d;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-  z-index: 999; /* 트리거 영역보다 낮음 */
-  transition: left 0.6s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  overflow-y: hidden; /* 스크롤 숨김 */
+const ContentWrapper = styled.div`
   padding: 20px;
 `;
 
@@ -535,8 +542,7 @@ const MainPage = () => {
 
   const handleServerSelect = (server: string) => {
     setSelectedServer(server);
-    setIsServerListVisible(false); // 리스트 접기
-    setIsAnimating(true); // 애니메이션 시작
+    setIsDropdownVisible(false);
 
     // 서버 변경 시 해당 서버의 캐릭터로 활성 캐릭터 초기화
     const newActiveCharacters = characters
@@ -557,11 +563,6 @@ const MainPage = () => {
       const updatedStates = { ...prevStates, [key]: newState };
       return updatedStates;
     });
-  };
-
-  const handleToggleServerList = () => {
-    setIsCollapsed((prev) => !prev); // 상태 토글
-    setRotation((prev) => prev + 180); // 시계 방향으로 180도씩 증가
   };
 
   /** 필터링 및 계산 */
@@ -626,60 +627,45 @@ const MainPage = () => {
     return acc;
   }, {} as { [key: string]: number });
 
-  const handleMouseEnter = () => {
-    setIsRaidTableVisible(true); // 마우스가 감지 영역에 들어오면 표시
+  const [isMenuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setMenuOpen((prev) => !prev);
   };
 
-  const handleMouseLeave = () => {
-    setIsRaidTableVisible(false); // 마우스가 테이블 영역을 벗어나면 숨김
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const toggleDropdown = () => {
+    setIsDropdownVisible((prev) => !prev);
   };
 
   return (
     <Container>
-      <ServerListContainer>
-        {/* 선택된 서버 */}
-        {selectedServer && (
-          <ServerButton
-            key={selectedServer}
-            selected={true}
-            onClick={handleToggleServerList}
-          >
-            <span>{selectedServer}</span>
-            <CharacterCount>
-              <div className="character-icon"></div>
-              <div className="character-count">
-                {serverCharacterCounts[selectedServer] || 0}
-              </div>
-            </CharacterCount>
-          </ServerButton>
-        )}
+      <DropdownContainer>
+        {/* 선택된 서버 표시 */}
+        <SelectedServer onClick={toggleDropdown} isOpen={isDropdownVisible}>
+          <span>
+            {selectedServer
+              ? selectedServer // 서버 선택 후 표시
+              : "서버를 선택해주세요..."}{" "}
+            {/* 서버 선택 전 표시 */}
+          </span>
+          <ArrowIcon isOpen={isDropdownVisible} />
+        </SelectedServer>
 
         {/* 서버 리스트 */}
-        <ServerList isCollapsed={isCollapsed}>
+        <ServerList isVisible={isDropdownVisible}>
           {servers
             .filter((server) => server !== selectedServer) // 선택된 서버 제외
             .map((server) => (
-              <ServerButton
+              <ServerItem
                 key={server}
-                selected={false}
                 onClick={() => handleServerSelect(server)}
               >
-                <span>{server}</span>
-                <CharacterCount>
-                  <div className="character-icon"></div>
-                  <div className="character-count">
-                    {serverCharacterCounts[server] || 0}
-                  </div>
-                </CharacterCount>
-              </ServerButton>
+                {server}
+              </ServerItem>
             ))}
         </ServerList>
-
-        {/* 펼치기/접기 버튼 */}
-        <ToggleButton onClick={handleToggleServerList} rotation={rotation}>
-          <IoIosArrowDown />
-        </ToggleButton>
-      </ServerListContainer>
+      </DropdownContainer>
 
       {selectedServer && (
         <>
@@ -743,22 +729,30 @@ const MainPage = () => {
         </>
       )}
 
-      <RaidTableTriggerArea onMouseEnter={handleMouseEnter} />
-
-      {/* 레이드 테이블 */}
-      <RaidTableModalWrapper
-        isVisible={isRaidTableVisible}
-        onMouseLeave={handleMouseLeave}
-      >
-        <RaidTable
-          server={selectedServer}
-          characters={filteredCharacters}
-          toggleStates={toggleStates}
-          setToggleStates={handleToggle}
-          setGoldRewards={setGoldRewards}
-          raidValues={RaidValues}
+      {/* 사이드 메뉴 열기 버튼 */}
+      <MenuButton onClick={toggleMenu} isOpen={isMenuOpen}>
+        <img
+          src={`${process.env.PUBLIC_URL}/img/expand_arrow.png`}
+          alt="toggle menu"
         />
-      </RaidTableModalWrapper>
+      </MenuButton>
+
+      {/* 메뉴 패널 */}
+      <MenuPanel isOpen={isMenuOpen}>
+        <ContentWrapper>
+          <RaidTable
+            server={selectedServer}
+            characters={filteredCharacters}
+            toggleStates={toggleStates}
+            setToggleStates={handleToggle}
+            setGoldRewards={setGoldRewards}
+            raidValues={RaidValues}
+          />
+        </ContentWrapper>
+      </MenuPanel>
+
+      {/* 화면 덮는 오버레이 */}
+      <Overlay isOpen={isMenuOpen} onClick={toggleMenu} />
 
       {isCharacterListModalOpen && (
         <CharacterListModalWrapper onClick={toggleCharacterListModal}>
