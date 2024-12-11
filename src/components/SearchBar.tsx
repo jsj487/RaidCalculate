@@ -2,13 +2,17 @@ import React from "react";
 import styled from "styled-components";
 import { useLayoutContext } from "../components/Layout";
 
-const SearchContainer = styled.div<{ ismainpage: boolean }>`
+const SearchContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "ismainpage",
+})<{ ismainpage: boolean }>`
   position: relative;
   display: flex;
   align-items: center;
 `;
 
-const SearchInput = styled.input<{ ismainpage: boolean }>`
+const SearchInput = styled.input.withConfig({
+  shouldForwardProp: (prop) => prop !== "ismainpage",
+})<{ ismainpage: boolean }>`
   width: 600px;
   padding: ${(props) =>
     props.ismainpage ? "20px 30px" : "0.5rem 2.5rem 0.5rem 0.75rem"};
@@ -21,7 +25,9 @@ const SearchInput = styled.input<{ ismainpage: boolean }>`
   }
 `;
 
-const SearchButton = styled.button<{ ismainpage: boolean }>`
+const SearchButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== "ismainpage",
+})<{ ismainpage: boolean }>`
   position: absolute;
   right: ${(props) => (props.ismainpage ? "30px" : "10px")};
   background: none;

@@ -7,9 +7,17 @@ const TableContainer = styled.div`
   background-color: #2d2d2d;
   color: white;
   border-radius: 8px;
-  padding: 20px;
-  overflow-x: auto;
-  text-align: center; /* 중앙 정렬 */
+  padding: 20px 0px;
+  overflow-y: auto; /* 세로 스크롤 가능 */
+  text-align: center;
+  position: relative;
+
+  /* 스크롤바 숨기기 */
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+  ::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Opera */
+  }
 
   @media (max-width: 768px) {
     padding: 10px;

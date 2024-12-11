@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { keyframes } from "styled-components";
 
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
+import { IoIosArrowDown } from "react-icons/io";
 
 import { useLayoutContext } from "../components/Layout"; // Context 가져오기
 import RaidValues from "../components/RaidValue";
@@ -20,7 +21,6 @@ const slideIn = keyframes`
 `;
 
 const Container = styled.div`
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,48 +32,108 @@ const Container = styled.div`
   }
 `;
 
-const Button = styled.button`
-  width: 100%; /* 부모 컨테이너의 너비를 따라감 */
-  padding: 10px;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    background: #0056b3;
-  }
-`;
-
-const ServerList = styled.div`
+const ServerListContainer = styled.div`
   margin-top: 20px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
 `;
 
-const ServerButton = styled.button<{ selected: boolean }>`
-  background: ${(props) => (props.selected ? "#3a3a3a" : "#1e1e1e")};
-  color: ${(props) => (props.selected ? "#fff" : "#ccc")};
-  border: ${(props) =>
-    props.selected ? "1px solid #a7a7a7" : "1px solid #444"};
-  padding: 10px 20px;
+const ServerList = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isCollapsed",
+})<{ isCollapsed: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-height: ${(props) => (props.isCollapsed ? "0px" : "300px")};
+  overflow: hidden;
+  transition: max-height 0.6s ease-in-out;
+`;
+
+const ServerButton = styled.div<{ selected: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: ${(props) => (props.selected ? "#444" : "#383838")};
+  color: white;
+  border: 2px solid ${(props) => (props.selected ? "#dedede" : "#444")};
   border-radius: 8px;
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
+  width: 300px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease-in-out;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    color: white;
-    border-color: #a7a7a7;
-    transform: translateY(-2px); /* 살짝 떠오르는 효과 */
+    background: #505050;
+    transform: translateY(-2px);
   }
 
   &:active {
-    transform: translateY(0); /* 클릭 시 원래 위치로 돌아감 */
+    background: #2d2d2d;
+    transform: translateY(0);
+  }
+
+  span {
+    font-size: 16px;
+  }
+`;
+
+const CharacterCount = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #ccc; /* 텍스트 색상 */
+
+  .character-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-image: url(${process.env
+      .PUBLIC_URL}/img/character.png); /* 이미지 경로 */
+    background-size: cover; /* 이미지를 박스에 맞춤 */
+    background-position: center; /* 중앙 정렬 */
+  }
+
+  .character-count {
+    display: flex;
+    align-items: center; /* 숫자와 아이콘 수직 정렬 */
+    justify-content: center; /* 숫자와 아이콘 수평 정렬 */
+    min-width: 20px; /* 숫자의 최소 너비를 지정 */
+    text-align: center; /* 숫자 가운데 정렬 */
+  }
+`;
+
+const ToggleButton = styled.button<{ rotation: number }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.6s ease-in-out;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+
+  &:active {
+    background-color: #003f8a;
+  }
+
+  svg {
+    font-size: 24px;
+    transition: transform 0.6s ease-in-out; /* 회전 애니메이션 */
+    transform: rotate(${(props) => props.rotation}deg); /* 누적 회전 */
   }
 `;
 
@@ -268,6 +328,33 @@ const TotalGoldBox = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
+const RaidTableTriggerArea = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 20px; /* 감지 영역 너비 */
+  height: 100vh; /* 화면 전체 높이 */
+  z-index: 1000;
+  background: transparent; /* 보이지 않게 설정 */
+  cursor: pointer;
+`;
+
+const RaidTableModalWrapper = styled.div<{ isVisible: boolean }>`
+  position: fixed;
+  top: 0;
+  left: ${(props) => (props.isVisible ? "0" : "-90vw")}; /* 보여질 때 위치 */
+  width: 90vw; /* 레이드 테이블 너비 */
+  height: 100vh;
+  background-color: #2d2d2d;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  z-index: 999; /* 트리거 영역보다 낮음 */
+  transition: left 0.6s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden; /* 스크롤 숨김 */
+  padding: 20px;
+`;
+
 const MainPage = () => {
   /** Context 데이터 */
   const { servers, characters, selectedServer, setSelectedServer } =
@@ -298,6 +385,12 @@ const MainPage = () => {
     const storedExtraGold = localStorage.getItem("extraGold");
     return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
   });
+
+  const [isServerListVisible, setIsServerListVisible] = useState(true); // 서버 리스트 보이기 상태
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState(false); // 애니메이션 상태 관리
+  const [rotation, setRotation] = useState(0);
+
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
     if (storedActiveCharacters) {
@@ -312,6 +405,27 @@ const MainPage = () => {
       .slice(0, 6)
       .map((char) => char.CharacterName);
   });
+
+  const [isRaidTableVisible, setIsRaidTableVisible] = useState(false);
+
+  useEffect(() => {
+    if (isRaidTableVisible) {
+      // 페이지 스크롤 비활성화
+      document.body.style.overflow = "hidden";
+    } else {
+      // 페이지 스크롤 활성화
+      document.body.style.overflow = "auto";
+    }
+
+    // 컴포넌트가 언마운트될 때 페이지 스크롤 활성화
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isRaidTableVisible]);
+
+  const toggleRaidTable = () => {
+    setIsRaidTableVisible((prev) => !prev);
+  };
 
   /**useEffect */
   useEffect(() => {
@@ -421,6 +535,8 @@ const MainPage = () => {
 
   const handleServerSelect = (server: string) => {
     setSelectedServer(server);
+    setIsServerListVisible(false); // 리스트 접기
+    setIsAnimating(true); // 애니메이션 시작
 
     // 서버 변경 시 해당 서버의 캐릭터로 활성 캐릭터 초기화
     const newActiveCharacters = characters
@@ -441,6 +557,11 @@ const MainPage = () => {
       const updatedStates = { ...prevStates, [key]: newState };
       return updatedStates;
     });
+  };
+
+  const handleToggleServerList = () => {
+    setIsCollapsed((prev) => !prev); // 상태 토글
+    setRotation((prev) => prev + 180); // 시계 방향으로 180도씩 증가
   };
 
   /** 필터링 및 계산 */
@@ -498,21 +619,67 @@ const MainPage = () => {
 
   const netGold = totalGold - consumedGold + extraGold;
 
+  const serverCharacterCounts = servers.reduce((acc, server) => {
+    acc[server] = characters.filter(
+      (char) => char.ServerName === server
+    ).length;
+    return acc;
+  }, {} as { [key: string]: number });
+
+  const handleMouseEnter = () => {
+    setIsRaidTableVisible(true); // 마우스가 감지 영역에 들어오면 표시
+  };
+
+  const handleMouseLeave = () => {
+    setIsRaidTableVisible(false); // 마우스가 테이블 영역을 벗어나면 숨김
+  };
+
   return (
     <Container>
-      {servers.length > 0 && (
-        <ServerList>
-          {servers.map((server) => (
-            <ServerButton
-              key={server}
-              selected={selectedServer === server}
-              onClick={() => handleServerSelect(server)}
-            >
-              {server}
-            </ServerButton>
-          ))}
+      <ServerListContainer>
+        {/* 선택된 서버 */}
+        {selectedServer && (
+          <ServerButton
+            key={selectedServer}
+            selected={true}
+            onClick={handleToggleServerList}
+          >
+            <span>{selectedServer}</span>
+            <CharacterCount>
+              <div className="character-icon"></div>
+              <div className="character-count">
+                {serverCharacterCounts[selectedServer] || 0}
+              </div>
+            </CharacterCount>
+          </ServerButton>
+        )}
+
+        {/* 서버 리스트 */}
+        <ServerList isCollapsed={isCollapsed}>
+          {servers
+            .filter((server) => server !== selectedServer) // 선택된 서버 제외
+            .map((server) => (
+              <ServerButton
+                key={server}
+                selected={false}
+                onClick={() => handleServerSelect(server)}
+              >
+                <span>{server}</span>
+                <CharacterCount>
+                  <div className="character-icon"></div>
+                  <div className="character-count">
+                    {serverCharacterCounts[server] || 0}
+                  </div>
+                </CharacterCount>
+              </ServerButton>
+            ))}
         </ServerList>
-      )}
+
+        {/* 펼치기/접기 버튼 */}
+        <ToggleButton onClick={handleToggleServerList} rotation={rotation}>
+          <IoIosArrowDown />
+        </ToggleButton>
+      </ServerListContainer>
 
       {selectedServer && (
         <>
@@ -573,16 +740,25 @@ const MainPage = () => {
           </GoldBoxContainer>
 
           <TotalGoldBox>총 순이익 골드: {netGold}</TotalGoldBox>
-          <RaidTable
-            server={selectedServer}
-            characters={filteredCharacters}
-            toggleStates={toggleStates}
-            setToggleStates={handleToggle}
-            setGoldRewards={setGoldRewards} // MainPage의 상태를 전달
-            raidValues={RaidValues}
-          />
         </>
       )}
+
+      <RaidTableTriggerArea onMouseEnter={handleMouseEnter} />
+
+      {/* 레이드 테이블 */}
+      <RaidTableModalWrapper
+        isVisible={isRaidTableVisible}
+        onMouseLeave={handleMouseLeave}
+      >
+        <RaidTable
+          server={selectedServer}
+          characters={filteredCharacters}
+          toggleStates={toggleStates}
+          setToggleStates={handleToggle}
+          setGoldRewards={setGoldRewards}
+          raidValues={RaidValues}
+        />
+      </RaidTableModalWrapper>
 
       {isCharacterListModalOpen && (
         <CharacterListModalWrapper onClick={toggleCharacterListModal}>
