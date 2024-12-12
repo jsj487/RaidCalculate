@@ -46,8 +46,8 @@ const SelectedServer = styled.div.withConfig({
   align-items: center;
   background: #383838;
   color: white;
-  border: 1px solid #444;
-  border-bottom: 1px solid #444;
+  border: 4px solid #444;
+  border-bottom: 4px solid #444;
   border-radius: ${(props) => (props.isOpen ? "8px 8px 0 0" : "8px")};
   padding: 10px 20px;
   font-size: 14px;
@@ -77,7 +77,7 @@ const ServerList = styled.div.withConfig({
   left: 0;
   width: 100%;
   background: #383838;
-  border: ${(props) => (props.isVisible ? "1px solid #444" : "none")};
+  border: ${(props) => (props.isVisible ? "4px solid #444" : "none")};
   border-top: none; /* 선택된 항목과 드롭다운 리스트 연결 */
   border-radius: 0 0 8px 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -184,6 +184,24 @@ const ImageBox = styled.div`
   justify-content: center;
 `;
 
+const GoldAdjustmentBox = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  gap: 10px; /* 레이블과 입력 필드 간 간격 */
+`;
+
+const GoldLabel = styled.label`
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+`;
+
 const AddCharacterButton = styled(CharacterCard)`
   display: flex;
   justify-content: center;
@@ -261,27 +279,6 @@ const Checkbox = styled.input.attrs({ type: "checkbox" })`
 const BoxContent = styled.div`
   font-size: 14px;
   color: #333;
-`;
-
-const GoldBoxContainer = styled.div`
-  display: flex;
-  gap: 20px; /* 두 박스 간 간격 */
-  margin: 20px 0;
-`;
-
-const GoldBox = styled.div`
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  background: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 10px; /* 레이블과 입력 필드 간 간격 */
-  justify-content: space-between; /* 레이블과 입력 필드 정렬 */
-  width: fit-content;
 `;
 
 const GoldInput = styled.input`
@@ -393,10 +390,16 @@ const MainPage = () => {
     return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
   });
 
-  const [isServerListVisible, setIsServerListVisible] = useState(true); // 서버 리스트 보이기 상태
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [isAnimating, setIsAnimating] = useState(false); // 애니메이션 상태 관리
-  const [rotation, setRotation] = useState(0);
+  const [charAdjustments, setCharAdjustments] = useState<
+    Record<string, { consumedGold: number; extraGold: number }>
+  >(() => {
+    const initialState = characters.reduce((acc, char) => {
+      acc[char.CharacterName] = { consumedGold: 0, extraGold: 0 };
+      return acc;
+    }, {} as Record<string, { consumedGold: number; extraGold: number }>);
+    const storedAdjustments = localStorage.getItem("charAdjustments");
+    return storedAdjustments ? JSON.parse(storedAdjustments) : initialState;
+  });
 
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
@@ -429,10 +432,6 @@ const MainPage = () => {
       document.body.style.overflow = "auto";
     };
   }, [isRaidTableVisible]);
-
-  const toggleRaidTable = () => {
-    setIsRaidTableVisible((prev) => !prev);
-  };
 
   /**useEffect */
   useEffect(() => {
@@ -500,11 +499,6 @@ const MainPage = () => {
     };
   }, [isCharacterListModalOpen]);
 
-  const totalGold = Object.values(goldRewards).reduce(
-    (sum, reward) => sum + reward,
-    0
-  );
-
   // Local Storage 저장
   React.useEffect(() => {
     localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
@@ -565,6 +559,20 @@ const MainPage = () => {
     });
   };
 
+  const handleAdjustmentChange = (
+    charName: string,
+    type: "consumedGold" | "extraGold",
+    value: number
+  ) => {
+    setCharAdjustments((prev) => ({
+      ...prev,
+      [charName]: {
+        ...prev[charName],
+        [type]: value,
+      },
+    }));
+  };
+
   /** 필터링 및 계산 */
   const filteredCharacters = characters
     .filter((char) => char.ServerName === selectedServer) // 선택된 서버의 캐릭터만 필터링
@@ -596,7 +604,8 @@ const MainPage = () => {
           const [raidName, raidLevel, charName, phase] = key.split("-");
           if (charName === activeName) {
             const phaseIndex = parseInt(phase, 10);
-            const raidData = RaidValues[raidName]?.[raidLevel]?.[phaseIndex];
+            const raidData =
+              RaidValues[raidName]?.[raidLevel]?.phases[phaseIndex];
 
             if (raidData) {
               if (toggleStates[key] === 1) {
@@ -618,8 +627,17 @@ const MainPage = () => {
 
   // toggleStates 변경 시 골드 계산 실행
 
-  const netGold = totalGold - consumedGold + extraGold;
+  function formatNumberWithCommas(value: number): string {
+    return value.toLocaleString(); // 1,000,000 형식으로 변환
+  }
 
+  const totalGold = Object.keys(charAdjustments).reduce((sum, charName) => {
+    const charGold =
+      (goldRewards[charName] || 0) -
+      charAdjustments[charName]?.consumedGold +
+      charAdjustments[charName]?.extraGold;
+    return sum + charGold;
+  }, 0);
   const serverCharacterCounts = servers.reduce((acc, server) => {
     acc[server] = characters.filter(
       (char) => char.ServerName === server
@@ -688,10 +706,62 @@ const MainPage = () => {
                   <strong>전투 레벨: </strong>
                   {char?.CharacterLevel || "N/A"}
                 </p>
+                <GoldAdjustmentBox>
+                  <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
+                    소비골드
+                  </GoldLabel>
+                  <GoldInput
+                    id={`consumedGold-${char.CharacterName}`}
+                    value={formatNumberWithCommas(
+                      charAdjustments[char.CharacterName]?.consumedGold
+                    )}
+                    onChange={(e) => {
+                      const value = parseInt(
+                        e.target.value.replace(/,/g, ""),
+                        10
+                      );
+                      handleAdjustmentChange(
+                        char.CharacterName,
+                        "consumedGold",
+                        isNaN(value) ? 0 : value
+                      );
+                    }}
+                  />
+                </GoldAdjustmentBox>
+
+                <GoldAdjustmentBox>
+                  <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
+                    추가골드
+                  </GoldLabel>
+                  <GoldInput
+                    id={`extraGold-${char.CharacterName}`}
+                    value={formatNumberWithCommas(
+                      charAdjustments[char.CharacterName]?.extraGold
+                    )}
+                    onChange={(e) => {
+                      const value = parseInt(
+                        e.target.value.replace(/,/g, ""),
+                        10
+                      );
+                      handleAdjustmentChange(
+                        char.CharacterName,
+                        "extraGold",
+                        isNaN(value) ? 0 : value
+                      );
+                    }}
+                  />
+                </GoldAdjustmentBox>
                 <CharacterBox>
                   <ImageBox />
                   <BoxContent>
-                    골드: {goldRewards[char.CharacterName] || 0}
+                    골드:{" "}
+                    <strong>
+                      {formatNumberWithCommas(
+                        (goldRewards[char.CharacterName] || 0) -
+                          charAdjustments[char.CharacterName]?.consumedGold +
+                          charAdjustments[char.CharacterName]?.extraGold
+                      )}
+                    </strong>
                   </BoxContent>
                 </CharacterBox>
               </CharacterCard>
@@ -701,31 +771,9 @@ const MainPage = () => {
             </AddCharacterButton>
           </CharacterRow>
 
-          <GoldBoxContainer>
-            <GoldBox>
-              <label htmlFor="consumedGold">소비 골드:</label>
-              <GoldInput
-                id="consumedGold"
-                value={consumedGold}
-                onChange={(e) =>
-                  setConsumedGold(parseInt(e.target.value, 10) || 0)
-                }
-              />
-            </GoldBox>
-
-            <GoldBox>
-              <label htmlFor="extraGold">추가 골드:</label>
-              <GoldInput
-                id="extraGold"
-                value={extraGold}
-                onChange={(e) =>
-                  setExtraGold(parseInt(e.target.value, 10) || 0)
-                }
-              />
-            </GoldBox>
-          </GoldBoxContainer>
-
-          <TotalGoldBox>총 순이익 골드: {netGold}</TotalGoldBox>
+          <TotalGoldBox>
+            총 순이익 골드: {formatNumberWithCommas(totalGold)}
+          </TotalGoldBox>
         </>
       )}
 

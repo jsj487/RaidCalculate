@@ -43,7 +43,7 @@ const Instructions = styled.p`
   border-radius: 8px; /* 모서리를 둥글게 */
   padding: 10px; /* 글자 주변 공간 */
   display: inline-block; /* 글자 주변 크기로 테두리 설정 */
-  margin: 0 auto; /* 수평 중앙 정렬 */
+  margin: 15px auto; /* 수평 중앙 정렬 */
 `;
 
 const Icon = styled.span<{ color: string }>`
@@ -139,14 +139,19 @@ const ResetButton = styled.button`
   }
 `;
 
-const ResetIcon = styled(IoIosRefresh)`
+const ResetIcon = styled.div`
   position: absolute;
   right: 5px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: white; /* 아이콘 색상 */
-  font-size: 24px; /* 아이콘 크기 */
+  width: 24px; /* 아이콘 너비 */
+  height: 24px; /* 아이콘 높이 */
+  background-image: url(${process.env
+    .PUBLIC_URL}/img/reset-icon.png); /* 다운받은 이미지 경로 */
+  background-size: contain; /* 이미지를 버튼 크기에 맞게 */
+  background-repeat: no-repeat; /* 이미지 반복 방지 */
+  background-position: center; /* 이미지 중앙 정렬 */
   transition: transform 0.5s ease-in-out;
 
   &:hover {
@@ -162,9 +167,46 @@ interface RaidTableProps {
   setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   raidValues: Record<
     string,
-    Record<string, Array<{ clearGold: number; bonusGold: number }>>
-  >;
+    Record<
+      string,
+      {
+        minItemLevel: number;
+        phases: Array<{ clearGold: number; bonusGold: number }>;
+      }
+    >
+  >; // RaidValues 타입 정의
 }
+
+const AccordionTitle = styled.h2`
+  cursor: pointer;
+  background: #444;
+  color: white;
+  padding: 10px 25px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+
+  &:hover {
+    background: #555;
+  }
+`;
+
+const AccordionIcon = styled.span<{ isOpen: boolean }>`
+  font-size: 20px;
+  margin-right: 20px;
+  transform: ${(props) => (props.isOpen ? "rotate(90deg)" : "rotate(0)")};
+  transition: transform 0.3s ease;
+`;
+
+const AccordionContent = styled.div<{ isOpen: boolean }>`
+  overflow: hidden; /* 스크롤바 숨김 */
+  max-height: ${(props) =>
+    props.isOpen ? "1000px" : "0"}; /* 열릴 때와 닫힐 때의 높이 설정 */
+  transition: max-height 0.6s ease-in-out; /* 스르륵 열리고 닫히는 효과 */
+`;
 
 function RaidTable({
   characters,
@@ -173,10 +215,6 @@ function RaidTable({
   setGoldRewards,
   raidValues,
 }: RaidTableProps) {
-  const [characterRaidCounts, setCharacterRaidCounts] = useState<{
-    [characterName: string]: Set<string>;
-  }>({});
-
   const raidCategories = [
     {
       category: "카제로스 레이드",
@@ -214,12 +252,31 @@ function RaidTable({
     },
   ];
 
+  const [characterRaidCounts, setCharacterRaidCounts] = useState<{
+    [characterName: string]: Set<string>;
+  }>({});
+
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
+    () =>
+      raidCategories.reduce(
+        (acc, category) => ({ ...acc, [category.category]: true }),
+        {}
+      )
+  );
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
   const handleToggleClick = (
     key: string,
     displayedCharIndex: number,
     raidName: string,
-    level: string,
-    phase: number
+    raidLevel: string,
+    phaseIndex: number
   ) => {
     const currentState = toggleStates[key] || 0;
     const newState = (currentState + 1) % 3;
@@ -249,7 +306,7 @@ function RaidTable({
       setToggleStates(key, newState);
 
       // 골드 업데이트
-      const raidData = raidValues[raidName]?.[level]?.[phase];
+      const raidData = raidValues[raidName]?.[raidLevel]?.phases[phaseIndex];
       if (raidData) {
         setGoldRewards((prevRewards) => {
           const updatedRewards = { ...prevRewards };
@@ -288,16 +345,20 @@ function RaidTable({
 
   // 특정 캐릭터 열 초기화
   const resetCharacterColumn = (charIndex: number) => {
+    const characterName = characters[charIndex]?.CharacterName;
+    if (!characterName) return;
+
+    // toggleStates에서 해당 캐릭터와 관련된 상태 초기화
     Object.keys(toggleStates).forEach((key) => {
-      if (key.includes(`-${charIndex}-`)) {
-        setToggleStates(key, 0); // 해당 캐릭터 열의 상태를 0으로 초기화
+      if (key.includes(characterName)) {
+        setToggleStates(key, 0); // 상태 초기화
       }
     });
 
     // 해당 캐릭터의 레이드 선택 상태 초기화
     setCharacterRaidCounts((prev) => {
       const updated = { ...prev };
-      delete updated[charIndex]; // 해당 캐릭터의 상태 삭제
+      delete updated[characterName]; // 캐릭터의 상태 삭제
       return updated;
     });
   };
@@ -312,83 +373,102 @@ function RaidTable({
         <Icon color="blue" /> - 클리어 골드, <Icon color="red" /> - 더 보기 한
         골드
       </Instructions>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "10px",
-        }}
-      >
-        <ResetButton onClick={resetAll}>전체 초기화</ResetButton>
-      </div>
       {raidCategories.map((category) => (
-        <React.Fragment key={category.category}>
-          <h2>{category.category}</h2>
-          <Table>
-            <thead>
-              <TableRow>
-                <TableHeader>레이드 이름</TableHeader>
-                <TableHeader>난이도</TableHeader>
-                {characters.map((char, index) => (
-                  <TableHeader key={index}>
-                    {char.CharacterName}
-                    {category.category === "카제로스 레이드" && (
-                      <ResetIcon onClick={() => resetCharacterColumn(index)} />
-                    )}
-                  </TableHeader>
-                ))}
-              </TableRow>
-            </thead>
-
-            <tbody>
-              {category.raids.map((raid) => (
-                <React.Fragment key={raid.name}>
-                  {raid.levels.map((level, levelIndex) => (
-                    <TableRow key={`${raid.name}-${level}`}>
-                      {levelIndex === 0 && (
-                        <TableCell rowSpan={raid.levels.length}>
-                          {raid.name}
-                        </TableCell>
+        <div key={category.category}>
+          <AccordionTitle onClick={() => toggleCategory(category.category)}>
+            <AccordionIcon isOpen={openCategories[category.category]}>
+              ▶
+            </AccordionIcon>
+            {category.category}
+          </AccordionTitle>
+          <AccordionContent isOpen={openCategories[category.category]}>
+            <Table>
+              <thead>
+                <TableRow>
+                  <TableHeader>레이드 이름</TableHeader>
+                  <TableHeader>난이도</TableHeader>
+                  {characters.map((char, index) => (
+                    <TableHeader key={index}>
+                      {char.CharacterName}
+                      {category.category === "카제로스 레이드" && (
+                        <ResetIcon
+                          onClick={() => resetCharacterColumn(index)}
+                        />
                       )}
-                      <TableCell>{level}</TableCell>
-                      {characters.map((_, charIndex) => (
-                        <TableCell key={`${raid.name}-${level}-${charIndex}`}>
-                          <ToggleContainer>
-                            {Array.from(
-                              {
-                                length:
-                                  raidValues[raid.name]?.[level]?.length || 0,
-                              },
-                              (_, phase) => {
-                                const toggleKey = `${raid.name}-${level}-${characters[charIndex]?.CharacterName}-${phase}`;
-                                return (
-                                  <ToggleButton
-                                    key={toggleKey}
-                                    state={toggleStates[toggleKey] || 0}
-                                    onClick={() =>
-                                      handleToggleClick(
-                                        toggleKey,
-                                        charIndex,
-                                        raid.name,
-                                        level,
-                                        phase
-                                      )
-                                    }
-                                  />
-                                );
-                              }
-                            )}
-                          </ToggleContainer>
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                    </TableHeader>
                   ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </Table>
-        </React.Fragment>
+                </TableRow>
+              </thead>
+
+              <tbody>
+                {category.raids.map((raid) => (
+                  <React.Fragment key={raid.name}>
+                    {raid.levels.map((level, levelIndex) => (
+                      <TableRow key={`${raid.name}-${level}`}>
+                        {levelIndex === 0 && (
+                          <TableCell rowSpan={raid.levels.length}>
+                            <div>
+                              {raid.name}
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#ccc",
+                                  marginTop: "5px",
+                                }}
+                              >
+                                {raid.levels
+                                  .map(
+                                    (level) =>
+                                      `[${level} - ${
+                                        raidValues[raid.name]?.[level]
+                                          ?.minItemLevel
+                                      }]`
+                                  )
+                                  .join(", ")}
+                              </div>
+                            </div>
+                          </TableCell>
+                        )}
+                        <TableCell>{level}</TableCell>
+                        {characters.map((_, charIndex) => (
+                          <TableCell key={`${raid.name}-${level}-${charIndex}`}>
+                            <ToggleContainer>
+                              {Array.from(
+                                {
+                                  length:
+                                    raidValues[raid.name]?.[level]?.phases
+                                      ?.length || 0, // phases 배열의 길이 사용
+                                },
+                                (_, phase) => {
+                                  const toggleKey = `${raid.name}-${level}-${characters[charIndex]?.CharacterName}-${phase}`;
+                                  return (
+                                    <ToggleButton
+                                      key={toggleKey}
+                                      state={toggleStates[toggleKey] || 0}
+                                      onClick={() =>
+                                        handleToggleClick(
+                                          toggleKey,
+                                          charIndex,
+                                          raid.name,
+                                          level,
+                                          phase
+                                        )
+                                      }
+                                    />
+                                  );
+                                }
+                              )}
+                            </ToggleContainer>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </Table>
+          </AccordionContent>
+        </div>
       ))}
     </TableContainer>
   );
