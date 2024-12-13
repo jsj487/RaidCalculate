@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import React, { useState, useEffect } from "react";
-import { IoIosRefresh } from "react-icons/io"; // React Icons import 추가
 
 const TableContainer = styled.div`
   width: 100%;
@@ -112,7 +111,16 @@ const ToggleButton = styled.div<{ state: number }>`
   height: 30px;
   cursor: pointer;
   background-color: ${(props) =>
-    props.state === 0 ? "#555" : props.state === 1 ? "#00f" : "#f00"};
+    props.state === 0
+      ? "#555" // 기본 상태: 회색
+      : props.state === 1
+      ? "#00f" // 클리어 상태: 파란색
+      : "#f00"}; // 더 보기 상태: 빨간색
+  background-image: ${(props) =>
+    props.state > 0 ? `url(${process.env.PUBLIC_URL}/img/check.png)` : "none"};
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   transition: background-color 0.3s ease, transform 0.3s ease;
 
   @media (max-width: 768px) {
@@ -159,24 +167,6 @@ const ResetIcon = styled.div`
   }
 `;
 
-interface RaidTableProps {
-  characters: any[];
-  server: string | null;
-  toggleStates: { [key: string]: number };
-  setToggleStates: (key: string, newState: number) => void; // 함수 타입 정의
-  setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  raidValues: Record<
-    string,
-    Record<
-      string,
-      {
-        minItemLevel: number;
-        phases: Array<{ clearGold: number; bonusGold: number }>;
-      }
-    >
-  >; // RaidValues 타입 정의
-}
-
 const AccordionTitle = styled.h2`
   cursor: pointer;
   background: #444;
@@ -207,6 +197,24 @@ const AccordionContent = styled.div<{ isOpen: boolean }>`
     props.isOpen ? "1000px" : "0"}; /* 열릴 때와 닫힐 때의 높이 설정 */
   transition: max-height 0.6s ease-in-out; /* 스르륵 열리고 닫히는 효과 */
 `;
+
+interface RaidTableProps {
+  characters: any[];
+  server: string | null;
+  toggleStates: { [key: string]: number };
+  setToggleStates: (key: string, newState: number) => void; // 함수 타입 정의
+  setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  raidValues: Record<
+    string,
+    Record<
+      string,
+      {
+        minItemLevel: number;
+        phases: Array<{ clearGold: number; bonusGold: number }>;
+      }
+    >
+  >; // RaidValues 타입 정의
+}
 
 function RaidTable({
   characters,
@@ -363,6 +371,23 @@ function RaidTable({
     });
   };
 
+  useEffect(() => {
+    const newCounts: Record<string, Set<string>> = {};
+
+    Object.keys(toggleStates).forEach((key) => {
+      if (toggleStates[key] > 0) {
+        const [raidName, , characterName] = key.split("-");
+
+        // 레이드 이름 기준으로 Set에 추가
+        if (!newCounts[characterName]) newCounts[characterName] = new Set();
+        newCounts[characterName].add(raidName);
+      }
+    });
+
+    console.log("Updated characterRaidCounts:", newCounts);
+    setCharacterRaidCounts(newCounts);
+  }, [toggleStates]);
+
   return (
     <TableContainer>
       <Title>주간 레이드</Title>
@@ -373,6 +398,15 @@ function RaidTable({
         <Icon color="blue" /> - 클리어 골드, <Icon color="red" /> - 더 보기 한
         골드
       </Instructions>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "10px",
+        }}
+      >
+        <ResetButton onClick={resetAll}>전체 초기화</ResetButton>
+      </div>
       {raidCategories.map((category) => (
         <div key={category.category}>
           <AccordionTitle onClick={() => toggleCategory(category.category)}>
@@ -390,6 +424,45 @@ function RaidTable({
                   {characters.map((char, index) => (
                     <TableHeader key={index}>
                       {char.CharacterName}
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          marginTop: "5px",
+                          color:
+                            (characterRaidCounts[char.CharacterName]?.size ||
+                              0) >= 3
+                              ? "red"
+                              : "#ccc",
+                        }}
+                      >
+                        {characterRaidCounts[char.CharacterName]?.size || 0}/3
+                      </div>
+                      <div
+                        style={{
+                          width: "50%",
+                          height: "4px",
+                          backgroundColor: "#ccc",
+                          margin: "5px auto",
+                          position: "relative",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${
+                              ((characterRaidCounts[char.CharacterName]?.size ||
+                                0) /
+                                3) *
+                              100
+                            }%`,
+                            height: "100%",
+                            backgroundColor:
+                              (characterRaidCounts[char.CharacterName]?.size ||
+                                0) >= 3
+                                ? "red"
+                                : "green",
+                          }}
+                        ></div>
+                      </div>
                       {category.category === "카제로스 레이드" && (
                         <ResetIcon
                           onClick={() => resetCharacterColumn(index)}
