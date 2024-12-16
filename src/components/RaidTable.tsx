@@ -1,27 +1,35 @@
 import styled from "styled-components";
+import RaidGoldModal from "./RaidGoldModal";
+import { RaidValues } from "./RaidValues";
 import React, { useState, useEffect } from "react";
 
 const TableContainer = styled.div`
   width: 100%;
-  height: calc(100vh - 100px); /* 화면 높이에서 상단 여백을 뺀 값 */
+  height: calc(100vh - 100px);
   background-color: #2d2d2d;
   color: white;
   border-radius: 8px;
   padding: 20px 0px;
+  overflow-x: auto; /* 가로 스크롤 활성화 */
   overflow-y: auto; /* 세로 스크롤 가능 */
-  text-align: center;
   position: relative;
 
   /* 스크롤바 숨기기 */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   ::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
   }
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px; /* 테이블 최소 너비 설정 */
 
   @media (max-width: 768px) {
-    height: calc(100vh - 80px); /* 모바일에서 적응 */
-    padding: 10px;
+    min-width: 100%; /* 모바일에서 최소 너비 */
+    font-size: 10px;
   }
 `;
 
@@ -33,16 +41,61 @@ const Title = styled.div`
   color: white;
 `;
 
-const Instructions = styled.p`
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #ddd;
+const Instructions = styled.div`
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background-color: #444;
+  border-radius: 50%; /* 원형 테두리 */
+  border: 1px solid #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px auto 15px 15px; /* 왼쪽 정렬 */
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+
+  &:hover > div {
+    visibility: visible;
+    opacity: 1;
+  }
+`;
+
+const TooltipText = styled.div`
+  visibility: hidden;
+  width: 300px;
+  background-color: #555;
+  color: #fff;
   text-align: center;
-  border: 1px dashed #ddd; /* 점선 테두리 */
-  border-radius: 8px; /* 모서리를 둥글게 */
-  padding: 10px; /* 글자 주변 공간 */
-  display: inline-block; /* 글자 주변 크기로 테두리 설정 */
-  margin: 15px auto; /* 수평 중앙 정렬 */
+  border-radius: 6px;
+  border: 1px solid #fff;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1001;
+  top: 50%; /* 툴팁 위치 조정 */
+  left: 50px; /* 툴팁이 원형 왼쪽에 위치하도록 설정 */
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent #555 transparent transparent;
+  }
+`;
+
+// 툴팁 컨테이너 유지
+const TooltipContainer = styled.div`
+  position: relative;
+  display: inline-block;
 `;
 
 const Icon = styled.span<{ color: string }>`
@@ -54,28 +107,18 @@ const Icon = styled.span<{ color: string }>`
   margin-right: 5px; /* 텍스트와 간격 */
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 800px;
-
-  @media (max-width: 768px) {
-    font-size: 12px;
-  }
-`;
-
 const TableHeader = styled.th`
-  position: relative; /* ResetIcon의 absolute 위치 기준 설정 */
+  position: relative;
   background-color: #444;
   color: white;
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
-  white-space: nowrap;
+  white-space: nowrap; /* 글자가 줄바꿈되지 않도록 */
 
   @media (max-width: 768px) {
     padding: 5px;
-    font-size: 10px;
+    font-size: 10px; /* 모바일에서 글자 크기 축소 */
   }
 `;
 
@@ -89,10 +132,11 @@ const TableCell = styled.td`
   text-align: center;
   padding: 10px;
   border: 1px solid #555;
+  white-space: nowrap;
 
   @media (max-width: 768px) {
     padding: 5px;
-    font-size: 10px;
+    font-size: 10px; /* 모바일에서 글자 크기 축소 */
   }
 `;
 
@@ -111,11 +155,7 @@ const ToggleButton = styled.div<{ state: number }>`
   height: 30px;
   cursor: pointer;
   background-color: ${(props) =>
-    props.state === 0
-      ? "#555" // 기본 상태: 회색
-      : props.state === 1
-      ? "#00f" // 클리어 상태: 파란색
-      : "#f00"}; // 더 보기 상태: 빨간색
+    props.state === 0 ? "#555" : props.state === 1 ? "#00f" : "#f00"};
   background-image: ${(props) =>
     props.state > 0 ? `url(${process.env.PUBLIC_URL}/img/check.png)` : "none"};
   background-size: contain;
@@ -124,12 +164,12 @@ const ToggleButton = styled.div<{ state: number }>`
   transition: background-color 0.3s ease, transform 0.3s ease;
 
   @media (max-width: 768px) {
-    width: 20px;
+    width: 20px; /* 모바일에서 버튼 크기 축소 */
     height: 20px;
   }
 
   &:hover {
-    transform: scale(1.1); /* hover 시 버튼 크기 확대 효과 */
+    transform: scale(1.1);
   }
 `;
 
@@ -192,7 +232,6 @@ const AccordionIcon = styled.span<{ isOpen: boolean }>`
 `;
 
 const AccordionContent = styled.div<{ isOpen: boolean }>`
-  overflow: hidden; /* 스크롤바 숨김 */
   max-height: ${(props) =>
     props.isOpen ? "1000px" : "0"}; /* 열릴 때와 닫힐 때의 높이 설정 */
   transition: max-height 0.6s ease-in-out; /* 스르륵 열리고 닫히는 효과 */
@@ -208,57 +247,40 @@ interface RaidTableProps {
     string,
     Record<
       string,
-      {
-        minItemLevel: number;
-        phases: Array<{ clearGold: number; bonusGold: number }>;
-      }
+      Record<
+        string, // 난이도 (하드, 노말 등)
+        {
+          minItemLevel: number; // 최소 아이템 레벨
+          phases: Array<{ clearGold: number; bonusGold: number }>; // 각 관문에 대한 골드 정보
+        }
+      >
     >
   >; // RaidValues 타입 정의
 }
 
 function RaidTable({
-  characters,
-  toggleStates,
   setToggleStates,
   setGoldRewards,
+  characters,
+  toggleStates,
   raidValues,
 }: RaidTableProps) {
-  const raidCategories = [
-    {
-      category: "카제로스 레이드",
-      raids: [
-        { name: "카제로스 아브렐슈드", maxPhases: 2, levels: ["하드", "노말"] },
-        { name: "에기르", maxPhases: 2, levels: ["하드", "노말"] },
-        { name: "에키드나", maxPhases: 2, levels: ["하드", "노말"] },
-      ],
-    },
-    {
-      category: "에픽 레이드",
-      raids: [{ name: "베히모스", maxPhases: 2, levels: ["노말"] }],
-    },
-    {
-      category: "군단장 레이드",
-      raids: [
-        {
-          name: "카멘",
-          maxPhases: 4,
-          levels: ["하드", "노말"],
-        },
-        { name: "일리아칸", maxPhases: 3, levels: ["하드", "노말"] },
-        { name: "군단장 아브렐슈드", maxPhases: 4, levels: ["하드", "노말"] },
-        { name: "쿠크세이튼", maxPhases: 3, levels: ["노말"] },
-        { name: "비아키스", maxPhases: 2, levels: ["하드", "노말"] },
-        { name: "발탄", maxPhases: 2, levels: ["하드", "노말"] },
-      ],
-    },
-    {
-      category: "어비스 던전",
-      raids: [
-        { name: "혼돈의 상아탑", maxPhases: 3, levels: ["하드", "노말"] },
-        { name: "카양겔", maxPhases: 3, levels: ["하드", "노말"] },
-      ],
-    },
-  ];
+  const transformRaidValues = (raidValues: typeof RaidValues) => {
+    return Object.entries(raidValues).map(([category, raids]) => ({
+      category,
+      raids: Object.entries(raids).map(([raidName, difficulties]) => ({
+        name: raidName,
+        maxPhases: Math.max(
+          ...Object.values(difficulties).map(
+            (difficulty) => difficulty.phases.length
+          )
+        ),
+        levels: Object.keys(difficulties), // 난이도 리스트
+      })),
+    }));
+  };
+
+  const raidCategories = transformRaidValues(raidValues); // 변환된 데이터 사용
 
   const [characterRaidCounts, setCharacterRaidCounts] = useState<{
     [characterName: string]: Set<string>;
@@ -271,6 +293,17 @@ function RaidTable({
         {}
       )
   );
+
+  const getRaidData = (raidValues: any, raidName: string, level: string) => {
+    // 모든 카테고리를 순회하며 raidName과 level이 일치하는 데이터를 찾는다
+    for (const category of Object.keys(raidValues)) {
+      const raidCategory = raidValues[category];
+      if (raidCategory?.[raidName]?.[level]) {
+        return raidCategory[raidName][level];
+      }
+    }
+    return null; // 일치하는 데이터가 없을 경우
+  };
 
   const toggleCategory = (category: string) => {
     setOpenCategories((prev) => ({
@@ -314,28 +347,56 @@ function RaidTable({
       setToggleStates(key, newState);
 
       // 골드 업데이트
-      const raidData = raidValues[raidName]?.[raidLevel]?.phases[phaseIndex];
-      if (raidData) {
-        setGoldRewards((prevRewards) => {
-          const updatedRewards = { ...prevRewards };
-          const currentReward = updatedRewards[characterName] || 0;
-          const additionalGold =
-            newState === 1
-              ? raidData.clearGold
-              : newState === 2
-              ? raidData.bonusGold
-              : -raidData.clearGold - raidData.bonusGold;
+      const raidData = getRaidData(raidValues, raidName, raidLevel);
 
-          updatedRewards[characterName] = Math.max(
-            0,
-            currentReward + additionalGold
-          );
-          return updatedRewards;
-        });
+      if (raidData && Array.isArray(raidData.phases)) {
+        const phaseData = raidData.phases[phaseIndex];
+        if (phaseData) {
+          setGoldRewards((prevRewards) => {
+            const updatedRewards = { ...prevRewards };
+            const currentReward = updatedRewards[characterName] || 0;
+            const additionalGold =
+              newState === 1
+                ? phaseData.clearGold
+                : newState === 2
+                ? phaseData.bonusGold
+                : -phaseData.clearGold - phaseData.bonusGold;
+
+            updatedRewards[characterName] = Math.max(
+              0,
+              currentReward + additionalGold
+            );
+            return updatedRewards;
+          });
+        }
       }
 
       // 업데이트된 레이드 반환
       return { ...prevCounts, [characterName]: updatedRaids };
+    });
+  };
+
+  const isPhaseDisabled = (
+    raidName: string,
+    currentLevel: string,
+    currentPhase: number,
+    characterName: string
+  ) => {
+    // 같은 레이드의 다른 난이도에서 동일 관문이 체크되었는지 확인
+    return Object.keys(toggleStates).some((key) => {
+      const [tRaidName, tLevel, tCharName, tPhase] = key.split("-");
+      const isSameRaid = tRaidName === raidName;
+      const isSamePhase = parseInt(tPhase, 10) === currentPhase;
+      const isDifferentLevel = tLevel !== currentLevel;
+      const isSameCharacter = tCharName === characterName;
+
+      return (
+        isSameRaid &&
+        isSamePhase &&
+        isDifferentLevel &&
+        isSameCharacter &&
+        toggleStates[key] > 0
+      );
     });
   };
 
@@ -391,13 +452,18 @@ function RaidTable({
   return (
     <TableContainer>
       <Title>주간 레이드</Title>
-      <Instructions>
-        사각형은 각 레이드에 관문을 의미합니다. 사각형 색에 따라 레이드 클리어
-        상태를 알 수 있습니다.
-        <br />
-        <Icon color="blue" /> - 클리어 골드, <Icon color="red" /> - 더 보기 한
-        골드
-      </Instructions>
+      <TooltipContainer>
+        <Instructions>
+          ?
+          <TooltipText>
+            사각형은 각 레이드에 관문을 의미합니다. 사각형 색에 따라 레이드
+            클리어 상태를 알 수 있습니다. <hr /> <Icon color="blue" /> - 클리어
+            골드, <Icon color="red" />- 더 보기 한 골드
+          </TooltipText>
+        </Instructions>
+      </TooltipContainer>
+      <RaidGoldModal />
+
       <div
         style={{
           display: "flex",
@@ -490,13 +556,16 @@ function RaidTable({
                                 }}
                               >
                                 {raid.levels
-                                  .map(
-                                    (level) =>
-                                      `[${level} - ${
-                                        raidValues[raid.name]?.[level]
-                                          ?.minItemLevel
-                                      }]`
-                                  )
+                                  .map((level) => {
+                                    const raidData = getRaidData(
+                                      raidValues,
+                                      raid.name,
+                                      level
+                                    );
+                                    return `[${level} - ${
+                                      raidData?.minItemLevel || "N/A"
+                                    }]`;
+                                  })
                                   .join(", ")}
                               </div>
                             </div>
@@ -508,17 +577,32 @@ function RaidTable({
                             <ToggleContainer>
                               {Array.from(
                                 {
-                                  length:
-                                    raidValues[raid.name]?.[level]?.phases
-                                      ?.length || 0, // phases 배열의 길이 사용
+                                  length: (() => {
+                                    const raidData = getRaidData(
+                                      raidValues,
+                                      raid.name,
+                                      level
+                                    );
+                                    return Array.isArray(raidData?.phases)
+                                      ? raidData.phases.length
+                                      : 0;
+                                  })(),
                                 },
                                 (_, phase) => {
                                   const toggleKey = `${raid.name}-${level}-${characters[charIndex]?.CharacterName}-${phase}`;
+                                  const isDisabled = isPhaseDisabled(
+                                    raid.name,
+                                    level,
+                                    phase,
+                                    characters[charIndex]?.CharacterName
+                                  );
+
                                   return (
                                     <ToggleButton
                                       key={toggleKey}
                                       state={toggleStates[toggleKey] || 0}
                                       onClick={() =>
+                                        !isDisabled &&
                                         handleToggleClick(
                                           toggleKey,
                                           charIndex,
@@ -527,6 +611,12 @@ function RaidTable({
                                           phase
                                         )
                                       }
+                                      style={{
+                                        opacity: isDisabled ? 0.5 : 1,
+                                        cursor: isDisabled
+                                          ? "not-allowed"
+                                          : "pointer",
+                                      }}
                                     />
                                   );
                                 }

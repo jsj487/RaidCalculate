@@ -7,7 +7,7 @@ import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
 
 import { useLayoutContext } from "../components/Layout"; // Context 가져오기
-import RaidValues from "../components/RaidValue";
+import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
 
@@ -604,8 +604,17 @@ const MainPage = () => {
           const [raidName, raidLevel, charName, phase] = key.split("-");
           if (charName === activeName) {
             const phaseIndex = parseInt(phase, 10);
-            const raidData =
-              RaidValues[raidName]?.[raidLevel]?.phases[phaseIndex];
+
+            // RaidValues를 카테고리별로 순회하여 raidName을 찾는다.
+            let raidData: { clearGold: number; bonusGold: number } | undefined;
+
+            Object.keys(RaidValues).forEach((category) => {
+              const raidCategory = RaidValues[category]; // 해당 카테고리의 레이드 데이터
+              if (raidCategory[raidName]?.[raidLevel]?.phases[phaseIndex]) {
+                raidData =
+                  raidCategory[raidName]?.[raidLevel]?.phases[phaseIndex];
+              }
+            });
 
             if (raidData) {
               if (toggleStates[key] === 1) {
