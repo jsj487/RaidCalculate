@@ -43,17 +43,19 @@ const ModalContent = styled.div`
 `;
 
 const CloseButton = styled.button`
-  position: absolute;
+  background: #565656; /* 동일한 배경색 */
+  color: white; /* 글자 색상 */
+  border: none; /* 테두리 제거 */
+  border-radius: 4px; /* 둥근 모서리 */
+  padding: 5px 10px; /* 동일한 패딩 */
+  font-size: 20px; /* 글자 크기 */
+  cursor: pointer; /* 마우스 커서 포인터 */
+  position: absolute; /* 위치 조정 */
   top: 10px;
   right: 10px;
-  background-color: #565656;
-  border-radius: 2px;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
 
   &:hover {
-    background: #3e3e3e;
+    background: #3e3e3e; /* 호버 시 배경색 변경 */
   }
 `;
 

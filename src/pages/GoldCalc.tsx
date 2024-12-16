@@ -595,40 +595,43 @@ const MainPage = () => {
     const newGoldRewards: Record<string, number> = {};
 
     activeCharacters.forEach((activeName) => {
-      const charIndex = characters.findIndex(
+      // 캐릭터 정보 확인
+      const charData = characters.find(
         (char) => char.CharacterName === activeName
       );
 
-      if (charIndex !== -1) {
-        const totalGold = Object.keys(toggleStates).reduce((sum, key) => {
-          const [raidName, raidLevel, charName, phase] = key.split("-");
-          if (charName === activeName) {
-            const phaseIndex = parseInt(phase, 10);
-
-            // RaidValues를 카테고리별로 순회하여 raidName을 찾는다.
-            let raidData: { clearGold: number; bonusGold: number } | undefined;
-
-            Object.keys(RaidValues).forEach((category) => {
-              const raidCategory = RaidValues[category]; // 해당 카테고리의 레이드 데이터
-              if (raidCategory[raidName]?.[raidLevel]?.phases[phaseIndex]) {
-                raidData =
-                  raidCategory[raidName]?.[raidLevel]?.phases[phaseIndex];
-              }
-            });
-
-            if (raidData) {
-              if (toggleStates[key] === 1) {
-                sum += raidData.clearGold;
-              } else if (toggleStates[key] === 2) {
-                sum += raidData.bonusGold;
-              }
-            }
-          }
-          return sum;
-        }, 0);
-
-        newGoldRewards[activeName] = totalGold;
+      if (!charData) {
+        console.warn(`캐릭터 데이터를 찾을 수 없습니다: ${activeName}`);
+        newGoldRewards[activeName] = 0; // 기본값 설정
+        return;
       }
+
+      // 골드 합계 계산
+      const totalGold = Object.keys(toggleStates).reduce((sum, key) => {
+        const [raidName, raidLevel, charName, phase] = key.split("-");
+        if (charName === activeName) {
+          const phaseIndex = parseInt(phase, 10);
+
+          // 레이드 데이터 확인
+          const raidData = Object.keys(RaidValues).reduce((data, category) => {
+            const raidCategory = RaidValues[category];
+            return (
+              data ||
+              raidCategory?.[raidName]?.[raidLevel]?.phases?.[phaseIndex]
+            );
+          }, undefined as { clearGold?: number; bonusGold?: number } | undefined);
+
+          if (raidData) {
+            if (toggleStates[key] === 1) sum += raidData.clearGold || 0;
+            else if (toggleStates[key] === 2) sum += raidData.bonusGold || 0;
+          } else {
+            console.warn(`레이드 데이터를 찾을 수 없습니다: ${key}`);
+          }
+        }
+        return sum;
+      }, 0);
+
+      newGoldRewards[activeName] = totalGold || 0; // 안전한 초기값 보장
     });
 
     setGoldRewards(newGoldRewards);
@@ -636,8 +639,9 @@ const MainPage = () => {
 
   // toggleStates 변경 시 골드 계산 실행
 
-  function formatNumberWithCommas(value: number): string {
-    return value.toLocaleString(); // 1,000,000 형식으로 변환
+  function formatNumberWithCommas(value: number | undefined | null): string {
+    if (value == null || isNaN(Number(value))) return "0"; // undefined, null, NaN 방어
+    return value.toLocaleString(); // 숫자를 ,로 구분
   }
 
   const totalGold = Object.keys(charAdjustments).reduce((sum, charName) => {
@@ -722,7 +726,7 @@ const MainPage = () => {
                   <GoldInput
                     id={`consumedGold-${char.CharacterName}`}
                     value={formatNumberWithCommas(
-                      charAdjustments[char.CharacterName]?.consumedGold
+                      charAdjustments[char.CharacterName]?.consumedGold || 0
                     )}
                     onChange={(e) => {
                       const value = parseInt(
@@ -745,7 +749,7 @@ const MainPage = () => {
                   <GoldInput
                     id={`extraGold-${char.CharacterName}`}
                     value={formatNumberWithCommas(
-                      charAdjustments[char.CharacterName]?.extraGold
+                      charAdjustments[char.CharacterName]?.extraGold || 0
                     )}
                     onChange={(e) => {
                       const value = parseInt(
