@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { useLayoutContext } from "../components/Layout";
+import { useLayoutContext } from "../components/LayoutProvider";
 
 const SearchContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",

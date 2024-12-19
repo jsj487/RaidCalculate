@@ -232,6 +232,7 @@ const AccordionIcon = styled.span<{ isOpen: boolean }>`
 `;
 
 const AccordionContent = styled.div<{ isOpen: boolean }>`
+  overflow: hidden; /* 스크롤바 숨김 */
   max-height: ${(props) =>
     props.isOpen ? "1000px" : "0"}; /* 열릴 때와 닫힐 때의 높이 설정 */
   transition: max-height 0.6s ease-in-out; /* 스르륵 열리고 닫히는 효과 */

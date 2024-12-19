@@ -68,8 +68,8 @@ export const RaidValues: Record<
       노말: {
         minItemLevel: 1640,
         phases: [
-          { clearGold: 7000, bonusGold: 3900 },
-          { clearGold: 14500, bonusGold: 9600 },
+          { clearGold: 6000, bonusGold: 2200 },
+          { clearGold: 12500, bonusGold: 4100 },
         ],
       },
     },
@@ -80,18 +80,18 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1630,
         phases: [
-          { clearGold: 5000, bonusGold: 3000 },
-          { clearGold: 6000, bonusGold: 3600 },
-          { clearGold: 9000, bonusGold: 6200 },
-          { clearGold: 21000, bonusGold: 17400 },
+          { clearGold: 3500, bonusGold: 1100 },
+          { clearGold: 4500, bonusGold: 1500 },
+          { clearGold: 7500, bonusGold: 2400 },
+          { clearGold: 8000, bonusGold: 2400 },
         ],
       },
       노말: {
         minItemLevel: 1610,
         phases: [
-          { clearGold: 3500, bonusGold: 2000 },
-          { clearGold: 4000, bonusGold: 2200 },
-          { clearGold: 5500, bonusGold: 3000 },
+          { clearGold: 2500, bonusGold: 800 },
+          { clearGold: 3000, bonusGold: 1000 },
+          { clearGold: 4500, bonusGold: 1500 },
         ],
       },
     },
@@ -99,17 +99,17 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1600,
         phases: [
-          { clearGold: 1500, bonusGold: 900 },
-          { clearGold: 2500, bonusGold: 1800 },
-          { clearGold: 3500, bonusGold: 2550 },
+          { clearGold: 1500, bonusGold: 600 },
+          { clearGold: 2500, bonusGold: 700 },
+          { clearGold: 3500, bonusGold: 950 },
         ],
       },
       노말: {
         minItemLevel: 1580,
         phases: [
-          { clearGold: 1000, bonusGold: 550 },
-          { clearGold: 1800, bonusGold: 1250 },
-          { clearGold: 2600, bonusGold: 1850 },
+          { clearGold: 1000, bonusGold: 450 },
+          { clearGold: 1800, bonusGold: 550 },
+          { clearGold: 2600, bonusGold: 750 },
         ],
       },
     },
@@ -117,19 +117,19 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1540,
         phases: [
-          { clearGold: 1200, bonusGold: 800 },
-          { clearGold: 1200, bonusGold: 800 },
-          { clearGold: 1200, bonusGold: 1100 },
-          { clearGold: 2000, bonusGold: 1200 },
+          { clearGold: 1200, bonusGold: 400 },
+          { clearGold: 1200, bonusGold: 400 },
+          { clearGold: 1200, bonusGold: 500 },
+          { clearGold: 2000, bonusGold: 800 },
         ],
       },
       노말: {
         minItemLevel: 1490,
         phases: [
-          { clearGold: 1000, bonusGold: 750 },
-          { clearGold: 1000, bonusGold: 700 },
-          { clearGold: 1000, bonusGold: 600 },
-          { clearGold: 1600, bonusGold: 1000 },
+          { clearGold: 1000, bonusGold: 250 },
+          { clearGold: 1000, bonusGold: 300 },
+          { clearGold: 1000, bonusGold: 400 },
+          { clearGold: 1600, bonusGold: 600 },
         ],
       },
     },
@@ -138,8 +138,8 @@ export const RaidValues: Record<
         minItemLevel: 1475,
         phases: [
           { clearGold: 600, bonusGold: 300 },
-          { clearGold: 900, bonusGold: 400 },
-          { clearGold: 1500, bonusGold: 800 },
+          { clearGold: 900, bonusGold: 500 },
+          { clearGold: 1500, bonusGold: 700 },
         ],
       },
     },
@@ -147,15 +147,15 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1460,
         phases: [
-          { clearGold: 900, bonusGold: 400 },
-          { clearGold: 1500, bonusGold: 850 },
+          { clearGold: 900, bonusGold: 500 },
+          { clearGold: 1500, bonusGold: 650 },
         ],
       },
       노말: {
         minItemLevel: 1430,
         phases: [
           { clearGold: 600, bonusGold: 300 },
-          { clearGold: 1000, bonusGold: 550 },
+          { clearGold: 1000, bonusGold: 450 },
         ],
       },
     },
@@ -163,15 +163,15 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1445,
         phases: [
-          { clearGold: 700, bonusGold: 250 },
-          { clearGold: 1100, bonusGold: 500 },
+          { clearGold: 700, bonusGold: 450 },
+          { clearGold: 1100, bonusGold: 600 },
         ],
       },
       노말: {
         minItemLevel: 1415,
         phases: [
-          { clearGold: 500, bonusGold: 200 },
-          { clearGold: 700, bonusGold: 300 },
+          { clearGold: 500, bonusGold: 300 },
+          { clearGold: 700, bonusGold: 400 },
         ],
       },
     },
@@ -182,17 +182,17 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1620,
         phases: [
-          { clearGold: 3000, bonusGold: 1800 },
-          { clearGold: 4000, bonusGold: 2550 },
-          { clearGold: 6000, bonusGold: 4000 },
+          { clearGold: 2000, bonusGold: 650 },
+          { clearGold: 3000, bonusGold: 1000 },
+          { clearGold: 5500, bonusGold: 1800 },
         ],
       },
       노말: {
         minItemLevel: 1600,
         phases: [
-          { clearGold: 1500, bonusGold: 900 },
-          { clearGold: 2000, bonusGold: 1350 },
-          { clearGold: 3000, bonusGold: 2000 },
+          { clearGold: 1500, bonusGold: 600 },
+          { clearGold: 2000, bonusGold: 650 },
+          { clearGold: 3000, bonusGold: 1000 },
         ],
       },
     },
@@ -200,17 +200,108 @@ export const RaidValues: Record<
       하드: {
         minItemLevel: 1580,
         phases: [
-          { clearGold: 1000, bonusGold: 650 },
-          { clearGold: 1600, bonusGold: 1100 },
-          { clearGold: 2200, bonusGold: 1500 },
+          { clearGold: 1000, bonusGold: 350 },
+          { clearGold: 1600, bonusGold: 500 },
+          { clearGold: 2200, bonusGold: 700 },
         ],
       },
       노말: {
         minItemLevel: 1540,
         phases: [
-          { clearGold: 800, bonusGold: 500 },
-          { clearGold: 1200, bonusGold: 800 },
-          { clearGold: 1600, bonusGold: 1100 },
+          { clearGold: 800, bonusGold: 300 },
+          { clearGold: 1200, bonusGold: 400 },
+          { clearGold: 1600, bonusGold: 500 },
+        ],
+      },
+    },
+  },
+
+  "싱글 레이드": {
+    에키드나: {
+      싱글: {
+        minItemLevel: 1620,
+        phases: [
+          { clearGold: 4000, bonusGold: 800 },
+          { clearGold: 7600, bonusGold: 1650 },
+        ],
+      },
+    },
+    카멘: {
+      싱글: {
+        minItemLevel: 1610,
+        phases: [
+          { clearGold: 2000, bonusGold: 650 },
+          { clearGold: 2400, bonusGold: 800 },
+          { clearGold: 3600, bonusGold: 1300 },
+        ],
+      },
+    },
+    "혼돈의 상아탑": {
+      싱글: {
+        minItemLevel: 1600,
+        phases: [
+          { clearGold: 1200, bonusGold: 250 },
+          { clearGold: 1600, bonusGold: 350 },
+          { clearGold: 2400, bonusGold: 550 },
+        ],
+      },
+    },
+    일리아칸: {
+      싱글: {
+        minItemLevel: 1580,
+        phases: [
+          { clearGold: 800, bonusGold: 225 },
+          { clearGold: 1440, bonusGold: 275 },
+          { clearGold: 2080, bonusGold: 375 },
+        ],
+      },
+    },
+    카양겔: {
+      싱글: {
+        minItemLevel: 1580,
+        phases: [
+          { clearGold: 640, bonusGold: 200 },
+          { clearGold: 960, bonusGold: 250 },
+          { clearGold: 1280, bonusGold: 300 },
+        ],
+      },
+    },
+    아브렐슈드: {
+      싱글: {
+        minItemLevel: 1490,
+        phases: [
+          { clearGold: 800, bonusGold: 100 },
+          { clearGold: 800, bonusGold: 150 },
+          { clearGold: 800, bonusGold: 200 },
+          { clearGold: 1280, bonusGold: 450 },
+        ],
+      },
+    },
+    쿠크세이튼: {
+      싱글: {
+        minItemLevel: 1475,
+        phases: [
+          { clearGold: 480, bonusGold: 100 },
+          { clearGold: 720, bonusGold: 150 },
+          { clearGold: 1200, bonusGold: 200 },
+        ],
+      },
+    },
+    비아키스: {
+      싱글: {
+        minItemLevel: 1430,
+        phases: [
+          { clearGold: 480, bonusGold: 100 },
+          { clearGold: 800, bonusGold: 150 },
+        ],
+      },
+    },
+    발탄: {
+      싱글: {
+        minItemLevel: 1415,
+        phases: [
+          { clearGold: 400, bonusGold: 75 },
+          { clearGold: 560, bonusGold: 100 },
         ],
       },
     },

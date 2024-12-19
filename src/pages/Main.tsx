@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import SearchBar from "../components/SearchBar";
-import { useLayoutContext } from "../components/Layout";
+import { useLayoutContext } from "../components/LayoutProvider";
 import "@fontsource/acme";
 
 const MainImage = styled.div`

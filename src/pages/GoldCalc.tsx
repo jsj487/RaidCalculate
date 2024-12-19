@@ -6,7 +6,9 @@ import { keyframes } from "styled-components";
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
 
-import { useLayoutContext } from "../components/Layout"; // Context 가져오기
+import { useLayoutContext } from "../components/LayoutProvider"; // Context 가져오기
+import SearchBar from "../components/SearchBar";
+import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져오기
 import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
@@ -25,11 +27,48 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background-color: #383838; /* 추천 배경색 */
+  background-color: #383838;
+`;
 
-  @media (max-width: 768px) {
-    padding: 8px;
+const TabContainer = styled.div`
+  display: flex;
+  margin-bottom: 10px;
+  background-color: #444;
+  border-radius: 8px;
+`;
+
+const TabButton = styled.button<{ isActive: boolean }>`
+  color: ${(props) => (props.isActive ? "#fff" : "#aaa")};
+  background-color: ${(props) => (props.isActive ? "#565656" : "#444")};
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  margin-right: 5px;
+
+  &:hover {
+    background-color: ${(props) => (props.isActive ? "#565656" : "#3e3e3e")};
   }
+`;
+
+const AddTabButton = styled.button`
+  background-color: #565656;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #3e3e3e;
+  }
+`;
+
+const TabContent = styled.div`
+  background-color: #383838;
+  padding: 20px;
+  border-radius: 0 8px 8px 8px;
+  width: 100%;
 `;
 
 const DropdownContainer = styled.div`
@@ -359,10 +398,15 @@ const ContentWrapper = styled.div`
   padding: 20px;
 `;
 
-const MainPage = () => {
+const GoldCalc = ({ tabId }: { tabId: number }) => {
   /** Context 데이터 */
-  const { servers, characters, selectedServer, setSelectedServer } =
-    useLayoutContext();
+  const {
+    servers,
+    characters,
+    selectedServer,
+    setSelectedServer,
+    setCharacters,
+  } = useLayoutContext();
 
   /** 상태 관리 */
   const [toggleStates, setToggleStates] = useState<{ [key: string]: number }>(
@@ -651,12 +695,6 @@ const MainPage = () => {
       charAdjustments[charName]?.extraGold;
     return sum + charGold;
   }, 0);
-  const serverCharacterCounts = servers.reduce((acc, server) => {
-    acc[server] = characters.filter(
-      (char) => char.ServerName === server
-    ).length;
-    return acc;
-  }, {} as { [key: string]: number });
 
   const [isMenuOpen, setMenuOpen] = useState(false);
 
@@ -669,10 +707,73 @@ const MainPage = () => {
     setIsDropdownVisible((prev) => !prev);
   };
 
+  const [tabs, setTabs] = useState<Array<{ id: number; name: string }>>(() => {
+    const savedTabs = localStorage.getItem("tabs");
+    return savedTabs ? JSON.parse(savedTabs) : [{ id: 1, name: "탭 1" }];
+  });
+  const [activeTab, setActiveTab] = useState<number>(1);
+  const [tabData, setTabData] = useState<Record<number, any>>({});
+  const [isTabModalOpen, setTabModalOpen] = useState(false);
+
+  useEffect(() => {
+    const savedData = localStorage.getItem("tabData");
+    if (savedData) {
+      setTabData(JSON.parse(savedData));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("tabs", JSON.stringify(tabs));
+    localStorage.setItem("tabData", JSON.stringify(tabData));
+  }, [tabs, tabData]);
+
+  const addTab = () => {
+    const newTabId = Date.now();
+    setTabs((prev) => [
+      ...prev,
+      { id: newTabId, name: `탭 ${tabs.length + 1}` },
+    ]);
+    setActiveTab(newTabId);
+    setTabData((prev) => ({
+      ...prev,
+      [newTabId]: {
+        characters: [],
+        selectedServer: null,
+        toggleStates: {},
+        goldRewards: {},
+        consumedGold: 0,
+        extraGold: 0,
+      },
+    }));
+    setTabModalOpen(true);
+  };
+
+  const handleTabSearch = (tabId: number, data: any, search: string) => {
+    setTabData((prev) => ({
+      ...prev,
+      [tabId]: {
+        ...prev[tabId],
+        characters: data,
+        search,
+      },
+    }));
+    setCharacters(data);
+    setSelectedServer(null);
+    setTabModalOpen(false);
+  };
+
+  const activeTabData = tabData[activeTab] || {
+    characters: [],
+    search: "",
+    toggleStates: {},
+    goldRewards: {},
+    consumedGold: 0,
+    extraGold: 0,
+  };
+
   return (
     <Container>
       <DropdownContainer>
-        {/* 선택된 서버 표시 */}
         <SelectedServer onClick={toggleDropdown} isOpen={isDropdownVisible}>
           <span>
             {selectedServer
@@ -683,7 +784,6 @@ const MainPage = () => {
           <ArrowIcon isOpen={isDropdownVisible} />
         </SelectedServer>
 
-        {/* 서버 리스트 */}
         <ServerList isVisible={isDropdownVisible}>
           {servers
             .filter((server) => server !== selectedServer) // 선택된 서버 제외
@@ -849,4 +949,4 @@ const MainPage = () => {
   );
 };
 
-export default MainPage;
+export default GoldCalc;
