@@ -804,9 +804,9 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     console.log("Updated charAdjustments:", updatedCharAdjustments);
   };
 
-  const filteredModalCharacters = activeTabData.characters
+  const filteredModalCharacters = (activeTabData?.characters || [])
     .filter(
-      (char: CharacterData) => char.ServerName === activeTabData.selectedServer
+      (char: CharacterData) => char.ServerName === activeTabData?.selectedServer
     )
     .sort(
       (a, b) =>
