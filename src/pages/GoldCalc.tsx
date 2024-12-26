@@ -804,18 +804,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     console.log("Updated charAdjustments:", updatedCharAdjustments);
   };
 
-  // Render characters and server list based on activeTabData
-  const filteredCharacters = activeTabData.characters
-    .filter(
-      (char: { ServerName: any }) =>
-        char.ServerName === activeTabData.selectedServer
-    )
-    .sort(
-      (a: { ItemAvgLevel: string }, b: { ItemAvgLevel: string }) =>
-        parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-    );
-
   const filteredModalCharacters = activeTabData.characters
     .filter(
       (char: CharacterData) => char.ServerName === activeTabData.selectedServer
