@@ -725,12 +725,18 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   }, [selectedServer, characters]);
 
   useEffect(() => {
-    console.log("Recalculating goldRewards for TabData...");
-    const updatedGoldRewards = calculateGoldRewards(activeTabData.toggleStates);
-    console.log("Updated Gold Rewards:", updatedGoldRewards);
+    if (activeTabData?.toggleStates) {
+      console.log("Recalculating goldRewards for TabData...");
+      const updatedGoldRewards = calculateGoldRewards(
+        activeTabData?.toggleStates || {}
+      );
+      console.log("Updated Gold Rewards:", updatedGoldRewards);
 
-    updateTabData("goldRewards", updatedGoldRewards);
-  }, [activeTabData.toggleStates]);
+      updateTabData("goldRewards", updatedGoldRewards);
+    } else {
+      console.warn("toggleStates is undefined or invalid.");
+    }
+  }, [activeTabData?.toggleStates]);
 
   useEffect(() => {
     if (isCharacterListModalOpen) {
@@ -859,14 +865,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     return value.toLocaleString(); // 숫자를 ,로 구분
   }
 
-  const totalGold = (activeTabData.activeCharacters || []).reduce(
+  const totalGold = (activeTabData?.activeCharacters || []).reduce(
     (sum, charName) => {
-      const raidGold = activeTabData.goldRewards?.[charName] || 0;
-
+      const raidGold = activeTabData?.goldRewards?.[charName] || 0;
       const consumedGold =
-        activeTabData.charAdjustments?.[charName]?.consumedGold || 0;
+        activeTabData?.charAdjustments?.[charName]?.consumedGold || 0;
       const extraGold =
-        activeTabData.charAdjustments?.[charName]?.extraGold || 0;
+        activeTabData?.charAdjustments?.[charName]?.extraGold || 0;
 
       return sum + raidGold - consumedGold + extraGold;
     },
