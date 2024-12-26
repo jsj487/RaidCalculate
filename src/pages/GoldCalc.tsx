@@ -441,20 +441,17 @@ type TabData = {
 
 const GoldCalc = ({ tabId }: { tabId: number }) => {
   /** Context 데이터 */
-  const {
-    servers,
-    characters,
-    selectedServer,
-    setSelectedServer,
-    setCharacters,
-    handleSearch,
-    search,
-    setSearch,
-  } = useLayoutContext();
+  const { characters, selectedServer, handleSearch } = useLayoutContext();
+
+  useEffect(() => {
+    const storedTabData = JSON.parse(localStorage.getItem("TabData") || "{}");
+    setTabData(storedTabData); // 상태 업데이트
+  }, []);
 
   const [tabData, setTabData] = useState<Record<number, any>>(() => {
     const savedData = localStorage.getItem("tabData");
-    return savedData ? JSON.parse(savedData) : {};
+    const parsedData = savedData ? JSON.parse(savedData) : {};
+    return Object.keys(parsedData).length ? parsedData : {};
   });
 
   const [tabCounter, setTabCounter] = useState<number>(() => {
@@ -462,7 +459,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     const existingTabIds = savedData
       ? Object.keys(JSON.parse(savedData)).map(Number)
       : [];
-    return existingTabIds.length > 0 ? Math.max(...existingTabIds) + 1 : 1;
+    return existingTabIds.length > 0 ? Math.max(...existingTabIds) + 1 : 0; // Start from 0 if no tabs
   });
 
   const [currentTabId, setCurrentTabId] = useState<number>(tabId);
@@ -514,36 +511,29 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     updateTabData("activeCharacters", newActiveCharacters); // Update activeCharacters in tabData
   };
 
-  const handleToggle = (key: string, newState: number) => {
-    // Update global toggle states
-    setToggleStates((prevStates) => {
-      const updatedStates = { ...prevStates, [key]: newState };
-      return updatedStates;
-    });
-
-    updateTabData("toggleStates", {
-      ...activeTabData.toggleStates,
-      [key]: newState,
-    });
-  };
-
   const handleSearchComplete = (data: CharacterData[], search: string) => {
-    // 모든 탭의 activeCharacters를 합침
+    if (!data || data.length === 0) {
+      console.warn("No characters found in search results.");
+      alert("검색 결과가 없습니다. 닉네임을 다시 확인하세요.");
+      return;
+    }
+
+    // Aggregate all activeCharacters across tabs
     const allActiveCharacters = Object.values(tabData).flatMap(
       (tab) => tab.activeCharacters
     );
 
-    // 검색된 캐릭터가 이미 존재하는지 확인
+    // Check for duplicate characters
     const duplicateCharacter = data.find((char) =>
       allActiveCharacters.includes(char.CharacterName)
     );
 
     if (duplicateCharacter) {
       alert(`캐릭터는 이미 다른 탭에 추가되어 있습니다.`);
-      return; // 중복 캐릭터가 있으면 검색 결과 처리 중단
+      return; // Stop processing if a duplicate is found
     }
 
-    // 중복이 없을 경우 새로운 탭 데이터 생성
+    // Create new tab data
     const newTabId = tabCounter;
     setTabData((prev) => ({
       ...prev,
@@ -674,6 +664,12 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
       document.body.style.overflow = "auto";
     };
   }, [isRaidTableVisible]);
+
+  useEffect(() => {
+    if (!Object.keys(tabData).length) {
+      console.warn("No TabData available. Initialize with default values.");
+    }
+  }, [tabData]);
 
   /**useEffect */
   useEffect(() => {
@@ -810,7 +806,8 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   const filteredModalCharacters = (activeTabData?.characters || [])
     .filter(
-      (char: CharacterData) => char.ServerName === activeTabData?.selectedServer
+      (char: CharacterData) =>
+        char?.ServerName === activeTabData?.selectedServer
     )
     .sort(
       (a, b) =>
@@ -821,27 +818,25 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   const calculateGoldRewards = (
     toggleStates: Record<string, number>
   ): Record<string, number> => {
+    if (!Array.isArray(activeTabData?.activeCharacters)) {
+      console.warn("activeCharacters is undefined or not an array.");
+      return {};
+    }
+
     return activeTabData.activeCharacters.reduce((acc, charName) => {
-      const raidGold = Object.keys(toggleStates).reduce((sum, key) => {
+      const raidGold = Object.keys(toggleStates || {}).reduce((sum, key) => {
         const [raidName, raidLevel, charNameInKey, phase] = key.split("-");
         if (charNameInKey === charName) {
           const phaseIndex = parseInt(phase, 10);
-
-          // Traverse raid categories to find the matching raid
-          const raidData = Object.values(RaidValues).reduce(
-            (found, category) => {
-              return (
-                found || category?.[raidName]?.[raidLevel]?.phases?.[phaseIndex]
-              );
-            },
+          const raidData = Object.values(RaidValues || {}).reduce(
+            (found, category) =>
+              found || category?.[raidName]?.[raidLevel]?.phases?.[phaseIndex],
             undefined as { clearGold?: number; bonusGold?: number } | undefined
           );
 
           if (raidData) {
             if (toggleStates[key] === 1) sum += raidData.clearGold || 0;
             else if (toggleStates[key] === 2) sum += raidData.bonusGold || 0;
-          } else {
-            console.warn(`Invalid Raid Data for Key: ${key}`);
           }
         }
         return sum;
@@ -892,8 +887,8 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   const displayedCharacters = (activeTabData?.characters || [])
     .filter(
       (char: CharacterData) =>
-        (activeTabData?.activeCharacters || []).includes(char.CharacterName) &&
-        char.ServerName === activeTabData?.selectedServer
+        (activeTabData?.activeCharacters || []).includes(char?.CharacterName) &&
+        char?.ServerName === activeTabData?.selectedServer
     )
     .sort(
       (a, b) =>
@@ -942,15 +937,22 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   const resetToggleStates = () => {
     if (window.confirm("정말 모두 초기화 하시나요?")) {
-      setTabData((prev) => ({
-        ...prev,
-        [currentTabId]: {
-          ...prev[currentTabId],
-          toggleStates: {},
-        },
-      }));
+      setTabData((prev) => {
+        if (!prev[currentTabId]) {
+          console.warn("Current tab data not found during reset.");
+          return prev;
+        }
+        return {
+          ...prev,
+          [currentTabId]: {
+            ...prev[currentTabId],
+            toggleStates: {},
+          },
+        };
+      });
     }
   };
+
   const resetChaToggleStates = (charName: string) => {
     setTabData((prev) => ({
       ...prev,
@@ -980,14 +982,15 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
         <TabContainer>
           {Object.keys(tabData)
             .map(Number)
-            .sort((a, b) => a - b) // Ensure sorted order
+            .filter((tabId) => tabData[tabId]?.characters?.length > 0) // Only render tabs with valid characters
+            .sort((a, b) => a - b)
             .map((tabId) => (
               <TabButton
                 key={tabId}
                 isActive={currentTabId === tabId}
                 onClick={() => setCurrentTabId(tabId)}
               >
-                {tabData[tabId]?.search || `Tab ${tabId}`} {/* Tab Title */}
+                {tabData[tabId]?.search || `Tab ${tabId}`}
                 <CloseButton
                   onClick={(e) => {
                     e.stopPropagation();

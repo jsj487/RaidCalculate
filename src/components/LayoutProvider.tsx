@@ -1,4 +1,5 @@
 import React, { useState, createContext, useContext, useEffect } from "react";
+import { useGoldCalcContext } from "./GoldCalcContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
@@ -79,10 +80,12 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { handleSearchComplete } = useGoldCalcContext();
 
   // 검색 핸들러
-  const handleSearch = async () => {
-    if (!search.trim()) {
+  const handleSearch = async (searchQuery?: string) => {
+    const effectiveSearch = searchQuery || search.trim();
+    if (!effectiveSearch) {
       setError("닉네임을 입력해주세요.");
       return;
     }
@@ -92,38 +95,24 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await axios.get(`${BASE_URL}/characters/siblings`, {
-        params: { name: search },
+        params: { name: effectiveSearch },
       });
 
-      // 캐릭터 데이터 타입 명시
-      type CharacterData = {
-        ServerName: string;
-        CharacterName: string;
-        CharacterClassName: string;
-        CharacterLevel: number;
-        ItemAvgLevel: string;
-        CharacterImage?: string;
-      };
+      const data = response.data;
 
-      // 서버 목록 추출 및 타입 변환
-      const serverList = Array.from(
-        new Set(
-          (response.data as CharacterData[]).map((char) => char.ServerName)
-        )
-      );
+      if (!data || data.length === 0) {
+        setError("검색 결과가 없습니다. 닉네임을 다시 확인하세요.");
+        return;
+      }
 
-      setServers(serverList); // 문제 해결: serverList의 타입은 명확히 string[]입니다.
-      setCharacters(response.data as CharacterData[]);
-      setSelectedServer(null);
+      // Update GoldCalcContext with search results
+      handleSearchComplete(data, effectiveSearch);
 
-      // Local Storage에 저장
-      localStorage.setItem("search", search);
-      localStorage.setItem("servers", JSON.stringify(serverList));
-      localStorage.setItem("characters", JSON.stringify(response.data));
-
-      navigate(`/GoldCalc/1`); // MainPage로 이동
-    } catch {
-      setError("캐릭터 데이터를 불러오는 데 실패했습니다.");
+      // Navigate to the tab
+      navigate(`/GoldCalc/1`);
+    } catch (error) {
+      console.error("검색 실패:", error);
+      setError("검색 중 오류가 발생했습니다. 다시 시도하세요.");
     } finally {
       setLoading(false);
     }

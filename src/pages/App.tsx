@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GoldCalcProvider } from "../components/GoldCalcContext";
 import {
   BrowserRouter as Router,
   Route,
@@ -28,25 +29,27 @@ function App() {
     <>
       <GlobalStyle /> {/* 전역 스타일 추가 */}
       <Router basename={basename}>
-        <LayoutProvider>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Main />} />
-              <Route
-                path="/GoldCalc"
-                element={<Navigate to="/GoldCalc/1" replace />}
-              />{" "}
-              {/* 기본 탭으로 리다이렉트 */}
-              {tabs.map((tab) => (
+        <GoldCalcProvider>
+          <LayoutProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Main />} />
                 <Route
-                  key={tab.id}
-                  path={`/GoldCalc/${tab.id}`}
-                  element={<GoldCalc tabId={tab.id} />}
-                />
-              ))}
-            </Routes>
-          </Layout>
-        </LayoutProvider>
+                  path="/GoldCalc"
+                  element={<Navigate to="/GoldCalc/1" replace />}
+                />{" "}
+                {/* 기본 탭으로 리다이렉트 */}
+                {tabs.map((tab) => (
+                  <Route
+                    key={tab.id}
+                    path={`/GoldCalc/${tab.id}`}
+                    element={<GoldCalc tabId={tab.id} />}
+                  />
+                ))}
+              </Routes>
+            </Layout>
+          </LayoutProvider>
+        </GoldCalcProvider>
       </Router>
     </>
   );
