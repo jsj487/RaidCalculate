@@ -30,11 +30,19 @@ const Container = styled.div`
   background-color: #383838;
 `;
 
+const TabContainerWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Align tabs to the left and + button to the right */
+  margin-bottom: 10px;
+`;
+
 const TabContainer = styled.div`
   display: flex;
-  margin-bottom: 10px;
+  gap: 5px; /* Add spacing between tabs */
   background-color: #444;
   border-radius: 8px;
+  overflow: hidden; /* Prevent overflow of tab content */
 `;
 
 const TabButton = styled.button<{ isActive: boolean }>`
@@ -42,12 +50,26 @@ const TabButton = styled.button<{ isActive: boolean }>`
   background-color: ${(props) => (props.isActive ? "#565656" : "#444")};
   border: none;
   padding: 10px 20px;
-  border-radius: 8px 8px 0 0;
+  position: relative;
   cursor: pointer;
-  margin-right: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between text and X button */
 
   &:hover {
     background-color: ${(props) => (props.isActive ? "#565656" : "#3e3e3e")};
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover {
+    color: #fff;
   }
 `;
 
@@ -55,20 +77,20 @@ const AddTabButton = styled.button`
   background-color: #565656;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-left: 10px;
 
   &:hover {
     background-color: #3e3e3e;
   }
-`;
-
-const TabContent = styled.div`
-  background-color: #383838;
-  padding: 20px;
-  border-radius: 0 8px 8px 8px;
-  width: 100%;
 `;
 
 const DropdownContainer = styled.div`
@@ -398,6 +420,25 @@ const ContentWrapper = styled.div`
   padding: 20px;
 `;
 
+type CharacterData = {
+  CharacterName: string;
+  ServerName: string;
+  ItemAvgLevel: string;
+  CharacterLevel?: string;
+  CharacterImage?: string;
+};
+
+type TabData = {
+  characters: any[]; // Replace `any` with the actual type of a character if available
+  search: string;
+  toggleStates: Record<string, number>;
+  goldRewards: Record<string, number>;
+  selectedServer: string | null;
+  servers: string[];
+  activeCharacters: string[];
+  charAdjustments: Record<string, { consumedGold: number; extraGold: number }>;
+};
+
 const GoldCalc = ({ tabId }: { tabId: number }) => {
   /** Context 데이터 */
   const {
@@ -406,7 +447,166 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     selectedServer,
     setSelectedServer,
     setCharacters,
+    handleSearch,
+    search,
+    setSearch,
   } = useLayoutContext();
+
+  const [tabData, setTabData] = useState<Record<number, any>>(() => {
+    const savedData = localStorage.getItem("tabData");
+    return savedData ? JSON.parse(savedData) : {};
+  });
+
+  const [tabCounter, setTabCounter] = useState<number>(() => {
+    const savedData = localStorage.getItem("tabData");
+    const existingTabIds = savedData
+      ? Object.keys(JSON.parse(savedData)).map(Number)
+      : [];
+    return existingTabIds.length > 0 ? Math.max(...existingTabIds) + 1 : 1;
+  });
+
+  const [currentTabId, setCurrentTabId] = useState<number>(tabId);
+  const [isTabModalOpen, setTabModalOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("tabData", JSON.stringify(tabData));
+  }, [tabData]);
+
+  useEffect(() => {
+    const savedTabData = localStorage.getItem("tabData");
+    if (savedTabData) {
+      setTabData(JSON.parse(savedTabData));
+    }
+  }, []);
+
+  const activeTabData: TabData = tabData[currentTabId] || {
+    characters: [],
+    consumedGold: 0,
+    extraGold: 0,
+    goldRewards: {},
+    search: "",
+    selectedServer: null,
+    servers: [],
+    toggleStates: {},
+    activeCharacters: [], // Ensure activeCharacters is initialized
+  };
+
+  const updateTabData = (key: string, value: any) => {
+    setTabData((prev) => ({
+      ...prev,
+      [currentTabId]: {
+        ...prev[currentTabId],
+        [key]: value,
+      },
+    }));
+  };
+
+  const handleServerSelect = (server: string) => {
+    updateTabData("selectedServer", server);
+
+    const newActiveCharacters = activeTabData.characters
+      .filter((char: CharacterData) => char.ServerName === server)
+      .sort(
+        (a, b) =>
+          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+      )
+      .slice(0, 6)
+      .map((char) => char.CharacterName);
+    updateTabData("activeCharacters", newActiveCharacters); // Update activeCharacters in tabData
+  };
+
+  const handleToggle = (key: string, newState: number) => {
+    // Update global toggle states
+    setToggleStates((prevStates) => {
+      const updatedStates = { ...prevStates, [key]: newState };
+      return updatedStates;
+    });
+
+    updateTabData("toggleStates", {
+      ...activeTabData.toggleStates,
+      [key]: newState,
+    });
+  };
+
+  const handleSearchComplete = (data: CharacterData[], search: string) => {
+    // 모든 탭의 activeCharacters를 합침
+    const allActiveCharacters = Object.values(tabData).flatMap(
+      (tab) => tab.activeCharacters
+    );
+
+    // 검색된 캐릭터가 이미 존재하는지 확인
+    const duplicateCharacter = data.find((char) =>
+      allActiveCharacters.includes(char.CharacterName)
+    );
+
+    if (duplicateCharacter) {
+      alert(`캐릭터는 이미 다른 탭에 추가되어 있습니다.`);
+      return; // 중복 캐릭터가 있으면 검색 결과 처리 중단
+    }
+
+    // 중복이 없을 경우 새로운 탭 데이터 생성
+    const newTabId = tabCounter;
+    setTabData((prev) => ({
+      ...prev,
+      [newTabId]: {
+        characters: data,
+        search,
+        toggleStates: {},
+        goldRewards: data.reduce((acc, char) => {
+          acc[char.CharacterName] = 0; // Initialize with zero gold
+          return acc;
+        }, {} as Record<string, number>),
+        selectedServer: null,
+        servers: Array.from(new Set(data.map((char) => char.ServerName))),
+        activeCharacters: data
+          .sort(
+            (a, b) =>
+              parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+              parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+          )
+          .slice(0, 6)
+          .map((char) => char.CharacterName),
+        charAdjustments: data.reduce((acc, char) => {
+          acc[char.CharacterName] = { consumedGold: 0, extraGold: 0 };
+          return acc;
+        }, {} as Record<string, { consumedGold: number; extraGold: number }>),
+      },
+    }));
+    setCurrentTabId(newTabId);
+    setTabCounter((prev) => prev + 1);
+    setTabModalOpen(false);
+  };
+
+  const openSearchModal = () => {
+    setTabModalOpen(true); // Open the modal for searching
+  };
+
+  const deleteTab = (tabId: number) => {
+    setTabData((prev) => {
+      const updatedTabData = { ...prev };
+      delete updatedTabData[tabId];
+
+      // Reassign tab IDs to keep them sequential
+      const reassignedTabData: Record<number, TabData> = {};
+      Object.keys(updatedTabData)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .forEach((id, index) => {
+          reassignedTabData[index + 1] = updatedTabData[id];
+        });
+
+      // Adjust currentTabId if needed
+      if (!reassignedTabData[currentTabId]) {
+        const remainingTabIds = Object.keys(reassignedTabData).map(Number);
+        setCurrentTabId(
+          remainingTabIds.length > 0 ? Math.min(...remainingTabIds) : 0
+        );
+      }
+
+      return reassignedTabData;
+    });
+  };
 
   /** 상태 관리 */
   const [toggleStates, setToggleStates] = useState<{ [key: string]: number }>(
@@ -527,8 +727,12 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   }, [selectedServer, characters]);
 
   useEffect(() => {
-    calculateGoldRewards();
-  }, [toggleStates, activeCharacters]); // 의존성 배열 추가
+    console.log("Recalculating goldRewards for TabData...");
+    const updatedGoldRewards = calculateGoldRewards(activeTabData.toggleStates);
+    console.log("Updated Gold Rewards:", updatedGoldRewards);
+
+    updateTabData("goldRewards", updatedGoldRewards);
+  }, [activeTabData.toggleStates]);
 
   useEffect(() => {
     if (isCharacterListModalOpen) {
@@ -570,37 +774,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   };
 
   const handleCharacterToggle = (characterName: string) => {
-    setActiveCharacters(
-      (prev) =>
-        prev.includes(characterName)
-          ? prev.filter((name) => name !== characterName) // 비활성화
-          : [...prev, characterName] // 활성화
-    );
-  };
+    const updatedActiveCharacters = activeTabData.activeCharacters.includes(
+      characterName
+    )
+      ? activeTabData.activeCharacters.filter((name) => name !== characterName)
+      : [...activeTabData.activeCharacters, characterName];
 
-  const handleServerSelect = (server: string) => {
-    setSelectedServer(server);
-    setIsDropdownVisible(false);
-
-    // 서버 변경 시 해당 서버의 캐릭터로 활성 캐릭터 초기화
-    const newActiveCharacters = characters
-      .filter((char) => char.ServerName === server)
-      .sort(
-        (a, b) =>
-          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-      )
-      .slice(0, 6)
-      .map((char) => char.CharacterName);
-
-    setActiveCharacters(newActiveCharacters);
-  };
-
-  const handleToggle = (key: string, newState: number) => {
-    setToggleStates((prevStates) => {
-      const updatedStates = { ...prevStates, [key]: newState };
-      return updatedStates;
-    });
+    updateTabData("activeCharacters", updatedActiveCharacters); // Update activeCharacters in tabData
   };
 
   const handleAdjustmentChange = (
@@ -608,78 +788,83 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     type: "consumedGold" | "extraGold",
     value: number
   ) => {
-    setCharAdjustments((prev) => ({
-      ...prev,
+    const updatedCharAdjustments = {
+      ...activeTabData.charAdjustments,
       [charName]: {
-        ...prev[charName],
+        ...(activeTabData.charAdjustments[charName] || {
+          consumedGold: 0,
+          extraGold: 0,
+        }),
         [type]: value,
       },
-    }));
+    };
+
+    updateTabData("charAdjustments", updatedCharAdjustments);
+
+    console.log("Updated charAdjustments:", updatedCharAdjustments);
   };
 
-  /** 필터링 및 계산 */
-  const filteredCharacters = characters
-    .filter((char) => char.ServerName === selectedServer) // 선택된 서버의 캐릭터만 필터링
+  // Render characters and server list based on activeTabData
+  const filteredCharacters = activeTabData.characters
+    .filter(
+      (char: { ServerName: any }) =>
+        char.ServerName === activeTabData.selectedServer
+    )
     .sort(
-      (a, b) =>
+      (a: { ItemAvgLevel: string }, b: { ItemAvgLevel: string }) =>
         parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
         parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-    )
-    .filter((char) => activeCharacters.includes(char.CharacterName)); // 활성 캐릭터 필터링
+    );
 
-  const filteredModalCharacters = characters
-    .filter((char) => char.ServerName === selectedServer) // 선택된 서버의 캐릭터만 필터링
+  const filteredModalCharacters = activeTabData.characters
+    .filter(
+      (char: CharacterData) => char.ServerName === activeTabData.selectedServer
+    )
     .sort(
       (a, b) =>
         parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
         parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
     );
 
-  const calculateGoldRewards = () => {
-    const newGoldRewards: Record<string, number> = {};
-
-    activeCharacters.forEach((activeName) => {
-      // 캐릭터 정보 확인
-      const charData = characters.find(
-        (char) => char.CharacterName === activeName
-      );
-
-      if (!charData) {
-        console.warn(`캐릭터 데이터를 찾을 수 없습니다: ${activeName}`);
-        newGoldRewards[activeName] = 0; // 기본값 설정
-        return;
-      }
-
-      // 골드 합계 계산
-      const totalGold = Object.keys(toggleStates).reduce((sum, key) => {
-        const [raidName, raidLevel, charName, phase] = key.split("-");
-        if (charName === activeName) {
+  const calculateGoldRewards = (
+    toggleStates: Record<string, number>
+  ): Record<string, number> => {
+    return activeTabData.activeCharacters.reduce((acc, charName) => {
+      const raidGold = Object.keys(toggleStates).reduce((sum, key) => {
+        const [raidName, raidLevel, charNameInKey, phase] = key.split("-");
+        if (charNameInKey === charName) {
           const phaseIndex = parseInt(phase, 10);
 
-          // 레이드 데이터 확인
-          const raidData = Object.keys(RaidValues).reduce((data, category) => {
-            const raidCategory = RaidValues[category];
-            return (
-              data ||
-              raidCategory?.[raidName]?.[raidLevel]?.phases?.[phaseIndex]
-            );
-          }, undefined as { clearGold?: number; bonusGold?: number } | undefined);
+          // Traverse raid categories to find the matching raid
+          const raidData = Object.values(RaidValues).reduce(
+            (found, category) => {
+              return (
+                found || category?.[raidName]?.[raidLevel]?.phases?.[phaseIndex]
+              );
+            },
+            undefined as { clearGold?: number; bonusGold?: number } | undefined
+          );
 
           if (raidData) {
             if (toggleStates[key] === 1) sum += raidData.clearGold || 0;
             else if (toggleStates[key] === 2) sum += raidData.bonusGold || 0;
           } else {
-            console.warn(`레이드 데이터를 찾을 수 없습니다: ${key}`);
+            console.warn(`Invalid Raid Data for Key: ${key}`);
           }
         }
         return sum;
       }, 0);
 
-      newGoldRewards[activeName] = totalGold || 0; // 안전한 초기값 보장
-    });
-
-    setGoldRewards(newGoldRewards);
+      acc[charName] = raidGold;
+      return acc;
+    }, {} as Record<string, number>);
   };
+
+  useEffect(() => {
+    console.log("Toggle States Changed:", activeTabData.toggleStates);
+    const updatedRewards = calculateGoldRewards(activeTabData.toggleStates);
+    console.log("Recalculated Gold Rewards:", updatedRewards);
+  }, [activeTabData.toggleStates]);
 
   // toggleStates 변경 시 골드 계산 실행
 
@@ -688,12 +873,14 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     return value.toLocaleString(); // 숫자를 ,로 구분
   }
 
-  const totalGold = Object.keys(charAdjustments).reduce((sum, charName) => {
-    const charGold =
-      (goldRewards[charName] || 0) -
-      charAdjustments[charName]?.consumedGold +
-      charAdjustments[charName]?.extraGold;
-    return sum + charGold;
+  const totalGold = activeTabData.activeCharacters.reduce((sum, charName) => {
+    const raidGold = activeTabData.goldRewards[charName] || 0;
+
+    const consumedGold =
+      activeTabData.charAdjustments[charName]?.consumedGold || 0;
+    const extraGold = activeTabData.charAdjustments[charName]?.extraGold || 0;
+
+    return sum + raidGold - consumedGold + extraGold;
   }, 0);
 
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -707,86 +894,143 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     setIsDropdownVisible((prev) => !prev);
   };
 
-  const [tabs, setTabs] = useState<Array<{ id: number; name: string }>>(() => {
-    const savedTabs = localStorage.getItem("tabs");
-    return savedTabs ? JSON.parse(savedTabs) : [{ id: 1, name: "탭 1" }];
-  });
-  const [activeTab, setActiveTab] = useState<number>(1);
-  const [tabData, setTabData] = useState<Record<number, any>>({});
-  const [isTabModalOpen, setTabModalOpen] = useState(false);
+  const displayedCharacters = activeTabData.characters
+    .filter(
+      (char: CharacterData) =>
+        activeTabData.activeCharacters.includes(char.CharacterName) &&
+        char.ServerName === activeTabData.selectedServer
+    )
+    .sort(
+      (a, b) =>
+        parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+        parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+    );
 
-  useEffect(() => {
-    const savedData = localStorage.getItem("tabData");
-    if (savedData) {
-      setTabData(JSON.parse(savedData));
+  // Functions for RaidTable
+  const handleSetToggleStates = (key: string, newState: number) => {
+    const updatedToggleStates = {
+      ...activeTabData.toggleStates,
+      [key]: newState,
+    };
+
+    // Update toggleStates in TabData
+    updateTabData("toggleStates", updatedToggleStates);
+
+    // Calculate and update goldRewards based on new toggleStates
+    const updatedGoldRewards = calculateGoldRewards(updatedToggleStates);
+    updateTabData("goldRewards", updatedGoldRewards);
+
+    console.log("Updated Toggle States:", updatedToggleStates);
+    console.log("Updated Gold Rewards:", updatedGoldRewards);
+  };
+
+  const handleSetGoldRewards: React.Dispatch<
+    React.SetStateAction<Record<string, number>>
+  > = (newRewards) => {
+    if (typeof newRewards === "function") {
+      const updatedRewards = newRewards(activeTabData.goldRewards);
+      updateTabData("goldRewards", updatedRewards);
+    } else {
+      updateTabData("goldRewards", newRewards);
     }
-  }, []);
+  };
 
+  // Synchronize tabData with LocalStorage
   useEffect(() => {
-    localStorage.setItem("tabs", JSON.stringify(tabs));
     localStorage.setItem("tabData", JSON.stringify(tabData));
-  }, [tabs, tabData]);
+  }, [JSON.stringify(tabData)]);
 
-  const addTab = () => {
-    const newTabId = Date.now();
-    setTabs((prev) => [
-      ...prev,
-      { id: newTabId, name: `탭 ${tabs.length + 1}` },
-    ]);
-    setActiveTab(newTabId);
+  // Synchronize toggleStates with LocalStorage
+  useEffect(() => {
+    localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
+  }, [JSON.stringify(toggleStates)]);
+
+  const resetToggleStates = () => {
+    if (window.confirm("정말 모두 초기화 하시나요?")) {
+      setTabData((prev) => ({
+        ...prev,
+        [currentTabId]: {
+          ...prev[currentTabId],
+          toggleStates: {},
+        },
+      }));
+    }
+  };
+  const resetChaToggleStates = (charName: string) => {
     setTabData((prev) => ({
       ...prev,
-      [newTabId]: {
-        characters: [],
-        selectedServer: null,
-        toggleStates: {},
-        goldRewards: {},
-        consumedGold: 0,
-        extraGold: 0,
+      [currentTabId]: {
+        ...prev[currentTabId],
+        toggleStates: Object.keys(prev[currentTabId].toggleStates).reduce(
+          (acc, key) => {
+            const [, , keyCharName] = key.split("-");
+            if (keyCharName !== charName) {
+              acc[key] = prev[currentTabId].toggleStates[key];
+            }
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        goldRewards: {
+          ...prev[currentTabId].goldRewards,
+          [charName]: 0,
+        },
       },
     }));
-    setTabModalOpen(true);
-  };
-
-  const handleTabSearch = (tabId: number, data: any, search: string) => {
-    setTabData((prev) => ({
-      ...prev,
-      [tabId]: {
-        ...prev[tabId],
-        characters: data,
-        search,
-      },
-    }));
-    setCharacters(data);
-    setSelectedServer(null);
-    setTabModalOpen(false);
-  };
-
-  const activeTabData = tabData[activeTab] || {
-    characters: [],
-    search: "",
-    toggleStates: {},
-    goldRewards: {},
-    consumedGold: 0,
-    extraGold: 0,
   };
 
   return (
     <Container>
+      <TabContainerWrapper>
+        <TabContainer>
+          {Object.keys(tabData)
+            .map(Number)
+            .sort((a, b) => a - b) // Ensure sorted order
+            .map((tabId) => (
+              <TabButton
+                key={tabId}
+                isActive={currentTabId === tabId}
+                onClick={() => setCurrentTabId(tabId)}
+              >
+                {tabData[tabId]?.search || `Tab ${tabId}`} {/* Tab Title */}
+                <CloseButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteTab(tabId);
+                  }}
+                >
+                  &times; {/* X icon */}
+                </CloseButton>
+              </TabButton>
+            ))}
+        </TabContainer>
+        <AddTabButton onClick={openSearchModal}>+</AddTabButton>
+      </TabContainerWrapper>
+
+      {/* Tab Modal for Adding Accounts */}
+      <TabModal
+        isOpen={isTabModalOpen}
+        onClose={() => setTabModalOpen(false)}
+        onSearchComplete={(data, search) => handleSearchComplete(data, search)}
+      />
+
       <DropdownContainer>
         <SelectedServer onClick={toggleDropdown} isOpen={isDropdownVisible}>
           <span>
-            {selectedServer
-              ? selectedServer // 서버 선택 후 표시
-              : "서버를 선택해주세요..."}{" "}
-            {/* 서버 선택 전 표시 */}
+            {activeTabData.selectedServer
+              ? activeTabData.selectedServer
+              : "서버를 선택 해 주세요..."}
           </span>
           <ArrowIcon isOpen={isDropdownVisible} />
         </SelectedServer>
 
         <ServerList isVisible={isDropdownVisible}>
-          {servers
-            .filter((server) => server !== selectedServer) // 선택된 서버 제외
+          {activeTabData.servers
+            .filter(
+              (server) =>
+                typeof server === "string" &&
+                server !== activeTabData.selectedServer
+            )
             .map((server) => (
               <ServerItem
                 key={server}
@@ -798,87 +1042,102 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
         </ServerList>
       </DropdownContainer>
 
-      {selectedServer && (
+      {activeTabData.selectedServer && displayedCharacters.length > 0 && (
         <>
           <CharacterRow>
-            {filteredCharacters.map((char, index) => (
-              <CharacterCard key={index}>
-                <CharacterImage
-                  src={char?.CharacterImage || "/img/default-character.png"}
-                  alt={char?.CharacterName || "No Character Selected"}
-                  onClick={() => handleImageClick(char?.CharacterImage || "")}
-                />
-                <CharacterName>
-                  {char?.CharacterName || "캐릭터 선택"}
-                </CharacterName>
-                <p>
-                  <strong>아이템 레벨: </strong>
-                  {char?.ItemAvgLevel || "N/A"}
-                </p>
-                <p>
-                  <strong>전투 레벨: </strong>
-                  {char?.CharacterLevel || "N/A"}
-                </p>
-                <GoldAdjustmentBox>
-                  <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
-                    소비골드
-                  </GoldLabel>
-                  <GoldInput
-                    id={`consumedGold-${char.CharacterName}`}
-                    value={formatNumberWithCommas(
-                      charAdjustments[char.CharacterName]?.consumedGold || 0
-                    )}
-                    onChange={(e) => {
-                      const value = parseInt(
-                        e.target.value.replace(/,/g, ""),
-                        10
-                      );
-                      handleAdjustmentChange(
-                        char.CharacterName,
-                        "consumedGold",
-                        isNaN(value) ? 0 : value
-                      );
-                    }}
+            {displayedCharacters.map(
+              (
+                char: {
+                  CharacterImage: any;
+                  CharacterName: string;
+                  ItemAvgLevel: any;
+                  CharacterLevel: any;
+                },
+                index: React.Key | null | undefined
+              ) => (
+                <CharacterCard key={index}>
+                  <CharacterImage
+                    src={char?.CharacterImage || "/img/default-character.png"}
+                    alt={char?.CharacterName || "No Character Selected"}
+                    onClick={() => handleImageClick(char?.CharacterImage || "")}
                   />
-                </GoldAdjustmentBox>
+                  <CharacterName>
+                    {char?.CharacterName || "No Name"}
+                  </CharacterName>
+                  <p>
+                    <strong>아이템 레벨:</strong> {char?.ItemAvgLevel || "N/A"}
+                  </p>
+                  <p>
+                    <strong>전투 레벨:</strong> {char?.CharacterLevel || "N/A"}
+                  </p>
 
-                <GoldAdjustmentBox>
-                  <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
-                    추가골드
-                  </GoldLabel>
-                  <GoldInput
-                    id={`extraGold-${char.CharacterName}`}
-                    value={formatNumberWithCommas(
-                      charAdjustments[char.CharacterName]?.extraGold || 0
-                    )}
-                    onChange={(e) => {
-                      const value = parseInt(
-                        e.target.value.replace(/,/g, ""),
-                        10
-                      );
-                      handleAdjustmentChange(
-                        char.CharacterName,
-                        "extraGold",
-                        isNaN(value) ? 0 : value
-                      );
-                    }}
-                  />
-                </GoldAdjustmentBox>
-                <CharacterBox>
-                  <ImageBox />
-                  <BoxContent>
-                    골드:{" "}
-                    <strong>
-                      {formatNumberWithCommas(
-                        (goldRewards[char.CharacterName] || 0) -
-                          charAdjustments[char.CharacterName]?.consumedGold +
-                          charAdjustments[char.CharacterName]?.extraGold
+                  <GoldAdjustmentBox>
+                    <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
+                      소비골드
+                    </GoldLabel>
+                    <GoldInput
+                      id={`consumedGold-${char.CharacterName}`}
+                      value={formatNumberWithCommas(
+                        activeTabData.charAdjustments[char.CharacterName]
+                          ?.consumedGold || 0
                       )}
-                    </strong>
-                  </BoxContent>
-                </CharacterBox>
-              </CharacterCard>
-            ))}
+                      onChange={(e) => {
+                        const value = parseInt(
+                          e.target.value.replace(/,/g, ""),
+                          10
+                        );
+                        handleAdjustmentChange(
+                          char.CharacterName,
+                          "consumedGold",
+                          isNaN(value) ? 0 : value
+                        );
+                      }}
+                    />
+                  </GoldAdjustmentBox>
+
+                  <GoldAdjustmentBox>
+                    <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
+                      추가골드
+                    </GoldLabel>
+                    <GoldInput
+                      id={`extraGold-${char.CharacterName}`}
+                      value={formatNumberWithCommas(
+                        activeTabData.charAdjustments[char.CharacterName]
+                          ?.extraGold || 0
+                      )}
+                      onChange={(e) => {
+                        const value = parseInt(
+                          e.target.value.replace(/,/g, ""),
+                          10
+                        );
+                        handleAdjustmentChange(
+                          char.CharacterName,
+                          "extraGold",
+                          isNaN(value) ? 0 : value
+                        );
+                      }}
+                    />
+                  </GoldAdjustmentBox>
+
+                  <CharacterBox>
+                    <ImageBox />
+                    <BoxContent>
+                      골드:{" "}
+                      <strong>
+                        {formatNumberWithCommas(
+                          (activeTabData.goldRewards[char.CharacterName] || 0) -
+                            (activeTabData.charAdjustments[char.CharacterName]
+                              ?.consumedGold || 0) +
+                            (activeTabData.charAdjustments[char.CharacterName]
+                              ?.extraGold || 0)
+                        )}
+                      </strong>
+                    </BoxContent>
+                    {/* Other UI elements */}
+                  </CharacterBox>
+                </CharacterCard>
+              )
+            )}
             <AddCharacterButton onClick={toggleCharacterListModal}>
               <PlusIcon />
             </AddCharacterButton>
@@ -902,11 +1161,17 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
       <MenuPanel isOpen={isMenuOpen}>
         <ContentWrapper>
           <RaidTable
-            server={selectedServer}
-            characters={filteredCharacters}
-            toggleStates={toggleStates}
-            setToggleStates={handleToggle}
-            setGoldRewards={setGoldRewards}
+            setToggleStates={handleSetToggleStates}
+            setGoldRewards={(rewards) => handleSetGoldRewards(rewards)}
+            characters={activeTabData.activeCharacters.map((charName) =>
+              activeTabData.characters.find(
+                (char) => char.CharacterName === charName
+              )
+            )}
+            toggleStates={activeTabData.toggleStates}
+            resetToggleStates={resetToggleStates}
+            resetChaToggleStates={resetChaToggleStates} // Function with parameter
+            goldRewards={activeTabData.goldRewards}
             raidValues={RaidValues}
           />
         </ContentWrapper>
@@ -918,22 +1183,28 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
       {isCharacterListModalOpen && (
         <CharacterListModalWrapper onClick={toggleCharacterListModal}>
           <CharacterListModal onClick={(e) => e.stopPropagation()}>
-            <h2>캐릭터 목록</h2>
-            {filteredModalCharacters.map((char, index) => (
-              <CharacterListItem
-                key={index}
-                onClick={() => handleCharacterToggle(char.CharacterName)}
-              >
-                <div>
-                  {char.CharacterName} - {char.ItemAvgLevel}
-                </div>
-                <Checkbox
-                  checked={activeCharacters.includes(char.CharacterName)}
-                  onChange={() => handleCharacterToggle(char.CharacterName)}
-                  onClick={(e) => e.stopPropagation()} // 부모의 onClick 이벤트와 겹치지 않도록 방지
-                />
-              </CharacterListItem>
-            ))}
+            <h2>Character List</h2>
+            {filteredModalCharacters.length > 0 ? (
+              filteredModalCharacters.map((char, index) => (
+                <CharacterListItem
+                  key={index}
+                  onClick={() => handleCharacterToggle(char.CharacterName)}
+                >
+                  <div>
+                    {char.CharacterName} - {char.ItemAvgLevel}
+                  </div>
+                  <Checkbox
+                    checked={activeTabData.activeCharacters.includes(
+                      char.CharacterName
+                    )}
+                    onChange={() => handleCharacterToggle(char.CharacterName)}
+                    onClick={(e) => e.stopPropagation()} // Prevent parent click
+                  />
+                </CharacterListItem>
+              ))
+            ) : (
+              <p>No characters available for the selected server.</p>
+            )}
           </CharacterListModal>
         </CharacterListModalWrapper>
       )}

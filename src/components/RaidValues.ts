@@ -1,16 +1,15 @@
-export const RaidValues: Record<
-  string, // 카테고리 이름 (예: 카제로스 레이드)
-  Record<
-    string, // 레이드 이름 (예: 카제로스 아브렐슈드)
-    Record<
-      string, // 난이도 (하드, 노말)
-      {
-        minItemLevel: number; // 최소 아이템 레벨
-        phases: Array<{ clearGold: number; bonusGold: number }>; // 각 관문에 대한 보상
-      }
-    >
-  >
-> = {
+type RaidValuesType = {
+  [category: string]: {
+    [raidName: string]: {
+      [raidLevel: string]: {
+        minItemLevel: number;
+        phases: Array<{ clearGold: number; bonusGold: number }>;
+      };
+    };
+  };
+};
+
+export const RaidValues: RaidValuesType = {
   // 카제로스 레이드
   "카제로스 레이드": {
     "2막: 아브렐슈드": {

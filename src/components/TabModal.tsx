@@ -47,26 +47,35 @@ const ModalBody = styled.div`
   margin-top: 20px;
 `;
 
-const LoadingMessage = styled.div`
-  margin-top: 10px;
-  color: #007bff;
-  font-weight: bold;
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+`;
+
+const LoadingSpinner = styled.img`
+  width: 800px;
+  height: 800px;
 `;
 
 type TabModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSearchComplete: (tabId: number, data: any, search: string) => void;
-  tabId: number;
+  onSearchComplete: (data: any[], search: string) => void;
 };
 
 const TabModal: React.FC<TabModalProps> = ({
   isOpen,
   onClose,
   onSearchComplete,
-  tabId,
 }) => {
-  const { setCharacters, setServers, setSelectedServer } = useLayoutContext();
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -79,13 +88,18 @@ const TabModal: React.FC<TabModalProps> = ({
 
       const data = response.data;
 
-      // 검색 완료 시 상위 컴포넌트에 검색 결과 전달
-      onSearchComplete(tabId, data, search);
-      onClose(); // 모달 닫기
+      if (!data || data.length === 0) {
+        alert("검색 결과가 없습니다. 닉네임을 다시 확인하세요.");
+        return; // Exit the function without closing the modal or calling onSearchComplete
+      }
+
+      onSearchComplete(data, search); // Pass data and search to the handler
+      onClose(); // Close the modal
     } catch (error) {
-      console.error("검색 실패:", error);
+      console.error("Search failed:", error);
+      alert("검색 중 오류가 발생했습니다. 다시 시도하세요.");
     } finally {
-      setLoading(false); // 로딩 상태 해제
+      setLoading(false); // Stop loading
     }
   };
 
@@ -103,7 +117,13 @@ const TabModal: React.FC<TabModalProps> = ({
             setSearch={setSearch}
             handleSearch={handleSearchAndClose}
           />
-          {loading && <LoadingMessage>검색 중입니다...</LoadingMessage>}
+          {loading && (
+            <LoadingOverlay>
+              <LoadingSpinner
+                src={`${process.env.PUBLIC_URL}/img/loading.gif`}
+              />
+            </LoadingOverlay>
+          )}
         </ModalBody>
       </ModalContent>
     </ModalOverlay>

@@ -240,23 +240,26 @@ const AccordionContent = styled.div<{ isOpen: boolean }>`
 
 interface RaidTableProps {
   characters: any[];
-  server: string | null;
+  server?: string | null; // Make server optional
   toggleStates: { [key: string]: number };
-  setToggleStates: (key: string, newState: number) => void; // 함수 타입 정의
+  setToggleStates: (key: string, newState: number) => void;
   setGoldRewards: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  resetToggleStates: () => void; // New prop for reset
+  resetChaToggleStates: (charName: string) => void; // Accepts a character name
+  goldRewards: Record<string, number>;
   raidValues: Record<
     string,
     Record<
       string,
       Record<
-        string, // 난이도 (하드, 노말 등)
+        string,
         {
-          minItemLevel: number; // 최소 아이템 레벨
-          phases: Array<{ clearGold: number; bonusGold: number }>; // 각 관문에 대한 골드 정보
+          minItemLevel: number;
+          phases: Array<{ clearGold: number; bonusGold: number }>;
         }
       >
     >
-  >; // RaidValues 타입 정의
+  >;
 }
 
 function RaidTable({
@@ -264,7 +267,10 @@ function RaidTable({
   setGoldRewards,
   characters,
   toggleStates,
+  goldRewards,
   raidValues,
+  resetToggleStates,
+  resetChaToggleStates,
 }: RaidTableProps) {
   const transformRaidValues = (raidValues: typeof RaidValues) => {
     return Object.entries(raidValues).map(([category, raids]) => ({
@@ -322,8 +328,8 @@ function RaidTable({
   ) => {
     const currentState = toggleStates[key] || 0;
     const newState = (currentState + 1) % 3;
-
     const characterName = characters[displayedCharIndex]?.CharacterName;
+
     if (!characterName) return;
 
     // 현재 활성화된 레이드 이름 추적
@@ -349,26 +355,23 @@ function RaidTable({
 
       // 골드 업데이트
       const raidData = getRaidData(raidValues, raidName, raidLevel);
-
       if (raidData && Array.isArray(raidData.phases)) {
         const phaseData = raidData.phases[phaseIndex];
         if (phaseData) {
-          setGoldRewards((prevRewards) => {
-            const updatedRewards = { ...prevRewards };
-            const currentReward = updatedRewards[characterName] || 0;
-            const additionalGold =
-              newState === 1
-                ? phaseData.clearGold
-                : newState === 2
-                ? phaseData.bonusGold
-                : -phaseData.clearGold - phaseData.bonusGold;
+          const additionalGold =
+            newState === 1
+              ? phaseData.clearGold
+              : newState === 2
+              ? phaseData.bonusGold
+              : -(phaseData.clearGold || 0);
 
-            updatedRewards[characterName] = Math.max(
-              0,
-              currentReward + additionalGold
-            );
-            return updatedRewards;
-          });
+          setToggleStates(key, newState);
+
+          // Dynamically update gold rewards in TabData
+          const updatedRewards = { ...goldRewards };
+          updatedRewards[characterName] =
+            (updatedRewards[characterName] || 0) + additionalGold;
+          setGoldRewards(updatedRewards);
         }
       }
 
@@ -401,36 +404,8 @@ function RaidTable({
     });
   };
 
-  // 모든 상태 초기화
-  const resetAll = () => {
-    const isConfirmed = window.confirm("표를 전부 초기화 하겠습니까?");
-    if (isConfirmed) {
-      Object.keys(toggleStates).forEach((key) => {
-        setToggleStates(key, 0);
-      });
-      localStorage.setItem("toggleStates", JSON.stringify({}));
-      setCharacterRaidCounts({}); // 레이드 이름 초기화
-    }
-  };
-
-  // 특정 캐릭터 열 초기화
-  const resetCharacterColumn = (charIndex: number) => {
-    const characterName = characters[charIndex]?.CharacterName;
-    if (!characterName) return;
-
-    // toggleStates에서 해당 캐릭터와 관련된 상태 초기화
-    Object.keys(toggleStates).forEach((key) => {
-      if (key.includes(characterName)) {
-        setToggleStates(key, 0); // 상태 초기화
-      }
-    });
-
-    // 해당 캐릭터의 레이드 선택 상태 초기화
-    setCharacterRaidCounts((prev) => {
-      const updated = { ...prev };
-      delete updated[characterName]; // 캐릭터의 상태 삭제
-      return updated;
-    });
+  const handleGlobalReset = () => {
+    resetToggleStates(); // Trigger a global reset for all toggle states
   };
 
   useEffect(() => {
@@ -459,7 +434,8 @@ function RaidTable({
           <TooltipText>
             사각형은 각 레이드에 관문을 의미합니다. 사각형 색에 따라 레이드
             클리어 상태를 알 수 있습니다. <hr /> <Icon color="blue" /> - 클리어
-            골드, <Icon color="red" />- 더 보기 한 골드
+            골드
+            <br /> <Icon color="red" />- 더 보기 한 골드
           </TooltipText>
         </Instructions>
       </TooltipContainer>
@@ -472,7 +448,7 @@ function RaidTable({
           marginBottom: "10px",
         }}
       >
-        <ResetButton onClick={resetAll}>전체 초기화</ResetButton>
+        <ResetButton onClick={handleGlobalReset}>전체 초기화</ResetButton>
       </div>
       {raidCategories.map((category) => (
         <div key={category.category}>
@@ -490,7 +466,7 @@ function RaidTable({
                   <TableHeader>난이도</TableHeader>
                   {characters.map((char, index) => (
                     <TableHeader key={index}>
-                      {char.CharacterName}
+                      {char?.CharacterName || "No Name"}
                       <div
                         style={{
                           fontSize: "12px",
@@ -532,7 +508,9 @@ function RaidTable({
                       </div>
                       {category.category === "카제로스 레이드" && (
                         <ResetIcon
-                          onClick={() => resetCharacterColumn(index)}
+                          onClick={() =>
+                            resetChaToggleStates(char.CharacterName)
+                          }
                         />
                       )}
                     </TableHeader>
