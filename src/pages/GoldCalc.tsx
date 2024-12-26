@@ -481,14 +481,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   const activeTabData: TabData = tabData[currentTabId] || {
     characters: [],
-    consumedGold: 0,
-    extraGold: 0,
-    goldRewards: {},
     search: "",
+    toggleStates: {},
+    goldRewards: {},
     selectedServer: null,
     servers: [],
-    toggleStates: {},
-    activeCharacters: [], // Ensure activeCharacters is initialized
+    activeCharacters: [],
+    charAdjustments: {},
   };
 
   const updateTabData = (key: string, value: any) => {
@@ -886,11 +885,11 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     setIsDropdownVisible((prev) => !prev);
   };
 
-  const displayedCharacters = activeTabData.characters
+  const displayedCharacters = (activeTabData?.characters || [])
     .filter(
       (char: CharacterData) =>
-        activeTabData.activeCharacters.includes(char.CharacterName) &&
-        char.ServerName === activeTabData.selectedServer
+        (activeTabData?.activeCharacters || []).includes(char.CharacterName) &&
+        char.ServerName === activeTabData?.selectedServer
     )
     .sort(
       (a, b) =>
