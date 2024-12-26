@@ -480,13 +480,12 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   }, []);
 
   const activeTabData: TabData = tabData[currentTabId] || {
+    activeCharacters: [],
     characters: [],
-    search: "",
     toggleStates: {},
     goldRewards: {},
     selectedServer: null,
     servers: [],
-    activeCharacters: [],
     charAdjustments: {},
   };
 
@@ -1158,15 +1157,16 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
           <RaidTable
             setToggleStates={handleSetToggleStates}
             setGoldRewards={(rewards) => handleSetGoldRewards(rewards)}
-            characters={activeTabData.activeCharacters.map((charName) =>
-              activeTabData.characters.find(
-                (char) => char.CharacterName === charName
-              )
+            characters={(activeTabData?.activeCharacters || []).map(
+              (charName) =>
+                activeTabData?.characters?.find(
+                  (char) => char?.CharacterName === charName
+                )
             )}
-            toggleStates={activeTabData.toggleStates}
+            toggleStates={activeTabData?.toggleStates || {}}
             resetToggleStates={resetToggleStates}
             resetChaToggleStates={resetChaToggleStates} // Function with parameter
-            goldRewards={activeTabData.goldRewards}
+            goldRewards={activeTabData?.goldRewards || {}}
             raidValues={RaidValues}
           />
         </ContentWrapper>
