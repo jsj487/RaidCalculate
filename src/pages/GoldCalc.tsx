@@ -1016,20 +1016,24 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
         </SelectedServer>
 
         <ServerList isVisible={isDropdownVisible}>
-          {activeTabData.servers
-            .filter(
-              (server) =>
-                typeof server === "string" &&
-                server !== activeTabData.selectedServer
-            )
-            .map((server) => (
-              <ServerItem
-                key={server}
-                onClick={() => handleServerSelect(server)}
-              >
-                {server}
-              </ServerItem>
-            ))}
+          {(activeTabData?.servers || []).length > 0 ? (
+            activeTabData.servers
+              .filter(
+                (server) =>
+                  typeof server === "string" &&
+                  server !== activeTabData?.selectedServer
+              )
+              .map((server) => (
+                <ServerItem
+                  key={server}
+                  onClick={() => handleServerSelect(server)}
+                >
+                  {server}
+                </ServerItem>
+              ))
+          ) : (
+            <p>No servers available</p>
+          )}
         </ServerList>
       </DropdownContainer>
 
