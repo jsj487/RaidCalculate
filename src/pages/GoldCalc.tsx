@@ -861,15 +861,19 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     return value.toLocaleString(); // 숫자를 ,로 구분
   }
 
-  const totalGold = activeTabData.activeCharacters.reduce((sum, charName) => {
-    const raidGold = activeTabData.goldRewards[charName] || 0;
+  const totalGold = (activeTabData.activeCharacters || []).reduce(
+    (sum, charName) => {
+      const raidGold = activeTabData.goldRewards?.[charName] || 0;
 
-    const consumedGold =
-      activeTabData.charAdjustments[charName]?.consumedGold || 0;
-    const extraGold = activeTabData.charAdjustments[charName]?.extraGold || 0;
+      const consumedGold =
+        activeTabData.charAdjustments?.[charName]?.consumedGold || 0;
+      const extraGold =
+        activeTabData.charAdjustments?.[charName]?.extraGold || 0;
 
-    return sum + raidGold - consumedGold + extraGold;
-  }, 0);
+      return sum + raidGold - consumedGold + extraGold;
+    },
+    0
+  );
 
   const [isMenuOpen, setMenuOpen] = useState(false);
 
