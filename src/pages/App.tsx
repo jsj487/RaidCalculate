@@ -23,7 +23,6 @@ const GlobalStyle = createGlobalStyle`
 
 function App() {
   const basename = process.env.PUBLIC_URL || ""; // 동적으로 basename 설정
-  const [tabs, setTabs] = useState([{ id: 1 }]);
 
   return (
     <>
@@ -34,18 +33,7 @@ function App() {
             <Layout>
               <Routes>
                 <Route path="/" element={<Main />} />
-                <Route
-                  path="/GoldCalc"
-                  element={<Navigate to="/GoldCalc/1" replace />}
-                />{" "}
-                {/* 기본 탭으로 리다이렉트 */}
-                {tabs.map((tab) => (
-                  <Route
-                    key={tab.id}
-                    path={`/GoldCalc/${tab.id}`}
-                    element={<GoldCalc tabId={tab.id} />}
-                  />
-                ))}
+                <Route path="/GoldCalc" element={<GoldCalc tabId={0} />} />
               </Routes>
             </Layout>
           </LayoutProvider>

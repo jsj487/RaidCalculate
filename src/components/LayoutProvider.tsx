@@ -109,7 +109,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
       handleSearchComplete(data, effectiveSearch);
 
       // Navigate to the tab
-      navigate(`/GoldCalc/1`);
+      navigate(`/GoldCalc`);
     } catch (error) {
       console.error("검색 실패:", error);
       setError("검색 중 오류가 발생했습니다. 다시 시도하세요.");

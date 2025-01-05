@@ -33,16 +33,20 @@ const Container = styled.div`
 const TabContainerWrapper = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Align tabs to the left and + button to the right */
+  justify-content: space-between; /* 탭을 왼쪽 정렬, 추가 버튼은 오른쪽 정렬 */
   margin-bottom: 10px;
+  padding: 10px; /* 탭 박스의 내부 여백 */
+  background-color: #333; /* 탭 박스 배경색 */
+  border-radius: 8px; /* 테두리 둥글게 */
 `;
 
 const TabContainer = styled.div`
   display: flex;
-  gap: 5px; /* Add spacing between tabs */
+  gap: 10px; /* 탭 간의 여백 */
   background-color: #444;
   border-radius: 8px;
-  overflow: hidden; /* Prevent overflow of tab content */
+  padding: 5px; /* 탭 박스 내부 여백 */
+  overflow: hidden; /* 탭 내용이 박스를 넘지 않도록 */
 `;
 
 const TabButton = styled.button<{ isActive: boolean }>`
@@ -50,14 +54,21 @@ const TabButton = styled.button<{ isActive: boolean }>`
   background-color: ${(props) => (props.isActive ? "#565656" : "#444")};
   border: none;
   padding: 10px 20px;
-  position: relative;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px; /* Space between text and X button */
+  justify-content: center;
+  gap: 8px; /* 텍스트와 닫기 버튼 사이의 간격 */
+  border-radius: 4px; /* 탭의 각을 둥글게 */
+  transition: background-color 0.2s ease; /* 호버 시 부드러운 전환 효과 */
 
   &:hover {
     background-color: ${(props) => (props.isActive ? "#565656" : "#3e3e3e")};
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.3); /* 포커스 시 강조 효과 */
   }
 `;
 
@@ -71,25 +82,29 @@ const CloseButton = styled.button`
   &:hover {
     color: #fff;
   }
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 const AddTabButton = styled.button`
-  background-color: #565656;
-  color: white;
+  background-color: #555;
+  color: #fff;
   border: none;
-  padding: 10px;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  padding: 10px 13px;
+  border-radius: 4px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
   margin-left: 10px;
+  transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #3e3e3e;
+    background-color: #666;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.3); /* 포커스 시 강조 효과 */
   }
 `;
 
@@ -443,11 +458,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   /** Context 데이터 */
   const { characters, selectedServer, handleSearch } = useLayoutContext();
 
-  useEffect(() => {
-    const storedTabData = JSON.parse(localStorage.getItem("TabData") || "{}");
-    setTabData(storedTabData); // 상태 업데이트
-  }, []);
-
   const [tabData, setTabData] = useState<Record<number, any>>(() => {
     const savedData = localStorage.getItem("tabData");
     const parsedData = savedData ? JSON.parse(savedData) : {};
@@ -509,6 +519,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
       .slice(0, 6)
       .map((char) => char.CharacterName);
     updateTabData("activeCharacters", newActiveCharacters); // Update activeCharacters in tabData
+    setIsDropdownVisible(false);
   };
 
   const handleSearchComplete = (data: CharacterData[], search: string) => {
@@ -622,17 +633,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
   });
 
-  const [charAdjustments, setCharAdjustments] = useState<
-    Record<string, { consumedGold: number; extraGold: number }>
-  >(() => {
-    const initialState = characters.reduce((acc, char) => {
-      acc[char.CharacterName] = { consumedGold: 0, extraGold: 0 };
-      return acc;
-    }, {} as Record<string, { consumedGold: number; extraGold: number }>);
-    const storedAdjustments = localStorage.getItem("charAdjustments");
-    return storedAdjustments ? JSON.parse(storedAdjustments) : initialState;
-  });
-
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
     if (storedActiveCharacters) {
@@ -672,6 +672,19 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   }, [tabData]);
 
   /**useEffect */
+  useEffect(() => {
+    const savedTabId = localStorage.getItem("currentTabId");
+    if (savedTabId !== null) {
+      setCurrentTabId(JSON.parse(savedTabId));
+    } else {
+      setCurrentTabId(0); // 저장된 값이 없을 때만 초기화
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("currentTabId", JSON.stringify(currentTabId));
+  }, [currentTabId]);
+
   useEffect(() => {
     localStorage.setItem("consumedGold", consumedGold.toString());
   }, [consumedGold]);
@@ -976,6 +989,16 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }));
   };
 
+  useEffect(() => {
+    // If no tab is currently selected or the current tab is invalid, set the first tab as active
+    if (currentTabId === null || !tabData[currentTabId]) {
+      const firstTabId = Object.keys(tabData).map(Number)[0]; // Get the first tab ID
+      if (firstTabId !== undefined) {
+        setCurrentTabId(firstTabId); // Set the first tab as active
+      }
+    }
+  }, [tabData, currentTabId]);
+
   return (
     <Container>
       <TabContainerWrapper>
@@ -1074,30 +1097,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                   </p>
 
                   <GoldAdjustmentBox>
-                    <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
-                      소비골드
-                    </GoldLabel>
-                    <GoldInput
-                      id={`consumedGold-${char.CharacterName}`}
-                      value={formatNumberWithCommas(
-                        activeTabData.charAdjustments[char.CharacterName]
-                          ?.consumedGold || 0
-                      )}
-                      onChange={(e) => {
-                        const value = parseInt(
-                          e.target.value.replace(/,/g, ""),
-                          10
-                        );
-                        handleAdjustmentChange(
-                          char.CharacterName,
-                          "consumedGold",
-                          isNaN(value) ? 0 : value
-                        );
-                      }}
-                    />
-                  </GoldAdjustmentBox>
-
-                  <GoldAdjustmentBox>
                     <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
                       추가골드
                     </GoldLabel>
@@ -1115,6 +1114,30 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                         handleAdjustmentChange(
                           char.CharacterName,
                           "extraGold",
+                          isNaN(value) ? 0 : value
+                        );
+                      }}
+                    />
+                  </GoldAdjustmentBox>
+
+                  <GoldAdjustmentBox>
+                    <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
+                      소비골드
+                    </GoldLabel>
+                    <GoldInput
+                      id={`consumedGold-${char.CharacterName}`}
+                      value={formatNumberWithCommas(
+                        activeTabData.charAdjustments[char.CharacterName]
+                          ?.consumedGold || 0
+                      )}
+                      onChange={(e) => {
+                        const value = parseInt(
+                          e.target.value.replace(/,/g, ""),
+                          10
+                        );
+                        handleAdjustmentChange(
+                          char.CharacterName,
+                          "consumedGold",
                           isNaN(value) ? 0 : value
                         );
                       }}

@@ -14,7 +14,7 @@ interface GoldCalcContextProps {
   handleSearchComplete: (data: CharacterData[], search: string) => void;
 }
 
-const GoldCalcContext = createContext<GoldCalcContextProps | undefined>(
+export const GoldCalcContext = createContext<GoldCalcContextProps | undefined>(
   undefined
 );
 
@@ -25,14 +25,6 @@ export const GoldCalcProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [tabData, setTabData] = useState<Record<string, any>>({});
   const [tabCounter, setTabCounter] = useState<number>(0);
-
-  const updateCurrentTabId = (id: number) => {
-    if (id !== null) {
-      setCurrentTabId(id);
-    } else {
-      console.error("Invalid Tab ID:", id);
-    }
-  };
 
   const handleSearchComplete = (data: CharacterData[], search: string) => {
     if (!data || data.length === 0) {

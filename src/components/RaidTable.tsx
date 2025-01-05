@@ -296,7 +296,7 @@ function RaidTable({
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     () =>
       raidCategories.reduce(
-        (acc, category) => ({ ...acc, [category.category]: true }),
+        (acc, category) => ({ ...acc, [category.category]: false }),
         {}
       )
   );
