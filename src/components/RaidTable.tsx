@@ -231,12 +231,27 @@ const AccordionIcon = styled.span<{ isOpen: boolean }>`
   transition: transform 0.3s ease;
 `;
 
+const IconWrapper = styled.div`
+  display: flex;
+
+  img {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+  }
+`;
+
 const AccordionContent = styled.div<{ isOpen: boolean }>`
   overflow: hidden; /* 스크롤바 숨김 */
   max-height: ${(props) =>
     props.isOpen ? "1000px" : "0"}; /* 열릴 때와 닫힐 때의 높이 설정 */
   transition: max-height 0.6s ease-in-out; /* 스르륵 열리고 닫히는 효과 */
 `;
+
+interface Material {
+  name: string;
+  quantity: number;
+}
 
 interface RaidTableProps {
   characters: any[];
@@ -255,7 +270,12 @@ interface RaidTableProps {
         string,
         {
           minItemLevel: number;
-          phases: Array<{ clearGold: number; bonusGold: number }>;
+          phases: Array<{
+            clearGold: number;
+            bonusGold: number;
+            clearMaterials: Material[];
+            bonusMaterials: Material[];
+          }>;
         }
       >
     >
@@ -301,7 +321,19 @@ function RaidTable({
       )
   );
 
-  const getRaidData = (raidValues: any, raidName: string, level: string) => {
+  const getRaidData = (
+    raidValues: any,
+    raidName: string,
+    level: string
+  ): {
+    minItemLevel: number;
+    phases: Array<{
+      clearGold: number;
+      bonusGold: number;
+      clearMaterials: Material[];
+      bonusMaterials: Material[];
+    }>;
+  } | null => {
     // 모든 카테고리를 순회하며 raidName과 level이 일치하는 데이터를 찾는다
     for (const category of Object.keys(raidValues)) {
       const raidCategory = raidValues[category];
@@ -425,6 +457,14 @@ function RaidTable({
     setCharacterRaidCounts(newCounts);
   }, [toggleStates]);
 
+  const categoryIcons: Record<string, string | null> = {
+    "카제로스 레이드": `${process.env.PUBLIC_URL}/img/Kazeroth_Raid.png`,
+    "에픽 레이드": `${process.env.PUBLIC_URL}/img/Epic_Raid.png`,
+    "군단장 레이드": `${process.env.PUBLIC_URL}/img/Commander_Raid.png`,
+    "어비스 던전": `${process.env.PUBLIC_URL}/img/Abyss_Dungeon.png`,
+    "싱글 레이드": `${process.env.PUBLIC_URL}/img/Solo_Raid.png`, // 아이콘이 없는 경우
+  };
+
   return (
     <TableContainer>
       <Title>주간 레이드</Title>
@@ -456,8 +496,15 @@ function RaidTable({
             <AccordionIcon isOpen={openCategories[category.category]}>
               ▶
             </AccordionIcon>
+            <IconWrapper>
+              <img
+                src={categoryIcons[category.category]!}
+                alt={`${category.category} icon`}
+              />
+            </IconWrapper>
             {category.category}
           </AccordionTitle>
+
           <AccordionContent isOpen={openCategories[category.category]}>
             <Table>
               <thead>
@@ -562,7 +609,8 @@ function RaidTable({
                                       raid.name,
                                       level
                                     );
-                                    return Array.isArray(raidData?.phases)
+                                    return raidData &&
+                                      Array.isArray(raidData.phases)
                                       ? raidData.phases.length
                                       : 0;
                                   })(),
