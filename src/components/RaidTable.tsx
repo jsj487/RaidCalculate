@@ -262,6 +262,7 @@ interface RaidTableProps {
   resetToggleStates: () => void; // New prop for reset
   resetChaToggleStates: (charName: string) => void; // Accepts a character name
   goldRewards: Record<string, number>;
+  materialRewards: Record<string, { clear: Material[]; bonus: Material[] }>;
   raidValues: Record<
     string,
     Record<
@@ -390,6 +391,9 @@ function RaidTable({
       if (raidData && Array.isArray(raidData.phases)) {
         const phaseData = raidData.phases[phaseIndex];
         if (phaseData) {
+          console.log("Clear Materials:", phaseData.clearMaterials);
+          console.log("Bonus Materials:", phaseData.bonusMaterials);
+
           const additionalGold =
             newState === 1
               ? phaseData.clearGold
@@ -453,7 +457,6 @@ function RaidTable({
       }
     });
 
-    console.log("Updated characterRaidCounts:", newCounts);
     setCharacterRaidCounts(newCounts);
   }, [toggleStates]);
 
@@ -525,7 +528,31 @@ function RaidTable({
                               : "#ccc",
                         }}
                       >
-                        {characterRaidCounts[char.CharacterName]?.size || 0}/3
+                        {/* ItemAvgLevel */}
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "bold",
+                            color: "#FFD700",
+                          }}
+                        >
+                          [{char?.ItemMaxLevel || "No Level"}]
+                        </div>
+
+                        {/* Raid Count */}
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            marginTop: "5px",
+                            color:
+                              (characterRaidCounts[char.CharacterName]?.size ||
+                                0) >= 3
+                                ? "red"
+                                : "#ccc",
+                          }}
+                        >
+                          {characterRaidCounts[char.CharacterName]?.size || 0}/3
+                        </div>
                       </div>
                       <div
                         style={{
@@ -665,3 +692,9 @@ function RaidTable({
 }
 
 export default RaidTable;
+function setMaterials(arg0: {
+  clearMaterials: Material[];
+  bonusMaterials: Material[];
+}) {
+  throw new Error("Function not implemented.");
+}

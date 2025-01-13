@@ -12,6 +12,7 @@ import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져�
 import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
+import { getMaterialImagePath } from "../utils/materialNameMap";
 
 const slideIn = keyframes`
   from {
@@ -217,7 +218,33 @@ const CharacterCard = styled.div`
   }
 `;
 
+const MaterialCard = styled.div`
+  width: 500px;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+
+  @media (max-width: 768px) {
+    width: 150px;
+    padding: 8px;
+  }
+`;
+
 const CharacterImage = styled.img`
+  width: 100%;
+  height: 270px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    height: 200px;
+  }
+`;
+
+const MaterialCharacterImage = styled.img`
   width: 100%;
   height: 270px;
   object-fit: cover;
@@ -449,9 +476,16 @@ type TabData = {
   toggleStates: Record<string, number>;
   goldRewards: Record<string, number>;
   selectedServer: string | null;
+  selectedRaid: string | null; // 추가
   servers: string[];
   activeCharacters: string[];
   charAdjustments: Record<string, { consumedGold: number; extraGold: number }>;
+  materialRewards: Record<string, { clear: Material[]; bonus: Material[] }>;
+};
+
+type Material = {
+  name: string;
+  quantity: number;
 };
 
 const GoldCalc = ({ tabId }: { tabId: number }) => {
@@ -491,6 +525,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     characters: [],
     toggleStates: {},
     goldRewards: {},
+    materialRewards: {},
     selectedServer: null,
     servers: [],
     charAdjustments: {},
@@ -615,23 +650,9 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }
   );
 
-  const [goldRewards, setGoldRewards] = useState<Record<string, number>>(() => {
-    const storedGoldRewards = localStorage.getItem("goldRewards");
-    return storedGoldRewards ? JSON.parse(storedGoldRewards) : {};
-  });
-
   const [modalImage, setModalImage] = useState<string | null>(null);
 
   const [isCharacterListModalOpen, setCharacterListModalOpen] = useState(false);
-
-  const [consumedGold, setConsumedGold] = useState<number>(() => {
-    const storedConsumedGold = localStorage.getItem("consumedGold");
-    return storedConsumedGold ? parseInt(storedConsumedGold, 10) : 0;
-  });
-  const [extraGold, setExtraGold] = useState<number>(() => {
-    const storedExtraGold = localStorage.getItem("extraGold");
-    return storedExtraGold ? parseInt(storedExtraGold, 10) : 0;
-  });
 
   const [activeCharacters, setActiveCharacters] = useState<string[]>(() => {
     const storedActiveCharacters = localStorage.getItem("activeCharacters");
@@ -682,20 +703,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("currentTabId", JSON.stringify(currentTabId));
-  }, [currentTabId]);
-
-  useEffect(() => {
-    localStorage.setItem("consumedGold", consumedGold.toString());
-  }, [consumedGold]);
-  useEffect(() => {
-    localStorage.setItem("extraGold", extraGold.toString());
-  }, [extraGold]);
-
-  useEffect(() => {
-    localStorage.setItem("activeCharacters", JSON.stringify(activeCharacters));
-  }, [activeCharacters]);
-  useEffect(() => {
     // activeCharacters를 ItemAvgLevel 순으로 정렬
     const sortedActiveCharacters = [...activeCharacters].sort(
       (aName, bName) => {
@@ -735,11 +742,9 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   useEffect(() => {
     if (activeTabData?.toggleStates) {
-      console.log("Recalculating goldRewards for TabData...");
       const updatedGoldRewards = calculateGoldRewards(
         activeTabData?.toggleStates || {}
       );
-      console.log("Updated Gold Rewards:", updatedGoldRewards);
 
       updateTabData("goldRewards", updatedGoldRewards);
     } else {
@@ -759,23 +764,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
       document.body.style.overflow = "auto";
     };
   }, [isCharacterListModalOpen]);
-
-  // Local Storage 저장
-  React.useEffect(() => {
-    localStorage.setItem("toggleStates", JSON.stringify(toggleStates));
-  }, [toggleStates]);
-
-  React.useEffect(() => {
-    localStorage.setItem("selectedServer", selectedServer || "");
-  }, [selectedServer]);
-
-  React.useEffect(() => {
-    localStorage.setItem("characters", JSON.stringify(characters));
-  }, [characters]);
-
-  React.useEffect(() => {
-    localStorage.setItem("goldRewards", JSON.stringify(goldRewards));
-  }, [goldRewards]);
 
   /** 이벤트 핸들러 */
   const handleImageClick = (image: string) => {
@@ -813,8 +801,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     };
 
     updateTabData("charAdjustments", updatedCharAdjustments);
-
-    console.log("Updated charAdjustments:", updatedCharAdjustments);
   };
 
   const filteredModalCharacters = (activeTabData?.characters || [])
@@ -861,9 +847,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   };
 
   useEffect(() => {
-    console.log("Toggle States Changed:", activeTabData.toggleStates);
     const updatedRewards = calculateGoldRewards(activeTabData.toggleStates);
-    console.log("Recalculated Gold Rewards:", updatedRewards);
   }, [activeTabData.toggleStates]);
 
   // toggleStates 변경 시 골드 계산 실행
@@ -919,12 +903,15 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     // Update toggleStates in TabData
     updateTabData("toggleStates", updatedToggleStates);
 
-    // Calculate and update goldRewards based on new toggleStates
+    // Update goldRewards
     const updatedGoldRewards = calculateGoldRewards(updatedToggleStates);
     updateTabData("goldRewards", updatedGoldRewards);
 
-    console.log("Updated Toggle States:", updatedToggleStates);
-    console.log("Updated Gold Rewards:", updatedGoldRewards);
+    // Update materialRewards
+    const updatedMaterialRewards =
+      calculateMaterialRewards(updatedToggleStates);
+    console.log("Updated Material Rewards:", updatedMaterialRewards);
+    updateTabData("materialRewards", updatedMaterialRewards);
   };
 
   const handleSetGoldRewards: React.Dispatch<
@@ -999,6 +986,46 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }
   }, [tabData, currentTabId]);
 
+  const [isGoldView, setIsGoldView] = useState(true);
+
+  const toggleView = () => {
+    setIsGoldView((prev) => !prev);
+  };
+
+  const calculateMaterialRewards = (
+    toggleStates: Record<string, number>
+  ): Record<string, { clear: Material[]; bonus: Material[] }> => {
+    const materialRewards: Record<
+      string,
+      { clear: Material[]; bonus: Material[] }
+    > = {};
+
+    Object.entries(toggleStates).forEach(([key, state]) => {
+      const [raidName, raidLevel, charName, phaseIndex] = key.split("-");
+
+      if (!charName || state === 0) return;
+
+      const phase = Object.values(RaidValues).flatMap((category) =>
+        Object.values(category?.[raidName]?.[raidLevel]?.phases || [])
+      )[parseInt(phaseIndex, 10)];
+
+      if (!phase) return;
+
+      if (!materialRewards[charName]) {
+        materialRewards[charName] = { clear: [], bonus: [] };
+      }
+
+      if (state === 1) {
+        materialRewards[charName].clear.push(...phase.clearMaterials);
+      } else if (state === 2) {
+        materialRewards[charName].clear.push(...phase.clearMaterials);
+        materialRewards[charName].bonus.push(...phase.bonusMaterials);
+      }
+    });
+
+    return materialRewards;
+  };
+
   return (
     <Container>
       <TabContainerWrapper>
@@ -1035,6 +1062,22 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
         onSearchComplete={(data, search) => handleSearchComplete(data, search)}
       />
 
+      <div style={{ marginBottom: "20px", textAlign: "center" }}>
+        <button
+          onClick={toggleView}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: isGoldView ? "#565656" : "#FF69B4",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          {isGoldView ? "Show Materials" : "Show Gold"}
+        </button>
+      </div>
+
       <DropdownContainer>
         <SelectedServer onClick={toggleDropdown} isOpen={isDropdownVisible}>
           <span>
@@ -1069,104 +1112,363 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
       {activeTabData.selectedServer && displayedCharacters.length > 0 && (
         <>
-          <CharacterRow>
-            {displayedCharacters.map(
-              (
-                char: {
-                  CharacterImage: any;
-                  CharacterName: string;
-                  ItemAvgLevel: any;
-                  CharacterLevel: any;
-                },
-                index: React.Key | null | undefined
-              ) => (
-                <CharacterCard key={index}>
-                  <CharacterImage
-                    src={char?.CharacterImage || "/img/default-character.png"}
-                    alt={char?.CharacterName || "No Character Selected"}
-                    onClick={() => handleImageClick(char?.CharacterImage || "")}
-                  />
-                  <CharacterName>
-                    {char?.CharacterName || "No Name"}
-                  </CharacterName>
-                  <p>
-                    <strong>아이템 레벨:</strong> {char?.ItemAvgLevel || "N/A"}
-                  </p>
-                  <p>
-                    <strong>전투 레벨:</strong> {char?.CharacterLevel || "N/A"}
-                  </p>
-
-                  <GoldAdjustmentBox>
-                    <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
-                      추가골드
-                    </GoldLabel>
-                    <GoldInput
-                      id={`extraGold-${char.CharacterName}`}
-                      value={formatNumberWithCommas(
-                        activeTabData.charAdjustments[char.CharacterName]
-                          ?.extraGold || 0
-                      )}
-                      onChange={(e) => {
-                        const value = parseInt(
-                          e.target.value.replace(/,/g, ""),
-                          10
-                        );
-                        handleAdjustmentChange(
-                          char.CharacterName,
-                          "extraGold",
-                          isNaN(value) ? 0 : value
-                        );
-                      }}
+          {isGoldView && (
+            <CharacterRow>
+              {displayedCharacters.map(
+                (
+                  char: {
+                    CharacterImage: any;
+                    CharacterName: string;
+                    ItemAvgLevel: any;
+                    CharacterLevel: any;
+                  },
+                  index: React.Key | null | undefined
+                ) => (
+                  <CharacterCard key={index}>
+                    <CharacterImage
+                      src={char?.CharacterImage || "/img/default-character.png"}
+                      alt={char?.CharacterName || "No Character Selected"}
+                      onClick={() =>
+                        handleImageClick(char?.CharacterImage || "")
+                      }
                     />
-                  </GoldAdjustmentBox>
+                    <CharacterName>
+                      {char?.CharacterName || "No Name"}
+                    </CharacterName>
+                    <p>
+                      <strong>아이템 레벨:</strong>{" "}
+                      {char?.ItemAvgLevel || "N/A"}
+                    </p>
+                    <p>
+                      <strong>전투 레벨:</strong>{" "}
+                      {char?.CharacterLevel || "N/A"}
+                    </p>
 
-                  <GoldAdjustmentBox>
-                    <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
-                      소비골드
-                    </GoldLabel>
-                    <GoldInput
-                      id={`consumedGold-${char.CharacterName}`}
-                      value={formatNumberWithCommas(
-                        activeTabData.charAdjustments[char.CharacterName]
-                          ?.consumedGold || 0
-                      )}
-                      onChange={(e) => {
-                        const value = parseInt(
-                          e.target.value.replace(/,/g, ""),
-                          10
-                        );
-                        handleAdjustmentChange(
-                          char.CharacterName,
-                          "consumedGold",
-                          isNaN(value) ? 0 : value
-                        );
-                      }}
-                    />
-                  </GoldAdjustmentBox>
-
-                  <CharacterBox>
-                    <ImageBox />
-                    <BoxContent>
-                      골드:{" "}
-                      <strong>
-                        {formatNumberWithCommas(
-                          (activeTabData.goldRewards[char.CharacterName] || 0) -
-                            (activeTabData.charAdjustments[char.CharacterName]
-                              ?.consumedGold || 0) +
-                            (activeTabData.charAdjustments[char.CharacterName]
-                              ?.extraGold || 0)
+                    <GoldAdjustmentBox>
+                      <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
+                        추가골드
+                      </GoldLabel>
+                      <GoldInput
+                        id={`extraGold-${char.CharacterName}`}
+                        value={formatNumberWithCommas(
+                          activeTabData.charAdjustments[char.CharacterName]
+                            ?.extraGold || 0
                         )}
-                      </strong>
-                    </BoxContent>
-                    {/* Other UI elements */}
-                  </CharacterBox>
-                </CharacterCard>
-              )
-            )}
-            <AddCharacterButton onClick={toggleCharacterListModal}>
-              <PlusIcon />
-            </AddCharacterButton>
-          </CharacterRow>
+                        onChange={(e) => {
+                          const value = parseInt(
+                            e.target.value.replace(/,/g, ""),
+                            10
+                          );
+                          handleAdjustmentChange(
+                            char.CharacterName,
+                            "extraGold",
+                            isNaN(value) ? 0 : value
+                          );
+                        }}
+                      />
+                    </GoldAdjustmentBox>
+
+                    <GoldAdjustmentBox>
+                      <GoldLabel htmlFor={`consumedGold-${char.CharacterName}`}>
+                        소비골드
+                      </GoldLabel>
+                      <GoldInput
+                        id={`consumedGold-${char.CharacterName}`}
+                        value={formatNumberWithCommas(
+                          activeTabData.charAdjustments[char.CharacterName]
+                            ?.consumedGold || 0
+                        )}
+                        onChange={(e) => {
+                          const value = parseInt(
+                            e.target.value.replace(/,/g, ""),
+                            10
+                          );
+                          handleAdjustmentChange(
+                            char.CharacterName,
+                            "consumedGold",
+                            isNaN(value) ? 0 : value
+                          );
+                        }}
+                      />
+                    </GoldAdjustmentBox>
+
+                    <CharacterBox>
+                      <ImageBox />
+                      <BoxContent>
+                        골드:{" "}
+                        <strong>
+                          {formatNumberWithCommas(
+                            (activeTabData.goldRewards[char.CharacterName] ||
+                              0) -
+                              (activeTabData.charAdjustments[char.CharacterName]
+                                ?.consumedGold || 0) +
+                              (activeTabData.charAdjustments[char.CharacterName]
+                                ?.extraGold || 0)
+                          )}
+                        </strong>
+                      </BoxContent>
+                      {/* Other UI elements */}
+                    </CharacterBox>
+                  </CharacterCard>
+                )
+              )}
+              <AddCharacterButton onClick={toggleCharacterListModal}>
+                <PlusIcon />
+              </AddCharacterButton>
+            </CharacterRow>
+          )}
+
+          {!isGoldView && (
+            <CharacterRow>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)", // 한 행에 3개의 열
+                  gap: "20px", // 각 카드 간의 간격
+                  padding: "20px", // 전체 레이아웃의 내부 여백
+                }}
+              >
+                {displayedCharacters.map((char, index) => (
+                  <MaterialCard
+                    key={index}
+                    style={{
+                      display: "flex",
+                      gap: "20px",
+                      padding: "20px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      backgroundColor: "#fff",
+                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    {/* Left Section: Image and Character Name */}
+                    <div
+                      style={{
+                        flex: "1",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        textAlign: "center",
+                      }}
+                    >
+                      <CharacterImage
+                        src={
+                          char?.CharacterImage || "/img/default-character.png"
+                        }
+                        alt={char?.CharacterName || "No Character Selected"}
+                        onClick={() =>
+                          handleImageClick(char?.CharacterImage || "")
+                        }
+                        style={{
+                          width: "240px",
+                          height: "240px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          marginBottom: "10px",
+                        }}
+                      />
+                      <CharacterName
+                        style={{ fontSize: "21px", fontWeight: "bold" }}
+                      >
+                        {char?.CharacterName || "No Name"}
+                      </CharacterName>
+                    </div>
+
+                    {/* Right Section: Raid Materials and Gold Adjustments */}
+                    <div
+                      style={{
+                        flex: "2",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      {/* Materials Section */}
+                      <div>
+                        <h4 style={{ marginBottom: "10px" }}>획득 재화:</h4>
+                        <ul
+                          style={{
+                            margin: "0",
+                            padding: "20px",
+                            listStyle: "none",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "15px",
+                            backgroundColor: "#f7f7f7",
+                            borderRadius: "10px",
+                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                          }}
+                        >
+                          {(() => {
+                            // Combine clearMaterials and bonusMaterials
+                            const materials = [
+                              ...(activeTabData.materialRewards?.[
+                                char.CharacterName
+                              ]?.clear || []),
+                              ...(activeTabData.materialRewards?.[
+                                char.CharacterName
+                              ]?.bonus || []),
+                            ];
+
+                            // Aggregate materials by name
+                            const aggregatedMaterials = materials.reduce(
+                              (acc, material) => {
+                                const existingMaterial = acc.find(
+                                  (m) => m.name === material.name
+                                );
+                                if (existingMaterial) {
+                                  existingMaterial.quantity +=
+                                    material.quantity;
+                                } else {
+                                  acc.push({ ...material });
+                                }
+                                return acc;
+                              },
+                              [] as { name: string; quantity: number }[]
+                            );
+
+                            return aggregatedMaterials.map((material, i) => {
+                              const imagePath = getMaterialImagePath(
+                                material.name
+                              ); // Fetch image path
+                              return (
+                                <li
+                                  key={i}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    padding: "10px",
+                                    border: "1px solid #eee",
+                                    borderRadius: "8px",
+                                    backgroundColor: "#f9f9f9",
+                                    flex: "1 1 calc(50% - 10px)",
+                                  }}
+                                >
+                                  {/* Material Image */}
+                                  {imagePath && (
+                                    <img
+                                      src={imagePath}
+                                      alt={material.name}
+                                      style={{
+                                        width: "40px",
+                                        height: "40px",
+                                        borderRadius: "4px",
+                                        objectFit: "cover",
+                                      }}
+                                    />
+                                  )}
+                                  {/* Material Name and Quantity */}
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                    }}
+                                  >
+                                    <strong style={{ fontSize: "14px" }}>
+                                      {material.name}
+                                    </strong>
+                                    <span
+                                      style={{
+                                        fontSize: "12px",
+                                        color: "#555",
+                                      }}
+                                    >
+                                      수량: {material.quantity.toLocaleString()}
+                                    </span>
+                                  </div>
+                                </li>
+                              );
+                            });
+                          })()}
+                        </ul>
+                      </div>
+
+                      {/* Gold Adjustments */}
+                      <div style={{ marginTop: "20px" }}>
+                        <GoldAdjustmentBox>
+                          <GoldLabel
+                            htmlFor={`extraGold-${char.CharacterName}`}
+                          >
+                            추가골드
+                          </GoldLabel>
+                          <GoldInput
+                            id={`extraGold-${char.CharacterName}`}
+                            value={formatNumberWithCommas(
+                              activeTabData.charAdjustments[char.CharacterName]
+                                ?.extraGold || 0
+                            )}
+                            onChange={(e) => {
+                              const value = parseInt(
+                                e.target.value.replace(/,/g, ""),
+                                10
+                              );
+                              handleAdjustmentChange(
+                                char.CharacterName,
+                                "extraGold",
+                                isNaN(value) ? 0 : value
+                              );
+                            }}
+                          />
+                        </GoldAdjustmentBox>
+
+                        <GoldAdjustmentBox>
+                          <GoldLabel
+                            htmlFor={`consumedGold-${char.CharacterName}`}
+                          >
+                            소비골드
+                          </GoldLabel>
+                          <GoldInput
+                            id={`consumedGold-${char.CharacterName}`}
+                            value={formatNumberWithCommas(
+                              activeTabData.charAdjustments[char.CharacterName]
+                                ?.consumedGold || 0
+                            )}
+                            onChange={(e) => {
+                              const value = parseInt(
+                                e.target.value.replace(/,/g, ""),
+                                10
+                              );
+                              handleAdjustmentChange(
+                                char.CharacterName,
+                                "consumedGold",
+                                isNaN(value) ? 0 : value
+                              );
+                            }}
+                          />
+                        </GoldAdjustmentBox>
+
+                        <CharacterBox>
+                          <ImageBox />
+                          <BoxContent>
+                            골드:{" "}
+                            <strong>
+                              {formatNumberWithCommas(
+                                (activeTabData.goldRewards[
+                                  char.CharacterName
+                                ] || 0) -
+                                  (activeTabData.charAdjustments[
+                                    char.CharacterName
+                                  ]?.consumedGold || 0) +
+                                  (activeTabData.charAdjustments[
+                                    char.CharacterName
+                                  ]?.extraGold || 0)
+                              )}
+                            </strong>
+                          </BoxContent>
+                        </CharacterBox>
+                      </div>
+                    </div>
+                  </MaterialCard>
+                ))}
+              </div>
+
+              <AddCharacterButton onClick={toggleCharacterListModal}>
+                <PlusIcon />
+              </AddCharacterButton>
+            </CharacterRow>
+          )}
 
           <TotalGoldBox>
             총 순이익 골드: {formatNumberWithCommas(totalGold)}
@@ -1199,6 +1501,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
             resetChaToggleStates={resetChaToggleStates} // Function with parameter
             goldRewards={activeTabData?.goldRewards || {}}
             raidValues={RaidValues}
+            materialRewards={activeTabData?.materialRewards || {}} // 추가
           />
         </ContentWrapper>
       </MenuPanel>

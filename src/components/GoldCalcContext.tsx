@@ -68,9 +68,6 @@ export const GoldCalcProvider: React.FC<{ children: React.ReactNode }> = ({
     setCurrentTabId(newTabId);
   };
 
-  useEffect(() => {
-    console.log("GoldCalc 렌더링. 현재 TabData:", tabData);
-  }, [tabData]);
   return (
     <GoldCalcContext.Provider
       value={{

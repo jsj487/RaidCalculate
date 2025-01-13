@@ -70,12 +70,10 @@ app.get("/api/characters/siblings", async (req, res) => {
 // 정적 파일 제공 (React 빌드 결과물)
 const buildPath = path.join(__dirname, "../build");
 app.use(express.static(buildPath));
-console.log("Serving static files from:", buildPath);
 
 // React의 라우팅을 처리 (SPA 지원)
 app.get("*", (req, res) => {
   const indexPath = path.join(buildPath, "index.html");
-  console.log("Serving index.html from:", indexPath);
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error("Error serving index.html:", err);
@@ -85,6 +83,4 @@ app.get("*", (req, res) => {
 });
 
 // 서버 실행
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => {});
