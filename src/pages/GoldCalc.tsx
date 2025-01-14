@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import styled from "styled-components";
-import { keyframes } from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
@@ -193,11 +192,11 @@ const ArrowIcon = styled(IoIosArrowDown)<{ isOpen: boolean }>`
 
 const CharacterRow = styled.div`
   display: flex;
-  justify-content: center;
   gap: 20px;
+  justify-content: flex-start;
+  align-items: stretch; /* 모든 자식 요소의 height를 동일하게 맞춤 */
+  flex-wrap: wrap;
   margin-top: 20px;
-  flex-wrap: wrap; /* 반응형: 카드가 줄 바꿈되도록 설정 */
-
   @media (max-width: 768px) {
     gap: 10px;
     margin-top: 10px;
@@ -205,26 +204,15 @@ const CharacterRow = styled.div`
 `;
 
 const CharacterCard = styled.div`
-  width: 200px;
-  text-align: center;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  flex: 1; /* 부모 요소와 동일한 높이 설정 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 10px;
-
-  @media (max-width: 768px) {
-    width: 150px;
-    padding: 8px;
-  }
-`;
-
-const MaterialCard = styled.div`
-  width: 500px;
-  text-align: center;
-  background: white;
+  border: 1px solid #ddd;
   border-radius: 8px;
+  background-color: #fff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 10px;
 
   @media (max-width: 768px) {
     width: 150px;
@@ -244,16 +232,22 @@ const CharacterImage = styled.img`
   }
 `;
 
-const MaterialCharacterImage = styled.img`
-  width: 100%;
-  height: 270px;
-  object-fit: cover;
+const CardStyle = css`
+  width: 500px;
+  text-align: center;
+  background: white;
   border-radius: 8px;
-  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
 
   @media (max-width: 768px) {
-    height: 200px;
+    width: 150px;
+    padding: 8px;
   }
+`;
+
+const MaterialCard = styled.div`
+  ${CardStyle}
 `;
 
 const CharacterName = styled.h3`
@@ -305,29 +299,44 @@ const GoldLabel = styled.label`
   color: #333;
 `;
 
-const AddCharacterButton = styled(CharacterCard)`
+const AddCharacterButtonGoldView = styled.div`
+  flex: 1; /* 부모 요소와 동일한 높이 설정 */
+  border: 2px dashed #ccc;
+  background-color: transparent;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #383838;
-  border: 2px dashed #ffffff; /* 점선 테두리 */
   cursor: pointer;
-  transition: all 0.3s;
+  border-radius: 8px;
 
   &:hover {
-    border-color: #ffffff6b; /* 호버 시 색상 변경 */
+    border-color: #aaa;
   }
+`;
 
-  &:hover svg {
-    color: #ffffff6b;
+const AddCharacterButtonNormalView = styled.div`
+  width: 100%;
+  height: 100%;
+  border: 2px dashed #ccc;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 8px;
+
+  &:hover {
+    border-color: #aaa;
   }
 `;
 
 const PlusIcon = styled(FaUserPlus)`
-  font-size: 48px; /* 아이콘 크기 */
-  color: #ffffff;
-  margin-bottom: 8px;
-  transition: all 0.3s;
+  font-size: 48px;
+  color: #aaa;
+
+  &:hover {
+    color: #777;
+  }
 `;
 
 const CharacterListModalWrapper = styled.div`
@@ -481,6 +490,7 @@ type TabData = {
   activeCharacters: string[];
   charAdjustments: Record<string, { consumedGold: number; extraGold: number }>;
   materialRewards: Record<string, { clear: Material[]; bonus: Material[] }>;
+  isGoldView: boolean; // 추가
 };
 
 type Material = {
@@ -494,8 +504,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   const [tabData, setTabData] = useState<Record<number, any>>(() => {
     const savedData = localStorage.getItem("tabData");
-    const parsedData = savedData ? JSON.parse(savedData) : {};
-    return Object.keys(parsedData).length ? parsedData : {};
+    return savedData ? JSON.parse(savedData) : {};
   });
 
   const [tabCounter, setTabCounter] = useState<number>(() => {
@@ -513,13 +522,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     localStorage.setItem("tabData", JSON.stringify(tabData));
   }, [tabData]);
 
-  useEffect(() => {
-    const savedTabData = localStorage.getItem("tabData");
-    if (savedTabData) {
-      setTabData(JSON.parse(savedTabData));
-    }
-  }, []);
-
   const activeTabData: TabData = tabData[currentTabId] || {
     activeCharacters: [],
     characters: [],
@@ -529,6 +531,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     selectedServer: null,
     servers: [],
     charAdjustments: {},
+    isGoldView: true, // 기본값 추가
   };
 
   const updateTabData = (key: string, value: any) => {
@@ -605,6 +608,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
           acc[char.CharacterName] = { consumedGold: 0, extraGold: 0 };
           return acc;
         }, {} as Record<string, { consumedGold: number; extraGold: number }>),
+        isGoldView: true, // 기본값 추가
       },
     }));
     setCurrentTabId(newTabId);
@@ -618,19 +622,24 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   const deleteTab = (tabId: number) => {
     setTabData((prev) => {
+      if (!prev[tabId]) return prev;
+
       const updatedTabData = { ...prev };
       delete updatedTabData[tabId];
 
-      // Reassign tab IDs to keep them sequential
       const reassignedTabData: Record<number, TabData> = {};
+      let newIndex = 0;
+
+      // 순서대로 ID를 다시 할당
       Object.keys(updatedTabData)
         .map(Number)
         .sort((a, b) => a - b)
-        .forEach((id, index) => {
-          reassignedTabData[index + 1] = updatedTabData[id];
+        .forEach((id) => {
+          reassignedTabData[newIndex] = updatedTabData[id];
+          newIndex++;
         });
 
-      // Adjust currentTabId if needed
+      // 현재 탭 ID가 삭제된 경우 다른 탭으로 이동
       if (!reassignedTabData[currentTabId]) {
         const remainingTabIds = Object.keys(reassignedTabData).map(Number);
         setCurrentTabId(
@@ -953,6 +962,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }
   };
 
+  useEffect(() => {
+    const updatedMaterialRewards = calculateMaterialRewards(
+      activeTabData.toggleStates
+    );
+    updateTabData("materialRewards", updatedMaterialRewards);
+  }, [activeTabData.toggleStates]);
+
   const resetChaToggleStates = (charName: string) => {
     setTabData((prev) => ({
       ...prev,
@@ -989,7 +1005,18 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   const [isGoldView, setIsGoldView] = useState(true);
 
   const toggleView = () => {
-    setIsGoldView((prev) => !prev);
+    setTabData((prev) => {
+      // 현재 탭 데이터가 없는 경우 그대로 반환
+      if (!prev[currentTabId]) return prev;
+
+      return {
+        ...prev,
+        [currentTabId]: {
+          ...prev[currentTabId],
+          isGoldView: !prev[currentTabId].isGoldView, // 현재 탭의 isGoldView 값을 토글
+        },
+      };
+    });
   };
 
   const calculateMaterialRewards = (
@@ -1067,14 +1094,16 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
           onClick={toggleView}
           style={{
             padding: "10px 20px",
-            backgroundColor: isGoldView ? "#565656" : "#FF69B4",
+            backgroundColor: tabData[currentTabId]?.isGoldView
+              ? "#565656"
+              : "#FF69B4",
             color: "#fff",
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
           }}
         >
-          {isGoldView ? "Show Materials" : "Show Gold"}
+          {tabData[currentTabId]?.isGoldView ? "Show Materials" : "Show Gold"}
         </button>
       </div>
 
@@ -1112,7 +1141,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
       {activeTabData.selectedServer && displayedCharacters.length > 0 && (
         <>
-          {isGoldView && (
+          {(tabData[currentTabId]?.isGoldView ?? true) && (
             <CharacterRow>
               {displayedCharacters.map(
                 (
@@ -1212,13 +1241,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                   </CharacterCard>
                 )
               )}
-              <AddCharacterButton onClick={toggleCharacterListModal}>
+              <AddCharacterButtonGoldView onClick={toggleCharacterListModal}>
                 <PlusIcon />
-              </AddCharacterButton>
+              </AddCharacterButtonGoldView>
             </CharacterRow>
           )}
 
-          {!isGoldView && (
+          {!(tabData[currentTabId]?.isGoldView ?? true) && (
             <CharacterRow>
               <div
                 style={{
@@ -1269,9 +1298,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                         }}
                       />
                       <CharacterName
-                        style={{ fontSize: "21px", fontWeight: "bold" }}
+                        style={{ fontSize: "18px", fontWeight: "bold" }}
                       >
                         {char?.CharacterName || "No Name"}
+                        <p>
+                          <strong>아이템 레벨:</strong>{" "}
+                          {char?.ItemAvgLevel || "N/A"}
+                        </p>
                       </CharacterName>
                     </div>
 
@@ -1438,7 +1471,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                             }}
                           />
                         </GoldAdjustmentBox>
-
                         <CharacterBox>
                           <ImageBox />
                           <BoxContent>
@@ -1462,11 +1494,30 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     </div>
                   </MaterialCard>
                 ))}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <AddCharacterButtonNormalView
+                    onClick={toggleCharacterListModal}
+                    style={{
+                      width: "540px", // CharacterCard와 동일한 너비
+                      height: "400px", // CharacterCard와 동일한 높이
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      border: "2px dashed #ddd", // 스타일 유지
+                      backgroundColor: "transparent", // 투명 배경
+                      margin: "0 auto", // 가운데 정렬
+                    }}
+                  >
+                    <PlusIcon />
+                  </AddCharacterButtonNormalView>
+                </div>
               </div>
-
-              <AddCharacterButton onClick={toggleCharacterListModal}>
-                <PlusIcon />
-              </AddCharacterButton>
             </CharacterRow>
           )}
 
