@@ -1080,32 +1080,61 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
             ))}
         </TabContainer>
         <AddTabButton onClick={openSearchModal}>+</AddTabButton>
-      </TabContainerWrapper>
 
-      {/* Tab Modal for Adding Accounts */}
-      <TabModal
-        isOpen={isTabModalOpen}
-        onClose={() => setTabModalOpen(false)}
-        onSearchComplete={(data, search) => handleSearchComplete(data, search)}
-      />
-
-      <div style={{ marginBottom: "20px", textAlign: "center" }}>
-        <button
-          onClick={toggleView}
+        {/* New Toggle Button Placement */}
+        <div
           style={{
-            padding: "10px 20px",
-            backgroundColor: tabData[currentTabId]?.isGoldView
-              ? "#565656"
-              : "#FF69B4",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
+            position: "absolute", // Position it relative to the container
+            right: "50px", // Distance from the right edge
+            top: "16%", // Vertically center it
+            transform: "translateY(-50%)", // Adjust for perfect centering
+            display: "flex",
+            alignItems: "center",
+            gap: "10px", // Space between text and toggle
+            color: tabData[currentTabId]?.isGoldView ? "#565656" : "#fff",
           }}
         >
-          {tabData[currentTabId]?.isGoldView ? "Show Materials" : "Show Gold"}
-        </button>
-      </div>
+          <span style={{ color: "#fff", fontWeight: "bold" }}>
+            {tabData[currentTabId]?.isGoldView ? "골드 보기" : "재료 보기"}
+          </span>
+          <div
+            onClick={toggleView} // Keeps your existing functionality
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: tabData[currentTabId]?.isGoldView
+                ? "flex-start"
+                : "flex-end",
+              width: "60px", // Adjust width as needed
+              height: "30px", // Adjust height as needed
+              backgroundColor: tabData[currentTabId]?.isGoldView
+                ? "#565656"
+                : "#fff",
+              borderRadius: "15px", // Ensures a pill shape
+              cursor: "pointer",
+              position: "relative",
+              transition:
+                "background-color 0.3s ease, justify-content 0.3s ease",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: tabData[currentTabId]?.isGoldView ? "5px" : "30px", // Adjust knob position
+                top: "5px",
+                width: "20px", // Adjust knob size
+                height: "20px",
+                backgroundColor: tabData[currentTabId]?.isGoldView
+                  ? "#fff"
+                  : "#565656",
+                borderRadius: "50%",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                transition: "left 0.3s ease",
+              }}
+            />
+          </div>
+        </div>
+      </TabContainerWrapper>
 
       <DropdownContainer>
         <SelectedServer onClick={toggleDropdown} isOpen={isDropdownVisible}>
