@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import styled, { keyframes, css } from "styled-components";
 import CryptoJS from "crypto-js";
 
@@ -7,7 +6,6 @@ import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
 
 import { useLayoutContext } from "../components/LayoutProvider"; // Context 가져오기
-import SearchBar from "../components/SearchBar";
 import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져오기
 import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
@@ -1151,50 +1149,76 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
             color: tabData[currentTabId]?.isGoldView ? "#565656" : "#fff",
           }}
         >
-          <span style={{ color: "#fff", fontWeight: "bold" }}>
-            {tabData[currentTabId]?.isGoldView ? "골드 보기" : "재료 보기"}
-          </span>
-          <div
-            onClick={toggleView} // Keeps your existing functionality
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: tabData[currentTabId]?.isGoldView
-                ? "flex-start"
-                : "flex-end",
-              width: "60px", // Adjust width as needed
-              height: "30px", // Adjust height as needed
-              backgroundColor: tabData[currentTabId]?.isGoldView
-                ? "#565656"
-                : "#fff",
-              borderRadius: "15px", // Ensures a pill shape
-              cursor: "pointer",
-              position: "relative",
-              transition:
-                "background-color 0.3s ease, justify-content 0.3s ease",
-            }}
-          >
+          <div style={{ margin: "10px 0px" }}>
+            <span style={{ color: "#fff", fontWeight: "bold" }}>
+              {tabData[currentTabId]?.isGoldView ? "골드 보기" : "재료 보기"}
+            </span>
             <div
+              onClick={toggleView} // Keeps your existing functionality
               style={{
-                position: "absolute",
-                left: tabData[currentTabId]?.isGoldView ? "5px" : "30px", // Adjust knob position
-                top: "5px",
-                width: "20px", // Adjust knob size
-                height: "20px",
+                marginLeft: "20px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: tabData[currentTabId]?.isGoldView
+                  ? "flex-start"
+                  : "flex-end",
+                width: "60px", // Adjust width as needed
+                height: "30px", // Adjust height as needed
                 backgroundColor: tabData[currentTabId]?.isGoldView
-                  ? "#fff"
-                  : "#565656",
-                borderRadius: "50%",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                transition: "left 0.3s ease",
+                  ? "#565656"
+                  : "#fff",
+                borderRadius: "15px", // Ensures a pill shape
+                cursor: "pointer",
+                position: "relative",
+                transition:
+                  "background-color 0.3s ease, justify-content 0.3s ease",
               }}
-            />
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: tabData[currentTabId]?.isGoldView ? "5px" : "30px", // Adjust knob position
+                  top: "5px",
+                  width: "20px", // Adjust knob size
+                  height: "20px",
+                  backgroundColor: tabData[currentTabId]?.isGoldView
+                    ? "#fff"
+                    : "#565656",
+                  borderRadius: "50%",
+                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                  transition: "left 0.3s ease",
+                }}
+              />
+            </div>
           </div>
-          <div style={{ margin: "20px", textAlign: "center" }}>
-            <button onClick={handleCopyTabData} style={{ marginRight: "10px" }}>
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={handleCopyTabData}
+              style={{
+                backgroundColor: "#4a90e2",
+                color: "#fff",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
               Tab 데이터 복사
             </button>
-            <button onClick={handleImportTabData}>Tab 데이터 가져오기</button>
+            <button
+              onClick={handleImportTabData}
+              style={{
+                backgroundColor: "#f562a5",
+                color: "#fff",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                marginLeft: "20px",
+              }}
+            >
+              Tab 데이터 가져오기
+            </button>
           </div>
         </div>
       </TabContainerWrapper>
