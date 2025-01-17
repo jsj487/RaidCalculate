@@ -43,7 +43,7 @@ export const GoldCalcProvider: React.FC<{ children: React.ReactNode }> = ({
         search,
         toggleStates: {},
         goldRewards: data.reduce((acc, char) => {
-          acc[char.CharacterName] = 0;
+          acc[char.CharacterName] = 0; // Initialize with zero gold
           return acc;
         }, {} as Record<string, number>),
         selectedServer: null,
@@ -60,6 +60,7 @@ export const GoldCalcProvider: React.FC<{ children: React.ReactNode }> = ({
           acc[char.CharacterName] = { consumedGold: 0, extraGold: 0 };
           return acc;
         }, {} as Record<string, { consumedGold: number; extraGold: number }>),
+        isGoldView: true, // 기본값 추가
       },
     };
 

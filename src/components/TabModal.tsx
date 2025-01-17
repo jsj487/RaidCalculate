@@ -103,8 +103,9 @@ const TabModal: React.FC<TabModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
+  if (!isOpen) {
+    return null;
+  }
   return (
     <ModalOverlay>
       <ModalContent>

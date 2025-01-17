@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled, { keyframes, css } from "styled-components";
+import CryptoJS from "crypto-js";
 
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
@@ -616,10 +617,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     setTabModalOpen(false);
   };
 
-  const openSearchModal = () => {
-    setTabModalOpen(true); // Open the modal for searching
-  };
-
   const deleteTab = (tabId: number) => {
     setTabData((prev) => {
       if (!prev[tabId]) return prev;
@@ -1002,8 +999,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }
   }, [tabData, currentTabId]);
 
-  const [isGoldView, setIsGoldView] = useState(true);
-
   const toggleView = () => {
     setTabData((prev) => {
       // 현재 탭 데이터가 없는 경우 그대로 반환
@@ -1020,38 +1015,100 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
   };
 
   const calculateMaterialRewards = (
-    toggleStates: Record<string, number>
+    toggleStates: Record<string, number> = {} // 기본값 설정
   ): Record<string, { clear: Material[]; bonus: Material[] }> => {
     const materialRewards: Record<
       string,
       { clear: Material[]; bonus: Material[] }
     > = {};
 
+    // toggleStates가 유효한 객체인지 확인
+    if (!toggleStates || typeof toggleStates !== "object") {
+      console.warn(
+        "calculateMaterialRewards: 유효하지 않은 toggleStates가 전달되었습니다."
+      );
+      return materialRewards; // 빈 값을 반환하여 에러 방지
+    }
+
     Object.entries(toggleStates).forEach(([key, state]) => {
       const [raidName, raidLevel, charName, phaseIndex] = key.split("-");
-
       if (!charName || state === 0) return;
 
-      const phase = Object.values(RaidValues).flatMap((category) =>
+      // RaidValues에서 해당 데이터를 가져옴
+      const phase = Object.values(RaidValues || {}).flatMap((category) =>
         Object.values(category?.[raidName]?.[raidLevel]?.phases || [])
       )[parseInt(phaseIndex, 10)];
 
       if (!phase) return;
 
+      // 해당 캐릭터의 초기값 생성
       if (!materialRewards[charName]) {
         materialRewards[charName] = { clear: [], bonus: [] };
       }
 
+      // toggleStates 값에 따라 clear 또는 bonus 데이터를 추가
       if (state === 1) {
-        materialRewards[charName].clear.push(...phase.clearMaterials);
+        materialRewards[charName].clear.push(...(phase.clearMaterials || []));
       } else if (state === 2) {
-        materialRewards[charName].clear.push(...phase.clearMaterials);
-        materialRewards[charName].bonus.push(...phase.bonusMaterials);
+        materialRewards[charName].clear.push(...(phase.clearMaterials || []));
+        materialRewards[charName].bonus.push(...(phase.bonusMaterials || []));
       }
     });
 
     return materialRewards;
   };
+
+  // 암호화 함수
+  const encryptData = (data: Record<number, any>): string => {
+    const secretKey = "your-secret-key";
+    return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
+  };
+
+  // 복호화 함수
+  const decryptData = (encryptedData: string): TabData => {
+    const secretKey = "your-secret-key";
+    const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  };
+
+  const handleCopyTabData = () => {
+    const encryptedData = encryptData(tabData); // 암호화
+    navigator.clipboard.writeText(encryptedData).then(() => {
+      alert("Tab 데이터가 클립보드에 복사되었습니다!");
+    });
+  };
+
+  const handleImportTabData = () => {
+    const inputData = prompt("암호화된 Tab 데이터를 붙여넣으세요:");
+    if (!inputData) return;
+
+    try {
+      const decryptedData = decryptData(inputData); // 복호화
+      setTabData(decryptedData); // TabData 상태 업데이트
+      localStorage.setItem("tabData", JSON.stringify(decryptedData)); // LocalStorage 동기화
+      alert("Tab 데이터가 성공적으로 가져와졌습니다!");
+    } catch (error) {
+      alert("데이터 가져오기에 실패했습니다. 입력값을 확인해주세요.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTabData?.toggleStates) {
+      const updatedMaterialRewards = calculateMaterialRewards(
+        activeTabData.toggleStates
+      );
+      updateTabData("materialRewards", updatedMaterialRewards);
+    }
+  }, [activeTabData?.toggleStates]);
+
+  const openSearchModal = () => {
+    console.log("openSearchModal triggered");
+    setTabModalOpen(true); // Open the modal for searching
+  };
+
+  useEffect(() => {
+    console.log("isTabModalOpen state:", isTabModalOpen);
+  }, [isTabModalOpen]);
 
   return (
     <Container>
@@ -1132,6 +1189,12 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                 transition: "left 0.3s ease",
               }}
             />
+          </div>
+          <div style={{ margin: "20px", textAlign: "center" }}>
+            <button onClick={handleCopyTabData} style={{ marginRight: "10px" }}>
+              Tab 데이터 복사
+            </button>
+            <button onClick={handleImportTabData}>Tab 데이터 가져오기</button>
           </div>
         </div>
       </TabContainerWrapper>
@@ -1616,6 +1679,14 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
             )}
           </CharacterListModal>
         </CharacterListModalWrapper>
+      )}
+
+      {isTabModalOpen && (
+        <TabModal
+          isOpen={isTabModalOpen}
+          onClose={() => setTabModalOpen(false)}
+          onSearchComplete={handleSearchComplete}
+        />
       )}
 
       {/* 모달 렌더링 */}
