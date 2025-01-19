@@ -11,6 +11,36 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000; // 배포 환경에서 사용할 포트
 const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
 
+// 공휴일 프록시 API
+app.get("/api/publicholidays/:year/:country", async (req, res) => {
+  const { year, country } = req.params;
+
+  try {
+    console.log(
+      `요청 URL: https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`
+    );
+
+    const response = await axios.get(
+      `https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    console.log("API 응답 상태 코드:", response.status);
+    console.log("API 응답 데이터:", response.data);
+
+    res.json(response.data); // 정상 응답
+  } catch (error) {
+    console.error("API 요청 실패:", error.message);
+    if (error.response) {
+    }
+    res.status(500).json({ error: "Failed to fetch public holidays" });
+  }
+});
+
 // 캐릭터 검색 API 라우트
 app.get("/api/characters/siblings", async (req, res) => {
   const { name } = req.query;

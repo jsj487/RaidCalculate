@@ -295,7 +295,6 @@ const GoldModal = () => {
                                         }}
                                       >
                                         <img
-                                          src={`${process.env.PUBLIC_URL}/img/gold.png`}
                                           style={{
                                             width: "20px",
                                             height: "20px",

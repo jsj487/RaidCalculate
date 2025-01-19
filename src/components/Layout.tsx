@@ -90,11 +90,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NavLink to="/GoldCalc" $isActive={location.pathname === "/GoldCalc"}>
             주간 레이드 계산기
           </NavLink>
-          <NavLink
-            to="/accessory-simulator"
-            $isActive={location.pathname === "/accessory-simulator"}
-          >
-            장신구 연마 시뮬
+          <NavLink to="/Schedule" $isActive={location.pathname === "/Schedule"}>
+            레이드 스케줄
           </NavLink>
           <NavLink
             to="/more-tools"

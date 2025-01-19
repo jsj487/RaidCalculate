@@ -1144,12 +1144,19 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
             top: "16%", // Vertically center it
             transform: "translateY(-50%)", // Adjust for perfect centering
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             gap: "10px", // Space between text and toggle
             color: tabData[currentTabId]?.isGoldView ? "#565656" : "#fff",
           }}
         >
-          <div style={{ margin: "10px 0px" }}>
+          <div
+            style={{
+              margin: "10px 0px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             <span style={{ color: "#fff", fontWeight: "bold" }}>
               {tabData[currentTabId]?.isGoldView ? "골드 보기" : "재료 보기"}
             </span>
@@ -1201,6 +1208,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                 padding: "10px 20px",
                 borderRadius: "5px",
                 cursor: "pointer",
+                fontWeight: "bold",
               }}
             >
               Tab 데이터 복사
@@ -1215,6 +1223,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                 borderRadius: "5px",
                 cursor: "pointer",
                 marginLeft: "20px",
+                fontWeight: "bold",
               }}
             >
               Tab 데이터 가져오기
