@@ -10,7 +10,7 @@ import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져�
 import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
-import { getMaterialImagePath } from "../utils/MaterialNameMap";
+import { getMaterialImagePath } from "../utils/materialNameMap";
 
 const slideIn = keyframes`
   from {

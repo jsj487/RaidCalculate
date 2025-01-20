@@ -220,7 +220,7 @@ const Schedule: React.FC = () => {
   };
 
   const handleSearch = async (nickname: string): Promise<string | null> => {
-    const uniqueCode = Math.random().toString(36).substr(2, 8); // 고유 코드 생성
+    const uniqueCode = Math.random().toString(36).substr(2, 8);
     try {
       const response = await axios.get("/api/characters/siblings", {
         params: { name: nickname },
@@ -233,7 +233,6 @@ const Schedule: React.FC = () => {
         return null;
       }
 
-      // Firestore에 고유 코드와 함께 데이터 저장
       const searchEntry = {
         nickname,
         code: uniqueCode,
@@ -241,9 +240,8 @@ const Schedule: React.FC = () => {
       };
 
       await addDoc(collection(db, "searches"), searchEntry);
-
       alert(`검색 성공! 고유 코드: ${uniqueCode}`);
-      return uniqueCode; // 고유 코드 반환
+      return uniqueCode;
     } catch (error) {
       console.error("검색 중 오류가 발생했습니다:", error);
       alert("검색 중 오류가 발생했습니다. 다시 시도하세요.");
@@ -251,24 +249,20 @@ const Schedule: React.FC = () => {
     }
   };
 
+  // 닉네임으로 스케줄 조회
   const fetchSchedulesByNickname = async (nickname: string) => {
-    try {
-      const querySnapshot = await getDocs(
-        query(collection(db, "searches"), where("nickname", "==", nickname))
-      );
+    const querySnapshot = await getDocs(
+      query(collection(db, "searches"), where("nickname", "==", nickname))
+    );
 
-      if (querySnapshot.empty) {
-        alert("해당 닉네임으로 저장된 스케줄이 없습니다.");
-        return [];
-      }
-
-      const schedules = querySnapshot.docs.map((doc) => doc.data());
-      console.log("조회된 스케줄 목록:", schedules);
-      return schedules;
-    } catch (error) {
-      console.error("스케줄 조회 실패:", error);
+    if (querySnapshot.empty) {
+      alert("해당 닉네임으로 저장된 스케줄이 없습니다.");
       return [];
     }
+
+    const schedules = querySnapshot.docs.map((doc) => doc.data());
+    console.log("조회된 스케줄 목록:", schedules);
+    return schedules;
   };
 
   return (
@@ -282,49 +276,35 @@ const Schedule: React.FC = () => {
         />
         <Button onClick={handleJoinSchedule}>스케줄표 입장하기</Button>
         <div>
-          <h2>닉네임 검색</h2>
+          <h3>닉네임 검색</h3>
           <input
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             placeholder="닉네임을 입력하세요"
-            style={{ padding: "10px", width: "300px", marginRight: "10px" }}
           />
-          <button
-            onClick={async () => {
-              const code = await handleSearch(nickname);
-              if (code) {
-                console.log("받은 코드:", code); // 받은 코드를 로컬 상태나 스토리지에 저장
-              }
-            }}
-            style={{ padding: "10px" }}
-          >
+          <Button onClick={async () => handleSearch(nickname)}>
             검색 및 코드 받기
-          </button>
+          </Button>
         </div>
-
         <div>
-          <h2>닉네임으로 스케줄 조회</h2>
+          <h3>닉네임 기반 스케줄 조회</h3>
           <input
             type="text"
             value={nicknameForSchedules}
             onChange={(e) => setNicknameForSchedules(e.target.value)}
             placeholder="닉네임을 입력하세요"
-            style={{ padding: "10px", width: "300px", marginRight: "10px" }}
           />
-          <button
+          <Button
             onClick={async () => {
               const schedules = await fetchSchedulesByNickname(
                 nicknameForSchedules
               );
-              if (schedules.length > 0) {
-                console.log("닉네임 기반 스케줄:", schedules);
-              }
+              console.log(schedules);
             }}
-            style={{ padding: "10px" }}
           >
             스케줄 조회
-          </button>
+          </Button>
         </div>
       </ButtonWrapper>
 

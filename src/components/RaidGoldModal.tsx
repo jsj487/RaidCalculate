@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { RaidValues } from "./RaidValues";
-import { getMaterialImagePath } from "../utils/MaterialNameMap";
+import { getMaterialImagePath } from "../utils/materialNameMap";
 
 const ModalButton = styled.button`
   background: #565656;
