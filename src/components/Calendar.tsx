@@ -140,7 +140,7 @@ const Calendar: React.FC<{ scheduleName: string }> = ({ scheduleName }) => {
             alt="이전 달"
           />
         </IconButton>
-        <span style={{ fontWeight: "bold" }}>
+        <span style={{ fontWeight: "bold", paddingBottom: "4px" }}>
           {currentYear}년 {currentMonth}
         </span>
         <IconButton onClick={handleNextMonth}>

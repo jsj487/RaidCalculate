@@ -70,14 +70,15 @@ const ScheduleCreationModal: React.FC<ScheduleCreationModalProps> = ({
 }) => {
   const [scheduleName, setScheduleName] = useState("");
 
-  const handleCreate = () => {
+  const handleCreateSchedule = () => {
     if (scheduleName.trim() === "") {
       alert("스케줄러 이름을 입력하세요.");
       return;
     }
+
     onCreate(scheduleName); // 부모 컴포넌트로 이름 전달
-    setScheduleName("");
-    onClose();
+    setScheduleName(""); // 입력 필드 초기화
+    onClose(); // 모달 닫기
   };
 
   if (!isOpen) return null;
@@ -94,7 +95,7 @@ const ScheduleCreationModal: React.FC<ScheduleCreationModalProps> = ({
         />
         <ButtonGroup>
           <Button onClick={onClose}>취소</Button>
-          <Button onClick={handleCreate} primary>
+          <Button onClick={handleCreateSchedule} primary>
             생성
           </Button>
         </ButtonGroup>
