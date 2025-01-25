@@ -80,7 +80,7 @@ const NicknameAuthModal: React.FC<NicknameAuthModalProps> = ({
   return (
     <ModalOverlay>
       <ModalContent>
-        <Title>닉네임 인증</Title>
+        <Title>회원가입</Title>
         <Input
           type="text"
           value={nickname}
@@ -100,7 +100,7 @@ const NicknameAuthModal: React.FC<NicknameAuthModalProps> = ({
             onClose();
           }}
         >
-          닉네임 인증
+          회원가입
         </AuthButton>
       </ModalContent>
     </ModalOverlay>

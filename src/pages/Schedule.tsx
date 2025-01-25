@@ -40,33 +40,35 @@ const AuthContainer = styled.div`
   padding: 20px;
 `;
 
-const AuthBox = styled.div`
-  background-color: #383838;
-  padding: 30px 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  width: 300px;
-  text-align: center;
-`;
-
 const Title = styled.h3`
   color: #fff;
   margin-bottom: 20px;
+`;
+
+const AuthBox = styled.div`
+  background-color: #444444; /* 어두운 회색 */
+  color: #fff; /* 흰색 텍스트 */
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: 320px;
+  text-align: center;
 `;
 
 const Input = styled.input`
   width: calc(100% - 20px);
   padding: 10px;
   margin: 10px 0;
-  border: 1px solid #555;
+  border: 1px solid #666666; /* 연한 테두리 */
   border-radius: 6px;
   font-size: 14px;
-  background-color: #2c2c2c;
+  background-color: #383838; /* 어두운 배경 */
   color: #fff;
 
   &:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #dddddd; /* 연한 회색 포커스 */
+    box-shadow: 0 0 5px #dddddd; /* 흰색 또는 살짝 회색 */
   }
 `;
 
@@ -78,14 +80,14 @@ const AuthButton = styled.button`
   font-size: 16px;
   font-weight: bold;
   color: #fff;
-  background-color: #007bff;
+  background-color: #0077cc; /* 차분한 파란색 */
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #0056b3;
+    background-color: #005bb5; /* 조금 더 어두운 파란색 */
   }
 `;
 
@@ -132,8 +134,9 @@ const ScheduleList = styled.div`
 `;
 
 const ScheduleCard = styled.div`
-  background-color: #333;
-  border-radius: 12px;
+  background-color: #555;
+  border: 1px solid #777;
+  border-radius: 10px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
   width: 180px;
   height: 250px;
@@ -232,6 +235,65 @@ const CalendarModal = styled.div`
   justify-content: center;
   align-items: center;
   z-index: 10001;
+`;
+
+const PrimaryButton = styled(Button)`
+  padding: 20px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  transition: transform 0.2s, background-color 0.3s ease;
+
+  &:hover {
+    background-color: #388e3c;
+    transform: scale(1.05);
+  }
+`;
+
+const TopBar = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  padding: 10px 20px;
+
+  h3 {
+    color: white;
+    margin-right: 20px;
+  }
+
+  button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: rgb(74, 144, 226);
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+
+    &:hover {
+      background-color: #0056b3;
+    }
+
+    &.secondary {
+      background-color: rgb(245, 98, 165);
+    &:hover {
+      background-color: #218838; /* hover 색상 */
+    }
+  }
+`;
+
+const NoScheduleMessage = styled.p`
+  color: #bbb;
+  font-size: 18px;
+  text-align: center;
+  margin-top: 20px;
+  font-style: italic;
 `;
 
 type Schedule = {
@@ -647,96 +709,124 @@ const Schedule: React.FC = () => {
   return (
     <Container>
       {isLoading && <p>로딩 중입니다. 잠시만 기다려주세요...</p>}
-      <Message>
-        닉네임 인증 또는 코드 입력 후 스케줄에 접근할 수 있습니다.
-      </Message>
+      {!isAuthenticated && (
+        <Message>
+          닉네임 인증 또는 코드 입력 후 스케줄에 접근할 수 있습니다.
+        </Message>
+      )}
+      {isAuthenticated && (
+        <TopBar>
+          <h3>{nickname}님 어서오세요.</h3>
+          <button
+            onClick={() => {
+              if (authenticatedCode) {
+                navigator.clipboard.writeText(authenticatedCode);
+                alert(`${authenticatedCode} 복사 완료했습니다.`);
+              } else {
+                alert("복사할 코드가 없습니다.");
+              }
+            }}
+          >
+            코드복사
+          </button>
+          <button className="secondary" onClick={handleLogout}>
+            로그아웃
+          </button>
+        </TopBar>
+      )}
+
       <ButtonWrapper>
         {isAuthenticated && (
           <>
-            <Button onClick={() => setIsModalOpen(true)}>스케줄 만들기</Button>
+            <PrimaryButton onClick={() => setIsModalOpen(true)}>
+              스케줄 만들기
+            </PrimaryButton>
             <ScheduleCreationModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               onCreate={handleCreateSchedule}
             />
-            <Button onClick={handleJoinSchedule}>스케줄 입장</Button>
+            <PrimaryButton onClick={handleJoinSchedule}>
+              스케줄 입장
+            </PrimaryButton>
           </>
         )}
+        {!isAuthenticated && (
+          <AuthContainer>
+            <>
+              <JoinModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onAuthenticate={handleAuthenticate}
+              />
 
-        <AuthContainer>
-          <button onClick={() => setIsModalOpen(true)}>닉네임 인증</button>
-          <JoinModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onAuthenticate={handleAuthenticate}
-          />
+              <AuthBox>
+                <Title>로그인</Title>
+                <Input
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="닉네임을 입력하세요"
+                />
+                <Input
+                  type="text"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  placeholder="4자리 PIN을 입력하세요"
+                  maxLength={4}
+                />
+                <AuthButton
+                  onClick={async () => {
+                    const code = await recoverCode(nickname, pin);
+                    if (code) {
+                      localStorage.setItem("nickname", nickname);
+                      localStorage.setItem("authenticatedCode", code);
+                      setAuthenticatedCode(code);
+                      setIsAuthenticated(true);
+                    }
+                  }}
+                >
+                  로그인
+                </AuthButton>
+                <AuthButton onClick={() => setIsModalOpen(true)}>
+                  회원가입
+                </AuthButton>
+              </AuthBox>
 
-          <AuthBox>
-            <Title>스케줄 불러오기</Title>
-            <Input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="코드를 입력하세요"
-            />
-            <AuthButton
-              onClick={async () => {
-                const schedule = await fetchScheduleByCode(code);
-                if (schedule) {
-                  setIsAuthenticated(true);
-                  setAuthenticatedCode(code);
-                }
-              }}
-            >
-              코드 입력
-            </AuthButton>
-          </AuthBox>
-
-          <AuthBox>
-            <Title>로그인</Title>
-            <Input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="닉네임을 입력하세요"
-            />
-            <Input
-              type="text"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="4자리 PIN을 입력하세요"
-              maxLength={4}
-            />
-            <AuthButton
-              onClick={async () => {
-                const code = await recoverCode(nickname, pin);
-                if (code) {
-                  localStorage.setItem("nickname", nickname);
-                  localStorage.setItem("authenticatedCode", code);
-                  setAuthenticatedCode(code);
-                  setIsAuthenticated(true);
-                }
-              }}
-            >
-              로그인
-            </AuthButton>
-          </AuthBox>
-
-          {isAuthenticated && (
-            <LogoutSection>
-              <h3>현재 로그인 중: {nickname}</h3>
-              <AuthButton onClick={handleLogout}>로그아웃</AuthButton>
-            </LogoutSection>
-          )}
-        </AuthContainer>
+              <AuthBox>
+                <Title>스케줄 불러오기</Title>
+                <Input
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="코드를 입력하세요"
+                />
+                <AuthButton
+                  onClick={async () => {
+                    const schedule = await fetchScheduleByCode(code);
+                    if (schedule) {
+                      setIsAuthenticated(true);
+                      setAuthenticatedCode(code);
+                    }
+                  }}
+                >
+                  코드 입력
+                </AuthButton>
+              </AuthBox>
+            </>
+          </AuthContainer>
+        )}
       </ButtonWrapper>
 
       {isAuthenticated && (
         <ScheduleList>
-          <h3>참여 중인 스케줄</h3>
           {schedules.length > 0 ? (
             schedules.map((schedule) => (
-              <ScheduleCard key={schedule.id}>
+              <ScheduleCard
+                key={schedule.id}
+                onClick={() => setSelectedSchedule(schedule)} // 클릭 시 선택된 스케줄 업데이트
+              >
+                {" "}
                 <button
                   className="delete-btn"
                   onClick={() => handleRemoveSchedule(schedule.code)}
@@ -747,7 +837,7 @@ const Schedule: React.FC = () => {
               </ScheduleCard>
             ))
           ) : (
-            <p>참여 중인 스케줄이 없습니다.</p>
+            <NoScheduleMessage>참여 중인 스케줄이 없습니다.</NoScheduleMessage>
           )}
         </ScheduleList>
       )}
