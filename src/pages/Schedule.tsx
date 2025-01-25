@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from "react";
+import bcrypt from "bcryptjs";
 import styled from "styled-components";
 import ScheduleCreationModal from "../components/ScheduleCreationModal";
+import JoinModal from "../components/JoinModal";
 import Calendar from "../components/Calendar";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  getDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+} from "firebase/firestore";
 import { db } from "../utils/FireBase";
 import axios from "axios";
 
@@ -14,6 +27,78 @@ const Container = styled.div`
   min-height: 100vh;
   background-color: #383838;
   padding: 20px;
+`;
+
+const AuthContainer = styled.div`
+  display: flex;
+  flex-direction: row; /* 세로에서 가로로 변경 */
+  gap: 100px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  background-color: #383838;
+  padding: 20px;
+`;
+
+const AuthBox = styled.div`
+  background-color: #383838;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: 300px;
+  text-align: center;
+`;
+
+const Title = styled.h3`
+  color: #fff;
+  margin-bottom: 20px;
+`;
+
+const Input = styled.input`
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #2c2c2c;
+  color: #fff;
+
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+`;
+
+const AuthButton = styled.button`
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+const LogoutSection = styled.div`
+  margin-top: 20px;
+  text-align: center;
+  width: 100%; /* 가로 레이아웃에서 중앙 정렬 */
+`;
+
+const Message = styled.p`
+  color: #fff;
+  font-weight: bold;
+  font-size: 30px;
 `;
 
 const ButtonWrapper = styled.div`
@@ -50,20 +135,42 @@ const ScheduleCard = styled.div`
   background-color: #333;
   border-radius: 12px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  width: 180px; // 카드 너비
-  height: 250px; // 카드 높이
+  width: 180px;
+  height: 250px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between; // 내용 간 간격 균일화
+  justify-content: space-between;
   padding: 15px;
   text-align: center;
   color: #fff;
-  cursor: pointer;
+  position: relative; /* 삭제 버튼 위치를 위해 추가 */
 
   &:hover {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   }
+
+  .delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+
+    &:hover {
+      background: darkred;
+    }
+  
 
   img {
     width: 100%;
@@ -127,197 +234,523 @@ const CalendarModal = styled.div`
   z-index: 10001;
 `;
 
+type Schedule = {
+  id: number;
+  name: string;
+  code: string;
+};
+
 // Main Component
 const Schedule: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // 인증 여부 상태
+  const [authenticatedCode, setAuthenticatedCode] = useState<string | null>(
+    null
+  ); // 인증된 코드
+  const [pin, setPin] = useState(""); // PIN을 관리하는 상태 추가
+  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nickname, setNickname] = useState("");
-  const [searchCode, setSearchCode] = useState("");
-  const [nicknameForSchedules, setNicknameForSchedules] = useState("");
+  const [code, setCode] = useState("");
   const [selectedSchedule, setSelectedSchedule] = useState<{
     id: number;
     name: string;
     code: string;
   } | null>(null);
-  const [schedules, setSchedules] = useState([
-    {
-      id: 1,
-      name: "Weekly Raid Schedule",
-      code: "abc12345", // 테스트용 고유 코드
-    },
-  ]);
 
-  const fetchSchedules = async (): Promise<
-    { id: number; name: string; code: string }[]
-  > => {
+  const [schedules, setSchedules] = useState<Schedule[]>([]); // 타입 지정
+
+  const fetchScheduleByCode = async (code: string) => {
+    setIsLoading(true); // 로딩 시작
     try {
-      const querySnapshot = await getDocs(collection(db, "schedules"));
-      const fetchedSchedules = querySnapshot.docs.map((doc, index) => ({
-        id: index + 1, // Firestore에는 숫자 ID가 없으므로 index를 사용
-        name: doc.data().name || "Unknown Name", // Firestore 문서의 name 필드
-        code: doc.data().code || "Unknown Code", // Firestore 문서의 code 필드
-      }));
-      console.log("가져온 스케줄:", fetchedSchedules);
-      return fetchedSchedules;
+      const querySnapshot = await getDocs(
+        query(collection(db, "searches"), where("code", "==", code))
+      );
+
+      if (querySnapshot.empty) {
+        alert("해당 코드로 조회된 데이터가 없습니다.");
+        setIsLoading(false); // 로딩 종료
+        return null;
+      }
+
+      const scheduleData = querySnapshot.docs.map((doc) => doc.data())[0];
+
+      if (scheduleData?.nickname && scheduleData?.code) {
+        localStorage.setItem("nickname", scheduleData.nickname);
+        localStorage.setItem("authenticatedCode", scheduleData.code);
+
+        setNickname(scheduleData.nickname);
+        setAuthenticatedCode(scheduleData.code);
+        setIsAuthenticated(true); // 인증 상태 업데이트
+      }
+
+      const schedules = await fetchSchedules(scheduleData.nickname);
+      setSchedules(schedules); // 스케줄 상태 업데이트
+      alert("스케줄 조회가 성공적으로 완료되었습니다.");
+      setIsLoading(false); // 로딩 종료
+      return scheduleData;
     } catch (error) {
-      console.error("스케줄 가져오기 실패:", error);
+      console.error("스케줄 코드 조회 실패:", error);
+      alert("스케줄 조회 중 문제가 발생했습니다.");
+      setIsLoading(false); // 로딩 종료
+      return null;
+    }
+  };
+
+  const fetchSchedules = async (nickname: string) => {
+    try {
+      // Firestore searches 컬렉션에서 인증 코드 가져오기
+      const searchQuerySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
+
+      if (searchQuerySnapshot.empty) {
+        console.error("인증 코드가 없습니다.");
+        return [];
+      }
+
+      const userCode = searchQuerySnapshot.docs[0].data().code;
+
+      // Firestore schedules 컬렉션에서 인증 코드가 포함된 스케줄 가져오기
+      const q = query(
+        collection(db, "schedules"),
+        where("participants", "array-contains", userCode) // 인증 코드 필터링
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      const schedules = querySnapshot.docs.map((doc, index) => ({
+        id: index + 1,
+        name: doc.data().name || "Unnamed Schedule",
+        code: doc.data().code || "No Code",
+      }));
+
+      console.log("참여된 스케줄:", schedules);
+      return schedules;
+    } catch (error) {
+      console.error("스케줄 조회 실패:", error);
       return [];
     }
   };
 
-  useEffect(() => {
-    const loadSchedules = async () => {
-      const fetchedSchedules = await fetchSchedules();
-      setSchedules(fetchedSchedules);
-    };
-    loadSchedules();
-  }, []);
-
-  const handleCreateSchedule = async (name: string) => {
-    const uniqueCode = Math.random().toString(36).substr(2, 8); // 고유 코드 생성
-
-    const newSchedule = {
-      id: schedules.length + 1, // 로컬 상태 관리용 ID
-      name,
-      code: uniqueCode,
-      createdAt: new Date(), // 생성 시간 추가
-    };
-
+  const recoverCode = async (
+    nickname: string,
+    pin: string
+  ): Promise<string | null> => {
     try {
-      // Firestore에 스케줄 추가
-      const docRef = await addDoc(collection(db, "schedules"), newSchedule);
-      console.log("스케줄 추가 성공! 문서 ID:", docRef.id);
+      // PIN 유효성 검사
+      if (!/^\d{4}$/.test(pin)) {
+        alert("PIN은 4자리 숫자여야 합니다.");
+        return null;
+      }
 
-      // 로컬 상태에도 업데이트
-      setSchedules((prev) => [...prev, newSchedule]);
+      // Firestore에서 닉네임으로 데이터 검색
+      const querySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
 
-      // 모달 닫기
-      setIsModalOpen(false);
+      if (querySnapshot.empty) {
+        alert("닉네임과 PIN이 일치하는 데이터를 찾을 수 없습니다.");
+        return null;
+      }
 
-      // 사용자에게 고유 코드 표시
-      alert(`스케줄이 생성되었습니다. 고유 코드: ${uniqueCode}`);
+      const existingData = querySnapshot.docs[0].data();
+
+      // PIN 검증
+      const isPinValid = await bcrypt.compare(pin, existingData.pin);
+      if (!isPinValid) {
+        alert("PIN이 올바르지 않습니다.");
+        return null;
+      }
+
+      alert(`인증 코드: ${existingData.code}`);
+      return existingData.code;
     } catch (error) {
-      console.error("스케줄 추가 실패:", error);
-      alert("스케줄 생성 중 문제가 발생했습니다. 다시 시도해주세요.");
+      console.error("코드 복구 실패:", error);
+      alert("코드 복구 중 문제가 발생했습니다.");
+      return null;
     }
   };
 
-  const handleJoinSchedule = () => {
-    const inputCode = prompt("스케줄표 고유 코드를 입력하세요:"); // 입력창 표시
+  const handleCreateSchedule = async (scheduleName: string) => {
+    if (!isAuthenticated) {
+      alert("닉네임 인증 후 스케줄을 생성할 수 있습니다.");
+      return;
+    }
+
+    setIsLoading(true); // 로딩 시작
+    const uniqueScheduleCode = Math.random().toString(36).substr(2, 8);
+
+    try {
+      const querySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
+
+      if (querySnapshot.empty) {
+        alert("닉네임 인증 정보가 없습니다.");
+        setIsLoading(false); // 로딩 종료
+        return;
+      }
+
+      const userCode = querySnapshot.docs[0].data().code;
+
+      const newSchedule = {
+        name: scheduleName,
+        code: uniqueScheduleCode,
+        createdAt: new Date(),
+        participants: [userCode],
+      };
+
+      await addDoc(collection(db, "schedules"), newSchedule);
+
+      const searchDocId = querySnapshot.docs[0].id;
+      const searchDocRef = doc(db, "searches", searchDocId);
+
+      await updateDoc(searchDocRef, {
+        scheduleCodes: arrayUnion(uniqueScheduleCode),
+      });
+
+      const schedules = await fetchSchedules(nickname);
+      setSchedules(schedules); // 스케줄 상태 업데이트
+      alert(`스케줄이 생성되었습니다. 코드: ${uniqueScheduleCode}`);
+      setIsLoading(false); // 로딩 종료
+    } catch (error) {
+      console.error("스케줄 생성 실패:", error);
+      alert("스케줄 생성 중 문제가 발생했습니다.");
+      setIsLoading(false); // 로딩 종료
+    }
+  };
+
+  const handleJoinSchedule = async () => {
+    const inputCode = prompt("스케줄표 고유 코드를 입력하세요:");
     if (!inputCode) {
       alert("입력이 취소되었습니다.");
       return;
     }
 
-    const foundSchedule = schedules.find(
-      (schedule) => schedule.code === inputCode.trim()
-    );
-    if (foundSchedule) {
-      setSelectedSchedule(foundSchedule);
-      alert(`"${foundSchedule.name}" 스케줄에 입장합니다.`);
-    } else {
-      alert("올바르지 않은 코드입니다. 다시 시도하세요.");
+    try {
+      // Firestore에서 스케줄 검색
+      const q = query(
+        collection(db, "schedules"),
+        where("code", "==", inputCode.trim())
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        alert("올바르지 않은 코드입니다. 다시 시도하세요.");
+        return;
+      }
+
+      const scheduleDoc = querySnapshot.docs[0];
+      const scheduleData = scheduleDoc.data();
+
+      // Firestore searches 컬렉션에서 인증 코드 가져오기
+      const searchQuerySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
+
+      if (searchQuerySnapshot.empty) {
+        alert("닉네임 인증 정보가 없습니다.");
+        return;
+      }
+
+      const userCode = searchQuerySnapshot.docs[0].data().code;
+
+      // 중복 참여 방지
+      if (scheduleData.participants?.includes(userCode)) {
+        alert("이미 이 스케줄에 참여하였습니다.");
+        return;
+      }
+
+      // Firestore searches 컬렉션에 스케줄 코드 추가
+      const searchDocId = searchQuerySnapshot.docs[0].id;
+      const searchDocRef = doc(db, "searches", searchDocId);
+
+      await updateDoc(searchDocRef, {
+        scheduleCodes: arrayUnion(inputCode.trim()), // 스케줄 코드 추가
+      });
+
+      // Firestore schedules 컬렉션에 인증 코드 추가
+      const scheduleDocRef = doc(db, "schedules", scheduleDoc.id);
+      await updateDoc(scheduleDocRef, {
+        participants: arrayUnion(userCode), // 인증 코드 추가
+      });
+
+      alert(`"${scheduleData.name}" 스케줄에 입장하였습니다.`);
+      window.location.reload(); // 새로고침
+      // 참여 후 스케줄 목록 업데이트
+      await fetchSchedules(nickname);
+    } catch (error) {
+      console.error("스케줄 입장 실패:", error);
+      alert("스케줄 입장 중 문제가 발생했습니다.");
     }
   };
 
-  const handleSearch = async (nickname: string): Promise<string | null> => {
-    const uniqueCode = Math.random().toString(36).substr(2, 8);
+  const handleSearch = async (
+    nickname: string,
+    pin: string
+  ): Promise<string | null> => {
     try {
-      const response = await axios.get("/api/characters/siblings", {
-        params: { name: nickname },
-      });
-
-      const data = response.data;
-
-      if (!data || data.length === 0) {
-        alert("검색 결과가 없습니다. 닉네임을 다시 확인하세요.");
+      // PIN 유효성 검사
+      if (!/^\d{4}$/.test(pin)) {
+        alert("PIN은 4자리 숫자여야 합니다.");
         return null;
       }
 
+      // Firestore에서 닉네임 중복 검사
+      const querySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
+
+      if (!querySnapshot.empty) {
+        alert(
+          "이미 인증된 닉네임입니다. 다른 닉네임을 사용하거나 PIN을 사용해 코드를 복구하세요."
+        );
+        return null;
+      }
+
+      // PIN 암호화
+      const hashedPin = await bcrypt.hash(pin, 10);
+
+      // 인증 코드 생성
+      const uniqueCode = Math.random().toString(36).substr(2, 8);
+
       const searchEntry = {
         nickname,
+        pin: hashedPin, // 암호화된 PIN 저장
         code: uniqueCode,
         createdAt: new Date(),
       };
 
+      // Firestore에 저장
       await addDoc(collection(db, "searches"), searchEntry);
-      alert(`검색 성공! 고유 코드: ${uniqueCode}`);
+
+      // localStorage에 인증 상태 저장
+      localStorage.setItem("nickname", nickname);
+      localStorage.setItem("authenticatedCode", uniqueCode);
+
+      alert(`인증 성공! 인증 코드: ${uniqueCode}`);
       return uniqueCode;
     } catch (error) {
-      console.error("검색 중 오류가 발생했습니다:", error);
-      alert("검색 중 오류가 발생했습니다. 다시 시도하세요.");
+      console.error("닉네임 인증 실패:", error);
+      alert("닉네임 인증 중 문제가 발생했습니다.");
       return null;
     }
   };
 
-  // 닉네임으로 스케줄 조회
-  const fetchSchedulesByNickname = async (nickname: string) => {
-    const querySnapshot = await getDocs(
-      query(collection(db, "searches"), where("nickname", "==", nickname))
+  const handleRemoveSchedule = async (scheduleCode: string) => {
+    const confirmDelete = window.confirm(
+      "정말로 스케줄 방에서 나가시겠습니까?"
     );
+    if (!confirmDelete) return; // 사용자가 취소를 누르면 삭제 작업 중단
 
-    if (querySnapshot.empty) {
-      alert("해당 닉네임으로 저장된 스케줄이 없습니다.");
-      return [];
+    try {
+      // Firestore searches 컬렉션에서 인증 코드 가져오기
+      const searchQuerySnapshot = await getDocs(
+        query(collection(db, "searches"), where("nickname", "==", nickname))
+      );
+
+      if (searchQuerySnapshot.empty) {
+        alert("닉네임 인증 정보가 없습니다.");
+        return;
+      }
+
+      const userCode = searchQuerySnapshot.docs[0].data().code;
+      const searchDocId = searchQuerySnapshot.docs[0].id;
+      const searchDocRef = doc(db, "searches", searchDocId);
+
+      // Firestore searches 컬렉션에서 scheduleCode 제거
+      await updateDoc(searchDocRef, {
+        scheduleCodes: arrayRemove(scheduleCode),
+      });
+
+      // Firestore schedules 컬렉션에서 participants에서 userCode 제거
+      const scheduleDocQuerySnapshot = await getDocs(
+        query(collection(db, "schedules"), where("code", "==", scheduleCode))
+      );
+
+      if (!scheduleDocQuerySnapshot.empty) {
+        const scheduleDocId = scheduleDocQuerySnapshot.docs[0].id;
+        const scheduleDocRef = doc(db, "schedules", scheduleDocId);
+
+        await updateDoc(scheduleDocRef, {
+          participants: arrayRemove(userCode),
+        });
+      }
+
+      alert("스케줄 방에서 성공적으로 나왔습니다.");
+      window.location.reload(); // 페이지 자동 새로고침
+    } catch (error) {
+      console.error("스케줄 삭제 실패:", error);
+      alert("스케줄 삭제 중 문제가 발생했습니다.");
     }
-
-    const schedules = querySnapshot.docs.map((doc) => doc.data());
-    console.log("조회된 스케줄 목록:", schedules);
-    return schedules;
   };
+
+  const handleLogout = () => {
+    // LocalStorage에서 데이터 삭제
+    localStorage.removeItem("authenticatedCode");
+    localStorage.removeItem("nickname");
+
+    // 상태 초기화
+    setIsAuthenticated(false);
+    setNickname("");
+    setAuthenticatedCode("");
+
+    // 페이지 새로고침 또는 리디렉션
+    window.location.reload(); // 새로고침으로 상태 반영
+  };
+
+  const handleAuthenticate = async (nickname: string, pin: string) => {
+    const code = await handleSearch(nickname, pin); // 기존 함수 사용
+    if (code) {
+      setAuthenticatedCode(code);
+      setIsAuthenticated(true);
+    }
+  };
+
+  useEffect(() => {
+    const storedNickname = localStorage.getItem("nickname");
+    const storedCode = localStorage.getItem("authenticatedCode");
+
+    if (storedNickname) setNickname(storedNickname);
+    if (storedCode) {
+      setIsAuthenticated(true);
+      setAuthenticatedCode(storedCode);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("schedules 상태:", schedules);
+  }, [schedules]);
+
+  useEffect(() => {
+    if (isAuthenticated && nickname) {
+      const loadSchedules = async () => {
+        const fetchedSchedules = await fetchSchedules(nickname);
+        setSchedules(fetchedSchedules); // 참여된 스케줄만 상태에 저장
+      };
+
+      loadSchedules();
+    }
+  }, [isAuthenticated, nickname]);
+
+  useEffect(() => {
+    const storedNickname = localStorage.getItem("nickname");
+    const storedCode = localStorage.getItem("authenticatedCode");
+
+    if (storedNickname) setNickname(storedNickname);
+    if (storedCode) {
+      setIsAuthenticated(true);
+      setAuthenticatedCode(storedCode);
+    }
+  }, []);
 
   return (
     <Container>
+      {isLoading && <p>로딩 중입니다. 잠시만 기다려주세요...</p>}
+      <Message>
+        닉네임 인증 또는 코드 입력 후 스케줄에 접근할 수 있습니다.
+      </Message>
       <ButtonWrapper>
-        <Button onClick={() => setIsModalOpen(true)}>스케줄러 만들기</Button>
-        <ScheduleCreationModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onCreate={handleCreateSchedule}
-        />
-        <Button onClick={handleJoinSchedule}>스케줄표 입장하기</Button>
-        <div>
-          <h3>닉네임 검색</h3>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="닉네임을 입력하세요"
+        {isAuthenticated && (
+          <>
+            <Button onClick={() => setIsModalOpen(true)}>스케줄 만들기</Button>
+            <ScheduleCreationModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onCreate={handleCreateSchedule}
+            />
+            <Button onClick={handleJoinSchedule}>스케줄 입장</Button>
+          </>
+        )}
+
+        <AuthContainer>
+          <button onClick={() => setIsModalOpen(true)}>닉네임 인증</button>
+          <JoinModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onAuthenticate={handleAuthenticate}
           />
-          <Button onClick={async () => handleSearch(nickname)}>
-            검색 및 코드 받기
-          </Button>
-        </div>
-        <div>
-          <h3>닉네임 기반 스케줄 조회</h3>
-          <input
-            type="text"
-            value={nicknameForSchedules}
-            onChange={(e) => setNicknameForSchedules(e.target.value)}
-            placeholder="닉네임을 입력하세요"
-          />
-          <Button
-            onClick={async () => {
-              const schedules = await fetchSchedulesByNickname(
-                nicknameForSchedules
-              );
-              console.log(schedules);
-            }}
-          >
-            스케줄 조회
-          </Button>
-        </div>
+
+          <AuthBox>
+            <Title>스케줄 불러오기</Title>
+            <Input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="코드를 입력하세요"
+            />
+            <AuthButton
+              onClick={async () => {
+                const schedule = await fetchScheduleByCode(code);
+                if (schedule) {
+                  setIsAuthenticated(true);
+                  setAuthenticatedCode(code);
+                }
+              }}
+            >
+              코드 입력
+            </AuthButton>
+          </AuthBox>
+
+          <AuthBox>
+            <Title>로그인</Title>
+            <Input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="닉네임을 입력하세요"
+            />
+            <Input
+              type="text"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="4자리 PIN을 입력하세요"
+              maxLength={4}
+            />
+            <AuthButton
+              onClick={async () => {
+                const code = await recoverCode(nickname, pin);
+                if (code) {
+                  localStorage.setItem("nickname", nickname);
+                  localStorage.setItem("authenticatedCode", code);
+                  setAuthenticatedCode(code);
+                  setIsAuthenticated(true);
+                }
+              }}
+            >
+              로그인
+            </AuthButton>
+          </AuthBox>
+
+          {isAuthenticated && (
+            <LogoutSection>
+              <h3>현재 로그인 중: {nickname}</h3>
+              <AuthButton onClick={handleLogout}>로그아웃</AuthButton>
+            </LogoutSection>
+          )}
+        </AuthContainer>
       </ButtonWrapper>
 
-      <ScheduleList>
-        {schedules.map((schedule) => (
-          <ScheduleCard
-            key={schedule.id}
-            onClick={() => setSelectedSchedule(schedule)}
-          >
-            <ScheduleName>{schedule.name}</ScheduleName>
-          </ScheduleCard>
-        ))}
-      </ScheduleList>
+      {isAuthenticated && (
+        <ScheduleList>
+          <h3>참여 중인 스케줄</h3>
+          {schedules.length > 0 ? (
+            schedules.map((schedule) => (
+              <ScheduleCard key={schedule.id}>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleRemoveSchedule(schedule.code)}
+                >
+                  X
+                </button>
+                <ScheduleName>{schedule.name}</ScheduleName>
+              </ScheduleCard>
+            ))
+          ) : (
+            <p>참여 중인 스케줄이 없습니다.</p>
+          )}
+        </ScheduleList>
+      )}
 
       {selectedSchedule && (
         <CalendarModal>

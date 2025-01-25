@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../utils/FireBase";
 
 // 스타일 컴포넌트
 const ModalOverlay = styled.div`
@@ -60,7 +62,7 @@ const Button = styled.button<{ primary?: boolean }>`
 interface ScheduleCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string) => void;
+  onCreate: (scheduleName: string) => void;
 }
 
 const ScheduleCreationModal: React.FC<ScheduleCreationModalProps> = ({
@@ -70,15 +72,15 @@ const ScheduleCreationModal: React.FC<ScheduleCreationModalProps> = ({
 }) => {
   const [scheduleName, setScheduleName] = useState("");
 
-  const handleCreateSchedule = () => {
+  const handleCreateSchedule = async () => {
     if (scheduleName.trim() === "") {
-      alert("스케줄러 이름을 입력하세요.");
+      alert("스케줄 이름과 닉네임을 모두 입력하세요.");
       return;
     }
 
-    onCreate(scheduleName); // 부모 컴포넌트로 이름 전달
-    setScheduleName(""); // 입력 필드 초기화
-    onClose(); // 모달 닫기
+    onCreate(scheduleName); // 부모 컴포넌트로 데이터 전달
+    setScheduleName("");
+    onClose();
   };
 
   if (!isOpen) return null;
