@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ko } from "date-fns/locale";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../utils/FireBase";
 
 const CalendarContainer = styled.div`
-  margin: 20px auto;
-  max-width: 1000px;
+  max-width: 700px;
   text-align: center;
 `;
 
@@ -65,7 +66,13 @@ const IconButton = styled.button`
   }
 `;
 
-const Calendar: React.FC<{ scheduleName: string }> = ({ scheduleName }) => {
+const Calendar = ({
+  scheduleName,
+  scheduleId,
+}: {
+  scheduleName: string;
+  scheduleId: string;
+}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [records, setRecords] = useState<Record<string, string[]>>({});
   const [holidays, setHolidays] = useState<Date[]>([]);
@@ -133,7 +140,14 @@ const Calendar: React.FC<{ scheduleName: string }> = ({ scheduleName }) => {
 
   return (
     <CalendarContainer>
-      <div style={{ marginBottom: "20px" }}>
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "Center",
+          alignItems: "Center",
+        }}
+      >
         <IconButton onClick={handlePreviousMonth}>
           <img
             src={`${process.env.PUBLIC_URL}/img/left_arrow.png`}

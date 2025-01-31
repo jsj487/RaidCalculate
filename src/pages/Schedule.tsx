@@ -17,7 +17,6 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { db } from "../utils/FireBase";
-import axios from "axios";
 
 // Styled Components
 const Container = styled.div`
@@ -41,7 +40,7 @@ const AuthContainer = styled.div`
 `;
 
 const Title = styled.h3`
-  color: #fff;
+  color: #000;
   margin-bottom: 20px;
 `;
 
@@ -296,10 +295,49 @@ const NoScheduleMessage = styled.p`
   font-style: italic;
 `;
 
+const ModalContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 90vw;
+  max-width: 1000px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+`;
+
+const CalendarModalContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: stretch; /* 모든 섹션을 같은 높이로 */
+  background: none;
+  max-width: 1300px;
+  width: 100%;
+  gap: 20px;
+`;
+
+const Section = styled.div`
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  min-height: 550px; /* 달력 높이에 맞춤 */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const CalendarSection = styled(Section)`
+  flex: 1.5;
+  text-align: center;
+`;
+
 type Schedule = {
   id: number;
   name: string;
   code: string;
+  participants: string[]; // 추가
 };
 
 // Main Component
@@ -308,6 +346,9 @@ const Schedule: React.FC = () => {
   const [authenticatedCode, setAuthenticatedCode] = useState<string | null>(
     null
   ); // 인증된 코드
+  const [selectedEvents, setSelectedEvents] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [pin, setPin] = useState(""); // PIN을 관리하는 상태 추가
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -317,6 +358,7 @@ const Schedule: React.FC = () => {
     id: number;
     name: string;
     code: string;
+    participants: string[]; // 추가
   } | null>(null);
 
   const [schedules, setSchedules] = useState<Schedule[]>([]); // 타입 지정
@@ -370,12 +412,10 @@ const Schedule: React.FC = () => {
         return [];
       }
 
-      const userCode = searchQuerySnapshot.docs[0].data().code;
-
       // Firestore schedules 컬렉션에서 인증 코드가 포함된 스케줄 가져오기
       const q = query(
         collection(db, "schedules"),
-        where("participants", "array-contains", userCode) // 인증 코드 필터링
+        where("participants", "array-contains", nickname) // 인증 코드 필터링
       );
 
       const querySnapshot = await getDocs(q);
@@ -384,6 +424,7 @@ const Schedule: React.FC = () => {
         id: index + 1,
         name: doc.data().name || "Unnamed Schedule",
         code: doc.data().code || "No Code",
+        participants: doc.data().participants || [], // participants 필드 추가
       }));
 
       console.log("참여된 스케줄:", schedules);
@@ -453,13 +494,13 @@ const Schedule: React.FC = () => {
         return;
       }
 
-      const userCode = querySnapshot.docs[0].data().code;
+      const nickkname = querySnapshot.docs[0].data().nickname;
 
       const newSchedule = {
         name: scheduleName,
         code: uniqueScheduleCode,
         createdAt: new Date(),
-        participants: [userCode],
+        participants: [nickname],
       };
 
       await addDoc(collection(db, "schedules"), newSchedule);
@@ -515,10 +556,8 @@ const Schedule: React.FC = () => {
         return;
       }
 
-      const userCode = searchQuerySnapshot.docs[0].data().code;
-
       // 중복 참여 방지
-      if (scheduleData.participants?.includes(userCode)) {
+      if (scheduleData.participants?.includes(nickname)) {
         alert("이미 이 스케줄에 참여하였습니다.");
         return;
       }
@@ -534,7 +573,7 @@ const Schedule: React.FC = () => {
       // Firestore schedules 컬렉션에 인증 코드 추가
       const scheduleDocRef = doc(db, "schedules", scheduleDoc.id);
       await updateDoc(scheduleDocRef, {
-        participants: arrayUnion(userCode), // 인증 코드 추가
+        participants: arrayUnion(nickname), // 인증 코드 추가
       });
 
       alert(`"${scheduleData.name}" 스케줄에 입장하였습니다.`);
@@ -635,7 +674,7 @@ const Schedule: React.FC = () => {
         const scheduleDocRef = doc(db, "schedules", scheduleDocId);
 
         await updateDoc(scheduleDocRef, {
-          participants: arrayRemove(userCode),
+          participants: arrayRemove(nickname),
         });
       }
 
@@ -844,24 +883,45 @@ const Schedule: React.FC = () => {
 
       {selectedSchedule && (
         <CalendarModal>
-          <div
-            style={{
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
-              maxWidth: "600px",
-              width: "90%",
-            }}
-          >
-            <h2>{selectedSchedule.name}</h2>
-            <Calendar scheduleName={selectedSchedule.name} />
-            <button
-              onClick={() => setSelectedSchedule(null)}
-              style={{ marginTop: "20px", padding: "10px 20px" }}
-            >
-              닫기
-            </button>
-          </div>
+          <CalendarModalContainer>
+            {/* 왼쪽: 구성원 리스트 */}
+            <Section>
+              <Title style={{ color: "#000" }}>구성원</Title>
+              {selectedSchedule.participants.length > 0 ? (
+                <ul>
+                  {selectedSchedule.participants.map((member) => (
+                    <li key={member}>{member}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>구성원이 없습니다.</p>
+              )}
+            </Section>
+
+            {/* 가운데: 캘린더 (구성원을 props로 전달) */}
+            <CalendarSection>
+              <h2>{selectedSchedule.name}</h2>
+              <Calendar
+                scheduleName={selectedSchedule.name}
+                scheduleId={String(selectedSchedule.id)}
+              />
+            </CalendarSection>
+
+            {/* 오른쪽: 날짜별 공대 일정 */}
+            <Section>
+              <Title>날짜를 선택하세요</Title>
+              {selectedEvents.length > 0 ? (
+                <ul>
+                  {selectedEvents.map((event) => (
+                    <li key={event.id}>{event.name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>해당 날짜에 일정이 없습니다.</p>
+              )}
+              <button>공대 등록하기</button>
+            </Section>
+          </CalendarModalContainer>
         </CalendarModal>
       )}
     </Container>
