@@ -26,7 +26,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background-color: #383838;
+  background-color: #262626;
 `;
 
 const TabContainerWrapper = styled.div`
@@ -119,7 +119,7 @@ const SelectedServer = styled.div.withConfig({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #383838;
+  background: #262626;
   color: white;
   border: 4px solid #444;
   border-bottom: 4px solid #444;
@@ -151,7 +151,7 @@ const ServerList = styled.div.withConfig({
   top: 100%;
   left: 0;
   width: 100%;
-  background: #383838;
+  background: #262626;
   border: ${(props) => (props.isVisible ? "4px solid #444" : "none")};
   border-top: none; /* 선택된 항목과 드롭다운 리스트 연결 */
   border-radius: 0 0 8px 8px;
@@ -468,6 +468,26 @@ const Overlay = styled.div<{ isOpen: boolean }>`
 
 const ContentWrapper = styled.div`
   padding: 20px;
+`;
+
+const ButtonWrapper = styled.div`
+  display: flex;
+  gap: 20px; /* 버튼 간격 */
+`;
+
+const Button = styled.button`
+  background-color: #3043ff; /* 기본 색상 */
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #2a39d6; /* hover 시 색상 */
+  }
 `;
 
 type CharacterData = {
@@ -1198,37 +1218,10 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
               />
             </div>
           </div>
-          <div style={{ textAlign: "center" }}>
-            <button
-              onClick={handleCopyTabData}
-              style={{
-                backgroundColor: "#4a90e2",
-                color: "#fff",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              Tab 데이터 복사
-            </button>
-            <button
-              onClick={handleImportTabData}
-              style={{
-                backgroundColor: "#f562a5",
-                color: "#fff",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "5px",
-                cursor: "pointer",
-                marginLeft: "20px",
-                fontWeight: "bold",
-              }}
-            >
-              Tab 데이터 가져오기
-            </button>
-          </div>
+          <ButtonWrapper>
+            <Button onClick={handleCopyTabData}>Tab 데이터 복사</Button>
+            <Button onClick={handleImportTabData}>Tab 데이터 가져오기</Button>
+          </ButtonWrapper>
         </div>
       </TabContainerWrapper>
 

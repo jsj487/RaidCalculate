@@ -43,6 +43,7 @@ const Day = styled.div<{
   height: 100px;
   text-align: center;
   padding: 10px;
+  cursor: pointer;
   color: ${({ isHoliday, isSaturday, isSunday }) =>
     isHoliday || isSunday
       ? "#ff0000" // 공휴일 또는 일요일 빨간색
@@ -51,6 +52,11 @@ const Day = styled.div<{
       : "#000"}; // 평일 검은색
   border: 1px solid #ddd;
   border-radius: 5px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background: rgb(233, 233, 233);
+  }
 `;
 
 const IconButton = styled.button`
@@ -69,9 +75,11 @@ const IconButton = styled.button`
 const Calendar = ({
   scheduleName,
   scheduleId,
+  onDateClick,
 }: {
   scheduleName: string;
   scheduleId: string;
+  onDateClick: (date: string) => void; // 날짜 클릭 시 호출될 함수 타입 지정
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [records, setRecords] = useState<Record<string, string[]>>({});
@@ -185,12 +193,15 @@ const Calendar = ({
           const isHolidayDay = isHoliday(day);
           const isSaturday = day.getDay() === 6;
           const isSunday = day.getDay() === 0;
+          const formattedDate = format(day, "yyyy-MM-dd"); // 날짜 포맷
+
           return (
             <Day
               key={day.getTime()}
               isHoliday={isHolidayDay}
               isSaturday={isSaturday}
               isSunday={isSunday}
+              onClick={() => onDateClick(formattedDate)} // 날짜 클릭 시 부모로 전달
             >
               <span>{format(day, "d", { locale: ko })}</span>
             </Day>

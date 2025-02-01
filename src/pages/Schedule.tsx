@@ -24,7 +24,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: #383838;
+  background-color: #262626;
   padding: 20px;
 `;
 
@@ -35,7 +35,7 @@ const AuthContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  background-color: #383838;
+  background-color: #262626;
   padding: 20px;
 `;
 
@@ -61,7 +61,7 @@ const Input = styled.input`
   border: 1px solid #666666; /* 연한 테두리 */
   border-radius: 6px;
   font-size: 14px;
-  background-color: #383838; /* 어두운 배경 */
+  background-color: #262626; /* 어두운 배경 */
   color: #fff;
 
   &:focus {
@@ -90,12 +90,6 @@ const AuthButton = styled.button`
   }
 `;
 
-const LogoutSection = styled.div`
-  margin-top: 20px;
-  text-align: center;
-  width: 100%; /* 가로 레이아웃에서 중앙 정렬 */
-`;
-
 const Message = styled.p`
   color: #fff;
   font-weight: bold;
@@ -113,15 +107,10 @@ const Button = styled.button`
   font-size: 18px;
   font-weight: bold;
   color: #fff;
-  background-color: #007bff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #0056b3;
-  }
 `;
 
 const ScheduleList = styled.div`
@@ -133,6 +122,7 @@ const ScheduleList = styled.div`
 `;
 
 const ScheduleCard = styled.div`
+  cursor: pointer;
   background-color: #555;
   border: 1px solid #777;
   border-radius: 10px;
@@ -193,26 +183,6 @@ const ScheduleCard = styled.div`
   }
 `;
 
-const Thumbnail = styled.div`
-  width: 100%;
-  height: 265px; // 썸네일 높이
-  background-color: #555;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 16px;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; // 이미지가 잘리지 않도록 설정
-  }
-`;
-
 const ScheduleName = styled.div`
   font-size: 16px; // 글자 크기 증가
   color: #fff;
@@ -236,19 +206,31 @@ const CalendarModal = styled.div`
   z-index: 10001;
 `;
 
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 12px; // 버튼 사이 여백
+  justify-content: center;
+  align-items: center;
+`;
+
 const PrimaryButton = styled(Button)`
-  padding: 20px;
-  font-size: 20px;
-  font-weight: bold;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  transition: transform 0.2s, background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center; // 텍스트 중앙 정렬
+  height: 48px;
+  width: 220px; // 고정된 너비 설정 (최소한으로 크기 동일하게)
+  min-width: 180px; // 버튼 최소 크기 지정
+  padding: 0 20px; // 좌우 여백 통일
+  border-radius: 10px;
+  border: 1px solid #101010;
+  background-color: #101010;
+  font-size: 16px;
+  transition: color 0.2s ease, border-color 0.2s ease,
+    background-color 0.2s ease;
+  cursor: pointer;
 
   &:hover {
-    background-color: #388e3c;
-    transform: scale(1.05);
+    border-color: #fff;
   }
 `;
 
@@ -268,21 +250,16 @@ const TopBar = styled.div`
     margin-left: 10px;
     padding: 10px 15px;
     font-size: 14px;
-    background-color: rgb(74, 144, 226);
+    background-color: #3043ff;
     color: rgb(255, 255, 255);
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
+    transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: #0056b3;
-    }
-
-    &.secondary {
-      background-color: rgb(245, 98, 165);
-    &:hover {
-      background-color: #218838; /* hover 색상 */
+      background-color: #2a39d6;
     }
   }
 `;
@@ -293,17 +270,6 @@ const NoScheduleMessage = styled.p`
   text-align: center;
   margin-top: 20px;
   font-style: italic;
-`;
-
-const ModalContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 90vw;
-  max-width: 1000px;
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
 `;
 
 const CalendarModalContainer = styled.div`
@@ -329,7 +295,7 @@ const Section = styled.div`
 `;
 
 const CalendarSection = styled(Section)`
-  flex: 1.5;
+  flex: 3;
   text-align: center;
 `;
 
@@ -346,6 +312,9 @@ const Schedule: React.FC = () => {
   const [authenticatedCode, setAuthenticatedCode] = useState<string | null>(
     null
   ); // 인증된 코드
+  const [selectedDate, setSelectedDate] = useState<string | null>(null); // 선택된 날짜 상태 추가
+  const [events, setEvents] = useState<{ date: string; name: string }[]>([]); // 해당 날짜의 일정 리스트
+
   const [selectedEvents, setSelectedEvents] = useState<
     { id: string; name: string }[]
   >([]);
@@ -708,6 +677,20 @@ const Schedule: React.FC = () => {
     }
   };
 
+  const handleDateClick = (date: string) => {
+    setSelectedDate(date); // 클릭된 날짜 업데이트
+
+    // Firebase에서 해당 날짜의 일정 불러오기 (데이터 예시)
+    const mockEvents = [
+      { date: "2025-02-10", name: "길드 레이드" },
+      { date: "2025-02-15", name: "주간 공대" },
+    ];
+
+    // 선택된 날짜와 일치하는 일정만 필터링하여 표시
+    const filteredEvents = mockEvents.filter((event) => event.date === date);
+    setEvents(filteredEvents);
+  };
+
   useEffect(() => {
     const storedNickname = localStorage.getItem("nickname");
     const storedCode = localStorage.getItem("authenticatedCode");
@@ -776,7 +759,7 @@ const Schedule: React.FC = () => {
 
       <ButtonWrapper>
         {isAuthenticated && (
-          <>
+          <ButtonContainer>
             <PrimaryButton onClick={() => setIsModalOpen(true)}>
               스케줄 만들기
             </PrimaryButton>
@@ -788,7 +771,7 @@ const Schedule: React.FC = () => {
             <PrimaryButton onClick={handleJoinSchedule}>
               스케줄 입장
             </PrimaryButton>
-          </>
+          </ButtonContainer>
         )}
         {!isAuthenticated && (
           <AuthContainer>
@@ -882,8 +865,12 @@ const Schedule: React.FC = () => {
       )}
 
       {selectedSchedule && (
-        <CalendarModal>
-          <CalendarModalContainer>
+        <CalendarModal onClick={() => setSelectedSchedule(null)}>
+          {" "}
+          {/* 바깥 클릭 시 닫힘 */}
+          <CalendarModalContainer onClick={(e) => e.stopPropagation()}>
+            {" "}
+            {/* 내부 클릭 시 이벤트 버블링 방지 */}
             {/* 왼쪽: 구성원 리스트 */}
             <Section>
               <Title style={{ color: "#000" }}>구성원</Title>
@@ -897,29 +884,34 @@ const Schedule: React.FC = () => {
                 <p>구성원이 없습니다.</p>
               )}
             </Section>
-
             {/* 가운데: 캘린더 (구성원을 props로 전달) */}
             <CalendarSection>
               <h2>{selectedSchedule.name}</h2>
               <Calendar
                 scheduleName={selectedSchedule.name}
                 scheduleId={String(selectedSchedule.id)}
+                onDateClick={handleDateClick} // 날짜 클릭 시 함수 실행
               />
             </CalendarSection>
-
             {/* 오른쪽: 날짜별 공대 일정 */}
             <Section>
-              <Title>날짜를 선택하세요</Title>
-              {selectedEvents.length > 0 ? (
-                <ul>
-                  {selectedEvents.map((event) => (
-                    <li key={event.id}>{event.name}</li>
-                  ))}
-                </ul>
+              {selectedDate ? (
+                <>
+                  <h3>{selectedDate}</h3>
+                  {events.length > 0 ? (
+                    <ul>
+                      {events.map((event) => (
+                        <li key={event.name}>{event.name}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>해당 날짜에 일정이 없습니다.</p>
+                  )}
+                  <button>공대 등록하기</button>
+                </>
               ) : (
-                <p>해당 날짜에 일정이 없습니다.</p>
+                <p>날짜를 선택하세요.</p>
               )}
-              <button>공대 등록하기</button>
             </Section>
           </CalendarModalContainer>
         </CalendarModal>

@@ -17,7 +17,7 @@ const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     padding: 0;
-    background-color: #383838; /* 추천 배경색 */
+    background-color: #262626; /* 추천 배경색 */
     font-family: Arial, sans-serif; /* 선택적 */
   }
 `;
