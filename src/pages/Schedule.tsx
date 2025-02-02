@@ -40,7 +40,7 @@ const AuthContainer = styled.div`
 `;
 
 const Title = styled.h3`
-  color: #000;
+  color: #fff;
   margin-bottom: 20px;
 `;
 
@@ -294,9 +294,29 @@ const Section = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 `;
 
+const ParticipantsSection = styled(Section)`
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  min-height: 550px; /* 달력 높이에 맞춤 */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
 const CalendarSection = styled(Section)`
   flex: 3;
   text-align: center;
+`;
+
+const ScheduleSection = styled(Section)<{ isDateSelected: boolean }>`
+  display: ${(props) => (props.isDateSelected ? "flex" : "flex")};
+  flex-direction: ${(props) => (props.isDateSelected ? "column" : "row")};
+  justify-content: ${(props) =>
+    props.isDateSelected ? "space-between" : "center"};
+  align-items: ${(props) => (props.isDateSelected ? "flex-start" : "center")};
 `;
 
 type Schedule = {
@@ -434,7 +454,6 @@ const Schedule: React.FC = () => {
         return null;
       }
 
-      alert(`인증 코드: ${existingData.code}`);
       return existingData.code;
     } catch (error) {
       console.error("코드 복구 실패:", error);
@@ -872,7 +891,7 @@ const Schedule: React.FC = () => {
             {" "}
             {/* 내부 클릭 시 이벤트 버블링 방지 */}
             {/* 왼쪽: 구성원 리스트 */}
-            <Section>
+            <ParticipantsSection>
               <Title style={{ color: "#000" }}>구성원</Title>
               {selectedSchedule.participants.length > 0 ? (
                 <ul>
@@ -883,7 +902,7 @@ const Schedule: React.FC = () => {
               ) : (
                 <p>구성원이 없습니다.</p>
               )}
-            </Section>
+            </ParticipantsSection>
             {/* 가운데: 캘린더 (구성원을 props로 전달) */}
             <CalendarSection>
               <h2>{selectedSchedule.name}</h2>
@@ -894,7 +913,7 @@ const Schedule: React.FC = () => {
               />
             </CalendarSection>
             {/* 오른쪽: 날짜별 공대 일정 */}
-            <Section>
+            <ScheduleSection isDateSelected={!!selectedDate}>
               {selectedDate ? (
                 <>
                   <h3>{selectedDate}</h3>
@@ -905,14 +924,18 @@ const Schedule: React.FC = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p>해당 날짜에 일정이 없습니다.</p>
+                    <p style={{ fontWeight: "bold" }}>
+                      해당 날짜에 일정이 없습니다.
+                    </p>
                   )}
                   <button>공대 등록하기</button>
                 </>
               ) : (
-                <p>날짜를 선택하세요.</p>
+                <p style={{ fontWeight: "bold", fontSize: "25px" }}>
+                  날짜를 선택하세요
+                </p>
               )}
-            </Section>
+            </ScheduleSection>
           </CalendarModalContainer>
         </CalendarModal>
       )}

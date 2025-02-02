@@ -36,6 +36,8 @@ export const materialNameMap: Record<string, string> = {
   파괴강석: "Destruction_Stone.png",
   "파괴석 결정": "Destruction_Stone_Fragment.png",
   "혼돈의 돌": "Stone_of_Chaos.png",
+  "낙뢰의 뿔": "Horn_of_Lightning.png",
+  "우레의 뇌옥": "Prison_of_Thunder.png",
 };
 
 export const getMaterialImagePath = (materialName: string): string | null => {

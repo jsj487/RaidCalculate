@@ -22,6 +22,132 @@ type RaidValuesType = {
 export const RaidValues: RaidValuesType = {
   // 카제로스 레이드
   "카제로스 레이드": {
+    "3막: 모르둠": {
+      하드: {
+        minItemLevel: 1700,
+        phases: [
+          //하드 - 1관문
+          {
+            clearGold: 7000,
+            bonusGold: 4300,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 440 },
+              { name: "운명의 수호석", quantity: 880 },
+              { name: "운명의 파편", quantity: 3400 },
+              { name: "우레의 뇌옥", quantity: 3 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 640 },
+              { name: "운명의 수호석", quantity: 1280 },
+              { name: "운명의 파편", quantity: 5400 },
+              { name: "운명의 돌파석", quantity: 24 },
+              { name: "우레의 뇌옥", quantity: 3 },
+            ],
+          },
+          //하드 - 2관문
+          {
+            clearGold: 11000,
+            bonusGold: 6900,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 520 },
+              { name: "운명의 수호석", quantity: 1040 },
+              { name: "운명의 파편", quantity: 4000 },
+              { name: "우레의 뇌옥", quantity: 12 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 880 },
+              { name: "운명의 수호석", quantity: 1760 },
+              { name: "운명의 파편", quantity: 7600 },
+              { name: "운명의 돌파석", quantity: 28 },
+              { name: "우레의 뇌옥", quantity: 5 },
+            ],
+          },
+          //하드 - 3관문
+          {
+            clearGold: 16000,
+            bonusGold: 10200,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 640 },
+              { name: "운명의 수호석", quantity: 1280 },
+              { name: "운명의 파편", quantity: 5600 },
+              { name: "우레의 뇌옥", quantity: 10 },
+              { name: "운명의 돌", quantity: 7 },
+              { name: "순환 돌파석", quantity: 15 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 1300 },
+              { name: "운명의 수호석", quantity: 2600 },
+              { name: "운명의 파편", quantity: 10500 },
+              { name: "운명의 돌파석", quantity: 40 },
+              { name: "우레의 뇌옥", quantity: 10 },
+              { name: "순환 돌파석", quantity: 10 },
+            ],
+          },
+        ],
+      },
+      노말: {
+        minItemLevel: 1680,
+        phases: [
+          //하드 - 1관문
+          {
+            clearGold: 6000,
+            bonusGold: 3600,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 320 },
+              { name: "운명의 수호석", quantity: 640 },
+              { name: "운명의 파편", quantity: 2600 },
+              { name: "낙뢰의 뿔", quantity: 3 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 500 },
+              { name: "운명의 수호석", quantity: 1000 },
+              { name: "운명의 파편", quantity: 4800 },
+              { name: "운명의 돌파석", quantity: 18 },
+              { name: "낙뢰의 뿔", quantity: 3 },
+            ],
+          },
+          //하드 - 2관문
+          {
+            clearGold: 9500,
+            bonusGold: 6300,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 400 },
+              { name: "운명의 수호석", quantity: 800 },
+              { name: "운명의 파편", quantity: 3000 },
+              { name: "낙뢰의 뿔", quantity: 5 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 620 },
+              { name: "운명의 수호석", quantity: 1240 },
+              { name: "운명의 파편", quantity: 5600 },
+              { name: "운명의 돌파석", quantity: 20 },
+              { name: "낙뢰의 뿔", quantity: 5 },
+            ],
+          },
+          //하드 - 3관문
+          {
+            clearGold: 12500,
+            bonusGold: 8300,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 520 },
+              { name: "운명의 수호석", quantity: 1040 },
+              { name: "운명의 파편", quantity: 4200 },
+              { name: "낙뢰의 뿔", quantity: 10 },
+              { name: "운명의 돌", quantity: 5 },
+              { name: "순환 돌파석", quantity: 11 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 840 },
+              { name: "운명의 수호석", quantity: 1680 },
+              { name: "운명의 파편", quantity: 7400 },
+              { name: "운명의 돌파석", quantity: 26 },
+              { name: "낙뢰의 뿔", quantity: 10 },
+              { name: "순환 돌파석", quantity: 7 },
+            ],
+          },
+        ],
+      },
+    },
     "2막: 아브렐슈드": {
       하드: {
         minItemLevel: 1690,
