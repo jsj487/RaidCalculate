@@ -790,7 +790,7 @@ const Schedule: React.FC = () => {
   };
 
   const saveRaidEvent = async (
-    scheduleId: string, // Firestore 문서 ID 직접 전달
+    scheduleId: string, // Firestore 문서 ID는 string 타입이어야 함
     title: string,
     raid: string,
     level: string
@@ -843,8 +843,12 @@ const Schedule: React.FC = () => {
     }
 
     // 🔹 Firestore 문서 ID를 그대로 사용
-    saveRaidEvent(selectedSchedule.id, finalTitle, selectedRaid, selectedLevel);
-
+    saveRaidEvent(
+      String(selectedSchedule.id), // 🔹 숫자를 문자열로 변환
+      finalTitle,
+      selectedRaid,
+      selectedLevel
+    );
     setIsAdding(false);
     setSelectedRaid("");
     setSelectedLevel("");
