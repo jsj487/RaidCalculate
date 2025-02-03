@@ -82,22 +82,70 @@ const Calendar = ({
   onDateClick: (date: string) => void; // 날짜 클릭 시 호출될 함수 타입 지정
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [records, setRecords] = useState<Record<string, string[]>>({});
   const [holidays, setHolidays] = useState<Date[]>([]);
   const [days, setDays] = useState<Date[]>([]);
-
-  const today = new Date();
-  const start = startOfMonth(today);
-  const end = endOfMonth(today);
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
   const currentMonth = format(currentDate, "MMMM", { locale: ko });
   const currentYear = format(currentDate, "yyyy", { locale: ko });
+  const [events, setEvents] = useState<{ date: string }[]>([]);
+
+  useEffect(() => {
+    console.log("📌 현재 scheduleId:", scheduleId); // scheduleId 확인
+
+    if (!scheduleId) {
+      console.warn("🚨 scheduleId가 없습니다.");
+      return;
+    }
+  }, [scheduleId]);
+
+  useEffect(() => {
+    console.log("📌 현재 scheduleId:", scheduleId); // scheduleId가 올바르게 설정되는지 확인
+
+    if (!scheduleId) {
+      console.warn("🚨 scheduleId가 없습니다.");
+      return;
+    }
+
+    const fetchEvents = async () => {
+      try {
+        const scheduleRef = doc(db, "schedules", scheduleId.toString()); // 문자열 변환
+        const scheduleSnap = await getDoc(scheduleRef);
+
+        if (!scheduleSnap.exists()) {
+          console.error(
+            "🚨 해당 scheduleId의 문서를 찾을 수 없습니다:",
+            scheduleId
+          );
+          return;
+        }
+
+        const scheduleData = scheduleSnap.data();
+        console.log("📌 가져온 스케줄 데이터:", scheduleData);
+
+        // events 필드가 없을 경우 빈 배열을 기본값으로 설정
+        setEvents(scheduleData?.events ?? []);
+      } catch (error) {
+        console.error("🔥 이벤트 데이터를 불러오는 중 오류 발생:", error);
+      }
+    };
+
+    fetchEvents();
+  }, [scheduleId]);
 
   useEffect(() => {
     const start = startOfMonth(currentDate);
     const end = endOfMonth(currentDate);
     setDays(eachDayOfInterval({ start, end }));
   }, [currentDate]);
+
+  const getEventCountForDate = (date: Date) => {
+    const formattedDate = format(date, "yyyy-MM-dd");
+
+    return events.filter((event) => {
+      console.log("Comparing:", event.date, "vs", formattedDate);
+      return event.date === formattedDate;
+    }).length;
+  };
 
   const fetchHolidays = async () => {
     try {
@@ -194,6 +242,7 @@ const Calendar = ({
           const isSaturday = day.getDay() === 6;
           const isSunday = day.getDay() === 0;
           const formattedDate = format(day, "yyyy-MM-dd"); // 날짜 포맷
+          const eventCount = getEventCountForDate(day); // 해당 날짜에 있는 이벤트 개수 가져오기
 
           return (
             <Day
@@ -201,9 +250,22 @@ const Calendar = ({
               isHoliday={isHolidayDay}
               isSaturday={isSaturday}
               isSunday={isSunday}
-              onClick={() => onDateClick(formattedDate)} // 날짜 클릭 시 부모로 전달
+              onClick={() => onDateClick(formattedDate)}
             >
               <span>{format(day, "d", { locale: ko })}</span>
+              {eventCount > 0 && (
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    color: "#0077cc",
+                    marginTop: "5px",
+                  }}
+                >
+                  {eventCount}
+                </span>
+              )}
             </Day>
           );
         })}

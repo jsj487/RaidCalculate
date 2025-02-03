@@ -394,10 +394,10 @@ const EventInputContainer = styled.div<{ isAdding: boolean }>`
 `;
 
 type Schedule = {
-  id: number;
+  id: string; // 🔹 Firestore 문서 ID는 `string`이어야 함
   name: string;
   code: string;
-  participants: string[]; // 추가
+  participants: string[];
 };
 
 // Main Component
@@ -423,7 +423,7 @@ const Schedule: React.FC = () => {
   const [nickname, setNickname] = useState("");
   const [code, setCode] = useState("");
   const [selectedSchedule, setSelectedSchedule] = useState<{
-    id: number;
+    id: string; // 🔹 Firestore 문서 ID는 `string`이어야 함
     name: string;
     code: string;
     participants: string[]; // 추가
@@ -470,7 +470,6 @@ const Schedule: React.FC = () => {
 
   const fetchSchedules = async (nickname: string) => {
     try {
-      // Firestore searches 컬렉션에서 인증 코드 가져오기
       const searchQuerySnapshot = await getDocs(
         query(collection(db, "searches"), where("nickname", "==", nickname))
       );
@@ -480,25 +479,24 @@ const Schedule: React.FC = () => {
         return [];
       }
 
-      // Firestore schedules 컬렉션에서 인증 코드가 포함된 스케줄 가져오기
       const q = query(
         collection(db, "schedules"),
-        where("participants", "array-contains", nickname) // 인증 코드 필터링
+        where("participants", "array-contains", nickname)
       );
 
       const querySnapshot = await getDocs(q);
 
-      const schedules = querySnapshot.docs.map((doc, index) => ({
-        id: index + 1,
+      const schedules = querySnapshot.docs.map((doc) => ({
+        id: doc.id, // 🔹 Firestore 문서 ID를 `string`으로 설정
         name: doc.data().name || "Unnamed Schedule",
         code: doc.data().code || "No Code",
-        participants: doc.data().participants || [], // participants 필드 추가
+        participants: doc.data().participants || [],
       }));
 
-      console.log("참여된 스케줄:", schedules);
+      console.log("📌 참여된 스케줄:", schedules);
       return schedules;
     } catch (error) {
-      console.error("스케줄 조회 실패:", error);
+      console.error("🔥 스케줄 조회 실패:", error);
       return [];
     }
   };
@@ -790,14 +788,27 @@ const Schedule: React.FC = () => {
   };
 
   const saveRaidEvent = async (
-    scheduleId: string, // Firestore 문서 ID는 string 타입이어야 함
+    scheduleCode: string, // Firestore 문서의 `code`를 사용하여 ID 찾기
     title: string,
     raid: string,
     level: string
   ) => {
     try {
-      // Firestore에서 해당 schedule 문서를 직접 참조
-      const scheduleRef = doc(db, "schedules", scheduleId);
+      // Firestore에서 `code` 필드가 `scheduleCode`와 일치하는 문서 찾기
+      const schedulesQuery = query(
+        collection(db, "schedules"),
+        where("code", "==", scheduleCode) // 🔹 Firestore에서 `code`로 문서 찾기
+      );
+      const querySnapshot = await getDocs(schedulesQuery);
+
+      if (querySnapshot.empty) {
+        alert("해당 코드의 스케줄을 찾을 수 없습니다.");
+        return;
+      }
+
+      // Firestore에서 첫 번째 매칭된 문서의 ID 가져오기
+      const scheduleDocId = querySnapshot.docs[0].id;
+      const scheduleRef = doc(db, "schedules", scheduleDocId);
 
       // 문서 존재 여부 확인
       const scheduleSnap = await getDoc(scheduleRef);
@@ -842,13 +853,14 @@ const Schedule: React.FC = () => {
       return;
     }
 
-    // 🔹 Firestore 문서 ID를 그대로 사용
+    // 🔹 Firestore 문서 ID가 아닌, `code` 값을 사용하여 문서 ID를 찾도록 변경
     saveRaidEvent(
-      String(selectedSchedule.id), // 🔹 숫자를 문자열로 변환
+      selectedSchedule.code,
       finalTitle,
       selectedRaid,
       selectedLevel
     );
+
     setIsAdding(false);
     setSelectedRaid("");
     setSelectedLevel("");
