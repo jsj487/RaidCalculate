@@ -4,6 +4,7 @@ import styled from "styled-components";
 import ScheduleCreationModal from "../components/ScheduleCreationModal";
 import JoinModal from "../components/JoinModal";
 import Calendar from "../components/Calendar";
+import { RaidValues } from "../components/RaidValues";
 import {
   collection,
   addDoc,
@@ -314,9 +315,82 @@ const CalendarSection = styled(Section)`
 const ScheduleSection = styled(Section)<{ isDateSelected: boolean }>`
   display: ${(props) => (props.isDateSelected ? "flex" : "flex")};
   flex-direction: ${(props) => (props.isDateSelected ? "column" : "row")};
-  justify-content: ${(props) =>
-    props.isDateSelected ? "space-between" : "center"};
-  align-items: ${(props) => (props.isDateSelected ? "flex-start" : "center")};
+  justify-content: ${(props) => (props.isDateSelected ? "" : "center")};
+  align-items: center;
+`;
+
+const AddEventButton = styled.div<{ isAdding: boolean }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+  font-size: 36px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  user-select: none; /* 드래그 방지 */
+  position: relative;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  span {
+    position: absolute;
+    color: #a9a9a9;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .plus {
+    opacity: ${({ isAdding }) => (isAdding ? "0" : "1")};
+    transform: ${({ isAdding }) =>
+      isAdding ? "scale(0.8)" : "scale(1)"}; /* 부드러운 축소 효과 */
+  }
+
+  .minus {
+    opacity: ${({ isAdding }) => (isAdding ? "1" : "0")};
+    transform: ${({ isAdding }) =>
+      isAdding ? "scale(1)" : "scale(1.2)"}; /* 부드러운 확대 효과 */
+  }
+`;
+
+const EventInputContainer = styled.div<{ isAdding: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f4f4f4;
+  border-radius: 8px;
+  transform: scaleY(${({ isAdding }) => (isAdding ? "1" : "0")});
+  transform-origin: top;
+  opacity: ${({ isAdding }) => (isAdding ? "1" : "0")};
+  max-height: ${({ isAdding }) =>
+    isAdding ? "300px" : "0px"}; /* 자연스러운 확장 */
+  overflow: hidden;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out,
+    padding 0.3s ease-in-out;
+
+  select,
+  input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  button {
+    padding: 8px 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #357abd;
+    }
+  }
 `;
 
 type Schedule = {
@@ -328,6 +402,11 @@ type Schedule = {
 
 // Main Component
 const Schedule: React.FC = () => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedRaid, setSelectedRaid] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("");
+  const [raidTitle, setRaidTitle] = useState("");
+
   const [isAuthenticated, setIsAuthenticated] = useState(false); // 인증 여부 상태
   const [authenticatedCode, setAuthenticatedCode] = useState<string | null>(
     null
@@ -710,6 +789,68 @@ const Schedule: React.FC = () => {
     setEvents(filteredEvents);
   };
 
+  const saveRaidEvent = async (
+    scheduleId: string, // Firestore 문서 ID 직접 전달
+    title: string,
+    raid: string,
+    level: string
+  ) => {
+    try {
+      // Firestore에서 해당 schedule 문서를 직접 참조
+      const scheduleRef = doc(db, "schedules", scheduleId);
+
+      // 문서 존재 여부 확인
+      const scheduleSnap = await getDoc(scheduleRef);
+      if (!scheduleSnap.exists()) {
+        console.error("해당 스케줄 문서를 찾을 수 없습니다.");
+        alert("해당 스케줄을 찾을 수 없습니다.");
+        return;
+      }
+
+      // 기존 events 필드 확인 (없으면 빈 배열 생성)
+      const scheduleData = scheduleSnap.data();
+      const existingEvents = scheduleData.events || [];
+
+      // 새로운 이벤트 데이터 추가
+      const newEvent = {
+        title: title || `${raid} - ${level}`,
+        raid,
+        level,
+        date: selectedDate,
+        createdAt: new Date(),
+      };
+
+      // Firestore 문서 업데이트 (events 배열 업데이트)
+      await updateDoc(scheduleRef, {
+        events: [...existingEvents, newEvent], // 기존 events 배열에 추가
+      });
+
+      alert("공대 일정이 저장되었습니다.");
+    } catch (error) {
+      console.error("일정 저장 실패:", error);
+      alert("일정 저장 중 문제가 발생했습니다.");
+    }
+  };
+
+  const handleSaveEvent = () => {
+    if (!selectedRaid || !selectedLevel) return;
+
+    const finalTitle = raidTitle.trim() || `${selectedRaid} - ${selectedLevel}`;
+
+    if (!selectedSchedule) {
+      alert("스케줄을 찾을 수 없습니다.");
+      return;
+    }
+
+    // 🔹 Firestore 문서 ID를 그대로 사용
+    saveRaidEvent(selectedSchedule.id, finalTitle, selectedRaid, selectedLevel);
+
+    setIsAdding(false);
+    setSelectedRaid("");
+    setSelectedLevel("");
+    setRaidTitle("");
+  };
+
   useEffect(() => {
     const storedNickname = localStorage.getItem("nickname");
     const storedCode = localStorage.getItem("authenticatedCode");
@@ -924,11 +1065,56 @@ const Schedule: React.FC = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p style={{ fontWeight: "bold" }}>
-                      해당 날짜에 일정이 없습니다.
-                    </p>
+                    <AddEventButton
+                      onClick={() => setIsAdding(!isAdding)}
+                      isAdding={isAdding}
+                    >
+                      <span className="plus">+</span>
+                      <span className="minus">−</span>
+                    </AddEventButton>
                   )}
-                  <button>공대 등록하기</button>
+
+                  <EventInputContainer isAdding={isAdding}>
+                    <select
+                      value={selectedRaid}
+                      onChange={(e) => setSelectedRaid(e.target.value)}
+                    >
+                      <option value="">레이드 선택</option>
+                      {Object.keys(RaidValues).map((category) =>
+                        Object.keys(RaidValues[category]).map((raidName) => (
+                          <option key={raidName} value={raidName}>
+                            {raidName}
+                          </option>
+                        ))
+                      )}
+                    </select>
+
+                    <select
+                      value={selectedLevel}
+                      onChange={(e) => setSelectedLevel(e.target.value)}
+                    >
+                      <option value="">난이도 선택</option>
+                      {selectedRaid &&
+                        Object.keys(
+                          Object.values(RaidValues)
+                            .map((category) => category[selectedRaid]) // 배열로 변환
+                            .find((raid) => raid !== undefined) || {}
+                        ).map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
+                        ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      value={raidTitle}
+                      onChange={(e) => setRaidTitle(e.target.value)}
+                      placeholder="공대 제목 (선택)"
+                    />
+
+                    <button onClick={handleSaveEvent}>저장</button>
+                  </EventInputContainer>
                 </>
               ) : (
                 <p style={{ fontWeight: "bold", fontSize: "25px" }}>
