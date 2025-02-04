@@ -814,13 +814,17 @@ const Schedule: React.FC = () => {
   };
 
   const handleDateClick = (date: string) => {
-    setSelectedDate(date);
+    setSelectedDate(date); // 클릭된 날짜 업데이트
 
-    // 🔹 Firestore에서 가져온 `events` 중 선택된 날짜와 일치하는 이벤트만 필터링
-    const filteredEvents = events.filter((event) => event.date === date);
-    console.log(`📌 ${date}에 해당하는 이벤트:`, filteredEvents);
+    // Firebase에서 해당 날짜의 일정 불러오기 (데이터 예시)
+    const mockEvents = [
+      { date: "2025-02-10", name: "길드 레이드" },
+      { date: "2025-02-15", name: "주간 공대" },
+    ];
 
-    setSelectedEvents(filteredEvents); // `Schedule.tsx`에서 `selectedEvents` 업데이트
+    // 선택된 날짜와 일치하는 일정만 필터링하여 표시
+    const filteredEvents = mockEvents.filter((event) => event.date === date);
+    setEvents(filteredEvents);
   };
 
   const saveRaidEvent = async (
