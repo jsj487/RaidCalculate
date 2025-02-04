@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import bcrypt from "bcryptjs";
 import styled from "styled-components";
 import ScheduleCreationModal from "../components/ScheduleCreationModal";
@@ -319,6 +319,39 @@ const ScheduleSection = styled(Section)<{ isDateSelected: boolean }>`
   align-items: center;
 `;
 
+const EventList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const EventItem = styled.li`
+  display: flex;
+  flex-direction: column;
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+`;
+
+const RaidInfo = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 5px;
+
+  .raid-name {
+    color: #007bff;
+  }
+
+  .raid-level {
+    color: #ff5733;
+  }
+`;
+
 const AddEventButton = styled.div<{ isAdding: boolean }>`
   display: flex;
   justify-content: center;
@@ -412,7 +445,13 @@ const Schedule: React.FC = () => {
     null
   ); // 인증된 코드
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 선택된 날짜 상태 추가
-  const [events, setEvents] = useState<{ date: string; name: string }[]>([]); // 해당 날짜의 일정 리스트
+  const [events, setEvents] = useState<
+    {
+      [x: string]: ReactNode;
+      date: string;
+      name: string;
+    }[]
+  >([]); // 해당 날짜의 일정 리스트
 
   const [selectedEvents, setSelectedEvents] = useState<
     { id: string; name: string }[]
@@ -491,6 +530,7 @@ const Schedule: React.FC = () => {
         name: doc.data().name || "Unnamed Schedule",
         code: doc.data().code || "No Code",
         participants: doc.data().participants || [],
+        events: doc.data().events || [], // 🔹 events 필드 추가
       }));
 
       console.log("📌 참여된 스케줄:", schedules);
@@ -774,17 +814,13 @@ const Schedule: React.FC = () => {
   };
 
   const handleDateClick = (date: string) => {
-    setSelectedDate(date); // 클릭된 날짜 업데이트
+    setSelectedDate(date);
 
-    // Firebase에서 해당 날짜의 일정 불러오기 (데이터 예시)
-    const mockEvents = [
-      { date: "2025-02-10", name: "길드 레이드" },
-      { date: "2025-02-15", name: "주간 공대" },
-    ];
+    // 🔹 Firestore에서 가져온 `events` 중 선택된 날짜와 일치하는 이벤트만 필터링
+    const filteredEvents = events.filter((event) => event.date === date);
+    console.log(`📌 ${date}에 해당하는 이벤트:`, filteredEvents);
 
-    // 선택된 날짜와 일치하는 일정만 필터링하여 표시
-    const filteredEvents = mockEvents.filter((event) => event.date === date);
-    setEvents(filteredEvents);
+    setSelectedEvents(filteredEvents); // `Schedule.tsx`에서 `selectedEvents` 업데이트
   };
 
   const saveRaidEvent = async (
@@ -1074,21 +1110,32 @@ const Schedule: React.FC = () => {
               {selectedDate ? (
                 <>
                   <h3>{selectedDate}</h3>
+
+                  {/* 📌 현재 선택된 날짜에 등록된 일정 목록 */}
                   {events.length > 0 ? (
-                    <ul>
+                    <EventList>
                       {events.map((event) => (
-                        <li key={event.name}>{event.name}</li>
+                        <EventItem key={event.name}>
+                          <RaidInfo>
+                            <span className="raid-name">{event.raid}</span>
+                            <span className="raid-level">{event.level}</span>
+                          </RaidInfo>
+                          <p className="event-title">{event.title}</p>
+                        </EventItem>
                       ))}
-                    </ul>
+                    </EventList>
                   ) : (
-                    <AddEventButton
-                      onClick={() => setIsAdding(!isAdding)}
-                      isAdding={isAdding}
-                    >
-                      <span className="plus">+</span>
-                      <span className="minus">−</span>
-                    </AddEventButton>
+                    <p style={{ fontWeight: "bold" }}>
+                      해당 날짜에 일정이 없습니다.
+                    </p>
                   )}
+                  <AddEventButton
+                    onClick={() => setIsAdding(!isAdding)}
+                    isAdding={isAdding}
+                  >
+                    <span className="plus">+</span>
+                    <span className="minus">−</span>
+                  </AddEventButton>
 
                   <EventInputContainer isAdding={isAdding}>
                     <select

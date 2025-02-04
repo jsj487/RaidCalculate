@@ -90,19 +90,13 @@ const Calendar = ({
   const [events, setEvents] = useState<{ date: string }[]>([]);
 
   useEffect(() => {
-    console.log("📌 현재 scheduleId:", scheduleId); // scheduleId 확인
-
     if (!scheduleId) {
-      console.warn("🚨 scheduleId가 없습니다.");
       return;
     }
   }, [scheduleId]);
 
   useEffect(() => {
-    console.log("📌 현재 scheduleId:", scheduleId); // scheduleId가 올바르게 설정되는지 확인
-
     if (!scheduleId) {
-      console.warn("🚨 scheduleId가 없습니다.");
       return;
     }
 
@@ -120,7 +114,6 @@ const Calendar = ({
         }
 
         const scheduleData = scheduleSnap.data();
-        console.log("📌 가져온 스케줄 데이터:", scheduleData);
 
         // events 필드가 없을 경우 빈 배열을 기본값으로 설정
         setEvents(scheduleData?.events ?? []);
@@ -142,7 +135,6 @@ const Calendar = ({
     const formattedDate = format(date, "yyyy-MM-dd");
 
     return events.filter((event) => {
-      console.log("Comparing:", event.date, "vs", formattedDate);
       return event.date === formattedDate;
     }).length;
   };
@@ -152,14 +144,12 @@ const Calendar = ({
       const response = await fetch(
         "http://localhost:5000/api/publicholidays/2025/KR"
       );
-      console.log("HTTP 상태 코드:", response.status); // 상태 코드 확인
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("공휴일 API 데이터:", data); // 응답 데이터 확인
 
       // 공휴일 데이터를 Date 객체로 변환하여 상태에 저장
       const holidayDates = data.map(
@@ -170,6 +160,33 @@ const Calendar = ({
       console.error("Failed to fetch holidays", error);
     }
   };
+  useEffect(() => {
+    if (!scheduleId) return;
+
+    const fetchEvents = async () => {
+      try {
+        const scheduleRef = doc(db, "schedules", scheduleId.toString());
+        const scheduleSnap = await getDoc(scheduleRef);
+
+        if (!scheduleSnap.exists()) {
+          console.error(
+            "🚨 해당 scheduleId의 문서를 찾을 수 없습니다:",
+            scheduleId
+          );
+          return;
+        }
+
+        const scheduleData = scheduleSnap.data();
+        console.log("📌 가져온 스케줄 데이터:", scheduleData);
+
+        setEvents(scheduleData?.events ?? []);
+      } catch (error) {
+        console.error("🔥 이벤트 데이터를 불러오는 중 오류 발생:", error);
+      }
+    };
+
+    fetchEvents();
+  }, [scheduleId]);
 
   useEffect(() => {
     fetchHolidays();
