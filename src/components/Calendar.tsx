@@ -4,6 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ko } from "date-fns/locale";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/FireBase";
+import { EventType } from "../pages/Schedule"; // 🔹 Schedule.tsx에서 EventType 가져오기
 
 const CalendarContainer = styled.div`
   max-width: 700px;
@@ -79,7 +80,7 @@ const Calendar = ({
 }: {
   scheduleName: string;
   scheduleId: string;
-  onDateClick: (date: string) => void; // 날짜 클릭 시 호출될 함수 타입 지정
+  onDateClick: (date: string, events: EventType[]) => void; // 🔹 두 개의 인수 받도록 수정
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [holidays, setHolidays] = useState<Date[]>([]);
@@ -160,6 +161,7 @@ const Calendar = ({
       console.error("Failed to fetch holidays", error);
     }
   };
+
   useEffect(() => {
     if (!scheduleId) return;
 
@@ -202,6 +204,11 @@ const Calendar = ({
     setCurrentDate(
       (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
     );
+  };
+
+  const handleDayClick = (day: Date) => {
+    const formattedDate = format(day, "yyyy-MM-dd");
+    const dayEvents = events.filter((event) => event.date === formattedDate);
   };
 
   const isHoliday = (date: Date) => {
@@ -254,6 +261,7 @@ const Calendar = ({
           .map((_, idx) => (
             <EmptyDay key={idx} />
           ))}
+
         {days.map((day) => {
           const isHolidayDay = isHoliday(day);
           const isSaturday = day.getDay() === 6;
@@ -267,7 +275,7 @@ const Calendar = ({
               isHoliday={isHolidayDay}
               isSaturday={isSaturday}
               isSunday={isSunday}
-              onClick={() => onDateClick(formattedDate)}
+              onClick={() => handleDayClick(day)} // 🔹 날짜 클릭 시 `onDateClick` 호출
             >
               <span>{format(day, "d", { locale: ko })}</span>
               {eventCount > 0 && (

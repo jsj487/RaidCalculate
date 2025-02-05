@@ -433,6 +433,15 @@ type Schedule = {
   participants: string[];
 };
 
+export type EventType = {
+  id: string; // Firestore에서 `date`와 `index` 조합
+  title: string;
+  raid: string;
+  level: string;
+  date: string;
+  createdAt: string; // Firestore Timestamp를 문자열로 변환
+};
+
 // Main Component
 const Schedule: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
@@ -447,15 +456,27 @@ const Schedule: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 선택된 날짜 상태 추가
   const [events, setEvents] = useState<
     {
-      [x: string]: ReactNode;
-      date: string;
+      [x: string]: any;
+      id: string;
       name: string;
+      raid: string;
+      level: string;
+      date: string;
+      createdAt: string;
     }[]
   >([]); // 해당 날짜의 일정 리스트
 
   const [selectedEvents, setSelectedEvents] = useState<
-    { id: string; name: string }[]
+    {
+      id: string;
+      name: string;
+      raid: string;
+      level: string;
+      date: string;
+      createdAt: string;
+    }[]
   >([]);
+
   const [pin, setPin] = useState(""); // PIN을 관리하는 상태 추가
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -813,18 +834,22 @@ const Schedule: React.FC = () => {
     }
   };
 
-  const handleDateClick = (date: string) => {
-    setSelectedDate(date); // 클릭된 날짜 업데이트
+  const handleDateClick = (date: string, dayEvents: EventType[]) => {
+    setSelectedDate(date);
 
-    // Firebase에서 해당 날짜의 일정 불러오기 (데이터 예시)
-    const mockEvents = [
-      { date: "2025-02-10", name: "길드 레이드" },
-      { date: "2025-02-15", name: "주간 공대" },
-    ];
+    // 🔹 Firestore에서 가져온 이벤트 데이터를 변환하여 `selectedEvents`와 타입 일치
+    const formattedEvents = dayEvents.map((event, index) => ({
+      id: `${event.date}-${index}`, // 🔹 id 생성 (date + index 조합)
+      name: event.title, // 🔹 Firestore의 title을 name으로 변경
+      raid: event.raid, // 🔹 레이드 이름 추가
+      level: event.level, // 🔹 레이드 난이도 추가
+      date: event.date, // 🔹 이벤트 날짜 추가
+      createdAt: String(event.createdAt), // 🔹 Firestore Timestamp를 문자열로 변환
+    }));
 
-    // 선택된 날짜와 일치하는 일정만 필터링하여 표시
-    const filteredEvents = mockEvents.filter((event) => event.date === date);
-    setEvents(filteredEvents);
+    console.log(`📌 ${date}에 해당하는 이벤트:`, formattedEvents);
+
+    setSelectedEvents(formattedEvents); // 🔹 `Schedule.tsx`에서 `selectedEvents` 업데이트
   };
 
   const saveRaidEvent = async (
@@ -1106,7 +1131,7 @@ const Schedule: React.FC = () => {
               <Calendar
                 scheduleName={selectedSchedule.name}
                 scheduleId={String(selectedSchedule.id)}
-                onDateClick={handleDateClick} // 날짜 클릭 시 함수 실행
+                onDateClick={handleDateClick} // 🔹 날짜 클릭 시 이벤트 목록도 함께 전달
               />
             </CalendarSection>
             {/* 오른쪽: 날짜별 공대 일정 */}
@@ -1115,16 +1140,16 @@ const Schedule: React.FC = () => {
                 <>
                   <h3>{selectedDate}</h3>
 
-                  {/* 📌 현재 선택된 날짜에 등록된 일정 목록 */}
-                  {events.length > 0 ? (
+                  {/* 📌 선택한 날짜의 일정 목록 */}
+                  {selectedEvents.length > 0 ? (
                     <EventList>
-                      {events.map((event) => (
-                        <EventItem key={event.name}>
+                      {selectedEvents.map((event) => (
+                        <EventItem key={event.id}>
                           <RaidInfo>
                             <span className="raid-name">{event.raid}</span>
                             <span className="raid-level">{event.level}</span>
                           </RaidInfo>
-                          <p className="event-title">{event.title}</p>
+                          <p className="event-title">{event.name}</p>
                         </EventItem>
                       ))}
                     </EventList>
