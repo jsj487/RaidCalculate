@@ -88,7 +88,16 @@ const Calendar = ({
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
   const currentMonth = format(currentDate, "MMMM", { locale: ko });
   const currentYear = format(currentDate, "yyyy", { locale: ko });
-  const [events, setEvents] = useState<{ date: string }[]>([]);
+  const [events, setEvents] = useState<
+    {
+      createdAt: any;
+      level: string;
+      raid: string;
+      title: string;
+      date: string;
+      participants: string[];
+    }[]
+  >([]);
 
   useEffect(() => {
     if (!scheduleId) {
@@ -208,7 +217,25 @@ const Calendar = ({
 
   const handleDayClick = (day: Date) => {
     const formattedDate = format(day, "yyyy-MM-dd");
-    const dayEvents = events.filter((event) => event.date === formattedDate);
+
+    // 🔹 `EventType` 형식으로 변환하여 `dayEvents`를 업데이트
+    const dayEvents: EventType[] = events
+      .filter((event) => event.date === formattedDate)
+      .map((event, index) => ({
+        id: `${event.date}-${index}`, // 🔹 id 생성 (date + index 조합)
+        title: event.title || "제목 없음", // 🔹 기본값 추가
+        raid: event.raid || "알 수 없음", // 🔹 기본값 추가
+        level: event.level || "알 수 없음", // 🔹 기본값 추가
+        date: event.date,
+        createdAt: event.createdAt
+          ? String(event.createdAt)
+          : new Date().toISOString(), // 🔹 Firestore Timestamp 변환
+        participants: event.participants,
+      }));
+
+    console.log(`📌 ${formattedDate}에 해당하는 이벤트:`, dayEvents);
+
+    onDateClick(formattedDate, dayEvents); // 🔹 날짜와 이벤트 목록을 함께 전달
   };
 
   const isHoliday = (date: Date) => {

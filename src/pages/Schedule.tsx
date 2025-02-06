@@ -5,6 +5,7 @@ import ScheduleCreationModal from "../components/ScheduleCreationModal";
 import JoinModal from "../components/JoinModal";
 import Calendar from "../components/Calendar";
 import { RaidValues } from "../components/RaidValues";
+import { EventModal } from "../components/EventModal";
 import {
   collection,
   addDoc,
@@ -320,6 +321,7 @@ const ScheduleSection = styled(Section)<{ isDateSelected: boolean }>`
 `;
 
 const EventList = styled.ul`
+  width: 100%;
   list-style: none;
   padding: 0;
   margin: 10px 0;
@@ -335,11 +337,16 @@ const EventItem = styled.li`
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+  &:hover {
+    background-color: #e0e0e0;
+  }
 `;
 
 const RaidInfo = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   font-weight: bold;
   margin-bottom: 5px;
 
@@ -426,6 +433,38 @@ const EventInputContainer = styled.div<{ isAdding: boolean }>`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 350px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+`;
+
+const CloseButton = styled.button`
+  margin-top: 10px;
+  padding: 10px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+`;
+
 type Schedule = {
   id: string; // 🔹 Firestore 문서 ID는 `string`이어야 함
   name: string;
@@ -434,12 +473,13 @@ type Schedule = {
 };
 
 export type EventType = {
-  id: string; // Firestore에서 `date`와 `index` 조합
+  id: string;
   title: string;
   raid: string;
   level: string;
   date: string;
-  createdAt: string; // Firestore Timestamp를 문자열로 변환
+  createdAt: string;
+  participants: string[]; // 🔹 새로운 필드 추가
 };
 
 // Main Component
@@ -454,26 +494,16 @@ const Schedule: React.FC = () => {
     null
   ); // 인증된 코드
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 선택된 날짜 상태 추가
-  const [events, setEvents] = useState<
-    {
-      [x: string]: any;
-      id: string;
-      name: string;
-      raid: string;
-      level: string;
-      date: string;
-      createdAt: string;
-    }[]
-  >([]); // 해당 날짜의 일정 리스트
 
   const [selectedEvents, setSelectedEvents] = useState<
     {
-      id: string;
-      name: string;
+      id: string; // Firestore에서 `date`와 `index` 조합
+      title: string;
       raid: string;
       level: string;
       date: string;
-      createdAt: string;
+      createdAt: string; // Firestore Timestamp를 문자열로 변환
+      participants: string[];
     }[]
   >([]);
 
@@ -490,6 +520,7 @@ const Schedule: React.FC = () => {
   } | null>(null);
 
   const [schedules, setSchedules] = useState<Schedule[]>([]); // 타입 지정
+  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
 
   const fetchScheduleByCode = async (code: string) => {
     setIsLoading(true); // 로딩 시작
@@ -647,6 +678,10 @@ const Schedule: React.FC = () => {
       alert("스케줄 생성 중 문제가 발생했습니다.");
       setIsLoading(false); // 로딩 종료
     }
+  };
+
+  const handleEventClick = (event: EventType) => {
+    setSelectedEvent(event);
   };
 
   const handleJoinSchedule = async () => {
@@ -836,20 +871,7 @@ const Schedule: React.FC = () => {
 
   const handleDateClick = (date: string, dayEvents: EventType[]) => {
     setSelectedDate(date);
-
-    // 🔹 Firestore에서 가져온 이벤트 데이터를 변환하여 `selectedEvents`와 타입 일치
-    const formattedEvents = dayEvents.map((event, index) => ({
-      id: `${event.date}-${index}`, // 🔹 id 생성 (date + index 조합)
-      name: event.title, // 🔹 Firestore의 title을 name으로 변경
-      raid: event.raid, // 🔹 레이드 이름 추가
-      level: event.level, // 🔹 레이드 난이도 추가
-      date: event.date, // 🔹 이벤트 날짜 추가
-      createdAt: String(event.createdAt), // 🔹 Firestore Timestamp를 문자열로 변환
-    }));
-
-    console.log(`📌 ${date}에 해당하는 이벤트:`, formattedEvents);
-
-    setSelectedEvents(formattedEvents); // 🔹 `Schedule.tsx`에서 `selectedEvents` 업데이트
+    setSelectedEvents(dayEvents);
   };
 
   const saveRaidEvent = async (
@@ -968,6 +990,18 @@ const Schedule: React.FC = () => {
       setAuthenticatedCode(storedCode);
     }
   }, []);
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      document.body.style.overflow = "hidden"; // 스크롤 막기
+    } else {
+      document.body.style.overflow = "auto"; // 스크롤 해제
+    }
+
+    return () => {
+      document.body.style.overflow = "auto"; // 컴포넌트 언마운트 시 스크롤 해제
+    };
+  }, [selectedSchedule]);
 
   return (
     <Container>
@@ -1106,7 +1140,13 @@ const Schedule: React.FC = () => {
       )}
 
       {selectedSchedule && (
-        <CalendarModal onClick={() => setSelectedSchedule(null)}>
+        <CalendarModal
+          onClick={() => {
+            setSelectedSchedule(null);
+            setSelectedDate(null); // 선택된 날짜 초기화
+            setSelectedEvents([]); // 선택된 이벤트 초기화
+          }}
+        >
           {" "}
           {/* 바깥 클릭 시 닫힘 */}
           <CalendarModalContainer onClick={(e) => e.stopPropagation()}>
@@ -1144,12 +1184,20 @@ const Schedule: React.FC = () => {
                   {selectedEvents.length > 0 ? (
                     <EventList>
                       {selectedEvents.map((event) => (
-                        <EventItem key={event.id}>
+                        <EventItem
+                          key={event.id}
+                          onClick={() => handleEventClick(event)}
+                        >
                           <RaidInfo>
                             <span className="raid-name">{event.raid}</span>
                             <span className="raid-level">{event.level}</span>
                           </RaidInfo>
-                          <p className="event-title">{event.name}</p>
+                          <p
+                            className="event-title"
+                            style={{ fontWeight: "bold" }}
+                          >
+                            {event.title}
+                          </p>
                         </EventItem>
                       ))}
                     </EventList>
@@ -1158,6 +1206,14 @@ const Schedule: React.FC = () => {
                       해당 날짜에 일정이 없습니다.
                     </p>
                   )}
+                  {selectedEvent && (
+                    <EventModal
+                      event={selectedEvent}
+                      scheduleId={selectedSchedule?.id} // 🛑 `id`가 올바르게 전달되는지 확인
+                      onClose={() => setSelectedEvent(null)}
+                    />
+                  )}
+
                   <AddEventButton
                     onClick={() => setIsAdding(!isAdding)}
                     isAdding={isAdding}
