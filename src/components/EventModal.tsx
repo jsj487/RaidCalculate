@@ -44,29 +44,50 @@ const ActionButtons = styled.div`
 
 const JoinButton = styled.button`
   flex: 1;
-  padding: 10px;
-  background: #4caf50;
+  padding: 12px;
+  background: #0073e6; /* 🔹 차분한 블루 계열 */
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  transition: background 0.3s ease-in-out;
+  font-size: 16px;
+  margin-top: 15px;
+  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
 
   &:hover {
-    background: #45a049;
+    background: #005bb5; /* 🔹 hover 시 더 어두운 블루 */
+    transform: scale(1.05);
+  }
+
+  &:active {
+    background: #004999; /* 🔹 클릭 시 더 깊은 블루 */
+    transform: scale(0.98);
   }
 `;
 
 const CloseButton = styled.button`
   flex: 1;
-  padding: 10px;
-  background: red;
+  padding: 12px;
+  background: red; /* 🔹 진한 레드 */
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
+  font-size: 16px;
+  margin-top: 15px;
+  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+
+  &:hover {
+    background: #b71c1c; /* 🔹 hover 시 더 어두운 레드 */
+    transform: scale(1.05);
+  }
+
+  &:active {
+    background: #8e0000; /* 🔹 클릭 시 더 깊은 레드 */
+    transform: scale(0.98);
+  }
 `;
 
 const CharacterListContainer = styled.div<{ isVisible: boolean }>`
@@ -74,62 +95,97 @@ const CharacterListContainer = styled.div<{ isVisible: boolean }>`
   bottom: ${({ isVisible }) => (isVisible ? "0" : "-100%")};
   left: 0;
   width: 100%;
-  background: #357abd;
+  background: #1e1e1e; /* 🔹 다크 모드 스타일 적용 */
   color: white;
   padding: 20px;
   transition: bottom 0.3s ease-in-out;
   text-align: center;
+  z-index: 100001;
+  box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.5); /* 🔹 위쪽 그림자 추가 */
 `;
 
 const CharacterList = styled.div`
   display: flex;
-  flex-wrap: nowrap; /* 한 줄로 배치 */
-  gap: 15px;
-  justify-content: center;
-  max-height: 300px;
-  overflow-x: auto; /* 가로 스크롤 추가 */
-  padding: 10px;
+  flex-wrap: nowrap;
+  gap: 20px; /* 🔹 카드 간 간격 증가 */
+  justify-content: flex-start;
+  max-height: 350px;
+  overflow-x: auto; /* 🔹 좌우 스크롤 가능하게 설정 */
+  padding: 10px 20px;
   width: 100%;
+  align-items: stretch;
+  scroll-padding: 20px;
+
+  /* 🔹 스크롤바 디자인 수정 */
+  &::-webkit-scrollbar {
+    height: 10px; /* 🔹 스크롤바 높이 설정 */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #555; /* 🔹 스크롤바 색상 변경 */
+    border-radius: 10px;
+    border: 2px solid #333; /* 🔹 테두리 추가 */
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: #222; /* 🔹 스크롤 트랙 색상 변경 */
+  }
 `;
 
-const CharacterCard = styled.div`
-  background: #f9f9f9;
-  padding: 15px;
+const CharacterCard = styled.div<{ isSelected: boolean }>`
+  position: relative;
+  width: 180px; /* 🔹 크기 조정 */
+  height: 320px; /* 🔹 높이 증가 */
+  min-width: 180px;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
+  overflow: hidden;
   cursor: pointer;
-  width: 120px; /* 카드의 너비 */
-  height: 200px; /* 카드의 높이 */
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out,
+    outline 0.2s ease-in-out;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: ${({ isSelected }) =>
+    isSelected ? "#FFD700" : "#2a2a2a"}; /* 🔹 선택된 캐릭터 강조 */
+
+  outline: ${({ isSelected }) =>
+    isSelected ? "3px solid white" : "none"}; /* ✅ 테두리 대신 outline 사용 */
 
   &:hover {
-    transform: scale(1.08);
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.3); /* 🔹 hover 시 밝은 효과 */
   }
 `;
 
 const CharacterImage = styled.img`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 10px;
-  border: 2px solid #ddd;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 🔹 이미지가 꽉 차도록 */
+  object-position: top center; /* 🔹 중앙을 기준으로 자르기 */
+`;
+
+const CharacterInfoOverlay = styled.div`
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.7); /* 🔹 어두운 반투명 배경 */
+  color: white;
+  padding: 10px 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  opacity: 0.9; /* 🔹 전체적으로 살짝 투명한 느낌 추가 */
+  transition: opacity 0.2s ease-in-out; /* 🔹 부드러운 효과 */
 `;
 
 const CharacterName = styled.p`
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
-  text-align: center;
-  color: #222;
+  margin: 0;
 `;
 
-const ItemLevel = styled.p`
-  font-size: 12px;
-  color: #555;
+const CharacterItemLevel = styled.p`
+  font-size: 14px;
+  margin: 2px 0 0;
+  color: #ddd;
 `;
 
 export const EventModal = ({
@@ -184,6 +240,7 @@ export const EventModal = ({
           parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
           parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
       );
+      console.log("🔍 정렬된 캐릭터 데이터:", sortedCharacters); // 🔹 정렬된 데이터 출력
 
       setCharacters(sortedCharacters);
     } catch (error) {
@@ -273,26 +330,42 @@ export const EventModal = ({
         </ActionButtons>
       </ModalContent>
 
-      {/* 🔹 캐릭터 선택 UI */}
-      <CharacterListContainer isVisible={isSelectingCharacter}>
-        <h2>캐릭터 리스트</h2>
-        <CharacterList>
-          {characters.map((char) => (
-            <CharacterCard
-              key={char.CharacterName}
-              onClick={() => setSelectedCharacter(char.CharacterName)}
-            >
-              <CharacterImage
-                src={char?.CharacterImage || "/img/default-character.png"}
-                alt={char?.CharacterName || "No Character Selected"}
-              />
-              <CharacterName>{char?.CharacterName || "No Name"}</CharacterName>
-              <ItemLevel>아이템 레벨: {char?.ItemAvgLevel || "N/A"}</ItemLevel>
-            </CharacterCard>
-          ))}
-        </CharacterList>
-        <button onClick={handleJoinEvent}>참가하기</button>
-      </CharacterListContainer>
+      {/* 🔹 캐릭터 선택 모달 (닫히지 않도록 stopPropagation 적용) */}
+      {isSelectingCharacter && (
+        <CharacterListContainer
+          isVisible={isSelectingCharacter}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2>캐릭터 리스트</h2>
+          <CharacterList>
+            {characters.map((char) => (
+              <CharacterCard
+                key={char.CharacterName}
+                isSelected={selectedCharacter === char.CharacterName}
+                onClick={() =>
+                  setSelectedCharacter((prev) =>
+                    prev === char.CharacterName ? null : char.CharacterName
+                  )
+                }
+              >
+                <CharacterImage
+                  src={char?.CharacterImage || "/img/default-character.png"}
+                  alt={char?.CharacterName || "No Character Selected"}
+                />
+                <CharacterInfoOverlay>
+                  <CharacterName>
+                    {char?.CharacterName || "No Name"}
+                  </CharacterName>
+                  <CharacterItemLevel>
+                    아이템 레벨: {char?.ItemAvgLevel || "N/A"}
+                  </CharacterItemLevel>
+                </CharacterInfoOverlay>
+              </CharacterCard>
+            ))}
+          </CharacterList>
+          <JoinButton onClick={handleJoinEvent}>참가하기</JoinButton>
+        </CharacterListContainer>
+      )}
     </ModalOverlay>
   );
 };
