@@ -3,12 +3,23 @@ import styled from "styled-components";
 import { EventType } from "../pages/Schedule";
 import { db } from "../utils/FireBase"; // Firestore 연결
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ClassIcon, ClassImage } from "../utils/NameMap";
 import axios from "axios";
 
 const BASE_URL =
   process.env.NODE_ENV === "production"
     ? "https://raidcalculate.onrender.com/api"
     : "http://localhost:5000/api";
+
+const CharacterClassIcon = styled.img`
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px; /* 🔹 아이콘 크기 조정 */
+  height: 32px;
+  z-index: 10;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.6)); /* 🔹 강조 효과 */
+`;
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -111,8 +122,8 @@ const CharacterList = styled.div`
   justify-content: flex-start;
   max-height: 350px;
   overflow-x: auto; /* 🔹 좌우 스크롤 가능하게 설정 */
-  padding: 10px 20px;
-  width: 100%;
+  padding: 10px 20px 10px 20px; /* 🔹 좌우 padding 유지 */
+  width: calc(100% + 20px); /* 🔹 오른쪽 끝이 안 짤리도록 width 확장 */
   align-items: stretch;
   scroll-padding: 20px;
 
@@ -140,6 +151,7 @@ const CharacterCard = styled.div<{ isSelected: boolean }>`
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
+  margin-right: 20px; /* 🔹 마지막 카드 여유 공간 확보 */
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out,
     outline 0.2s ease-in-out;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -148,6 +160,10 @@ const CharacterCard = styled.div<{ isSelected: boolean }>`
 
   outline: ${({ isSelected }) =>
     isSelected ? "3px solid white" : "none"}; /* ✅ 테두리 대신 outline 사용 */
+
+  &:last-child {
+    margin-right: 100px; /* 🔹 마지막 캐릭터 카드가 잘리지 않도록 */
+  }
 
   &:hover {
     transform: translateY(-5px);
@@ -219,6 +235,33 @@ export const EventModal = ({
     }
   }, [nickname]);
 
+  useEffect(() => {
+    const fetchUpdatedParticipants = async () => {
+      try {
+        const scheduleRef = doc(db, "schedules", scheduleId);
+        const scheduleSnap = await getDoc(scheduleRef);
+
+        if (!scheduleSnap.exists()) {
+          console.error("해당 스케줄을 찾을 수 없습니다.");
+          return;
+        }
+
+        const scheduleData = scheduleSnap.data();
+        const eventIndex = scheduleData.events.findIndex(
+          (e: any) => e.date === event.date && e.title === event.title
+        );
+
+        if (eventIndex !== -1) {
+          setParticipants(scheduleData.events[eventIndex].participants || []);
+        }
+      } catch (error) {
+        console.error("참가자 목록 갱신 실패:", error);
+      }
+    };
+
+    fetchUpdatedParticipants(); // 🔹 모달이 열릴 때 Firestore 최신 데이터 가져오기
+  }, [event, scheduleId]); // 🔹 event가 바뀔 때마다 최신화
+
   const handleSearch = async (searchQuery: string) => {
     setLoading(true);
     try {
@@ -276,6 +319,7 @@ export const EventModal = ({
         return;
       }
 
+      // 🔹 참가자 목록 업데이트
       const updatedEvents = [...scheduleData.events];
       updatedEvents[eventIndex].participants = [
         ...(updatedEvents[eventIndex].participants || []),
@@ -285,9 +329,16 @@ export const EventModal = ({
       await updateDoc(scheduleRef, { events: updatedEvents });
 
       alert(`${selectedCharacter} 캐릭터가 일정에 참가했습니다!`);
-      setParticipants((prev) => [...prev, selectedCharacter]);
 
-      // ✅ 참가가 완료된 후에만 닫기
+      // ✅ Firestore에서 최신 데이터 가져오기
+      const updatedScheduleSnap = await getDoc(scheduleRef);
+      const updatedScheduleData = updatedScheduleSnap.data();
+      if (updatedScheduleData) {
+        setParticipants(
+          updatedScheduleData.events[eventIndex].participants || []
+        );
+      }
+
       setIsSelectingCharacter(false);
     } catch (error) {
       console.error("❌ 참가 실패:", error);
@@ -348,8 +399,19 @@ export const EventModal = ({
                   )
                 }
               >
+                {ClassIcon[char.CharacterClassName] && (
+                  <CharacterClassIcon
+                    src={ClassIcon[char.CharacterClassName]}
+                    alt={char.CharacterClassName}
+                  />
+                )}{" "}
                 <CharacterImage
-                  src={char?.CharacterImage || "/img/default-character.png"}
+                  src={
+                    char?.CharacterImage && char?.CharacterImage !== "null"
+                      ? char.CharacterImage
+                      : ClassImage[char?.CharacterClassName] ||
+                        "/img/default-character.png"
+                  }
                   alt={char?.CharacterName || "No Character Selected"}
                 />
                 <CharacterInfoOverlay>
