@@ -441,79 +441,77 @@ export const EventModal = ({
         </ActionButtons>
       </ModalContent>
 
-      {/* 🔹 캐릭터 선택 모달 (닫히지 않도록 stopPropagation 적용) */}
-
       {isSelectingCharacter && (
         <CharacterSelectionContainer onClick={(e) => e.stopPropagation()}>
           {/* ✅ 서버 리스트 */}
           <ServerContainer>
-            <h2>서버 선택</h2>
+            <h2>서버 리스트</h2>
             <ServerList>
-              {["아브렐슈드", "카제로스", "루페온", "실리안", "카마인"].map(
-                (server) => (
-                  <ServerButton
-                    key={server}
-                    isSelected={selectedServer === server}
-                    onClick={() => {
-                      setSelectedServer(server); // ✅ 서버 선택
-                      setIsSelectingCharacter(true); // ✅ 모달 유지
-                    }}
-                  >
-                    {server}
-                  </ServerButton>
-                )
-              )}
+              {/* 🔹 `Array.from()`을 사용하여 `Set`을 배열로 변환 */}
+              {Array.from(
+                new Set(characters.map((char) => char.ServerName))
+              ).map((server) => (
+                <ServerButton
+                  key={server}
+                  isSelected={selectedServer === server}
+                  onClick={() => {
+                    setSelectedServer(server); // ✅ 서버 선택
+                    setIsSelectingCharacter(true); // ✅ 모달 유지
+                  }}
+                >
+                  {server}
+                </ServerButton>
+              ))}
             </ServerList>
           </ServerContainer>
 
-          {/* ✅ 캐릭터 리스트 (항상 표시) */}
           <CharacterContainer>
             <h2>캐릭터 리스트</h2>
             <CharacterList>
               <CharacterListWrapper>
-                {selectedServer
-                  ? characters
-                      .filter((char) => char.ServerName === selectedServer)
-                      .map((char) => (
-                        <CharacterCard
-                          key={char.CharacterName}
-                          isSelected={selectedCharacter === char.CharacterName}
-                          onClick={() =>
-                            setSelectedCharacter((prev) =>
-                              prev === char.CharacterName
-                                ? null
-                                : char.CharacterName
-                            )
-                          }
-                        >
-                          {ClassIcon[char.CharacterClassName] && (
-                            <CharacterClassIcon
-                              src={ClassIcon[char.CharacterClassName]}
-                              alt={char.CharacterClassName}
-                            />
-                          )}
-                          <CharacterImage
-                            src={
-                              char?.CharacterImage &&
-                              char?.CharacterImage !== "null"
-                                ? char.CharacterImage
-                                : ClassImage[char?.CharacterClassName] ||
-                                  "/img/default-character.png"
-                            }
-                            alt={char?.CharacterName || "No Character Selected"}
-                          />
-                          <CharacterInfoOverlay>
-                            <CharacterName>
-                              {char?.CharacterName || "No Name"}
-                            </CharacterName>
-                            <CharacterItemLevel>
-                              아이템 레벨: {char?.ItemAvgLevel || "N/A"}
-                            </CharacterItemLevel>
-                          </CharacterInfoOverlay>
-                        </CharacterCard>
-                      ))
-                  : null}{" "}
-                {/* ✅ 서버가 선택되지 않았을 경우 아무것도 출력하지 않음 */}
+                {characters
+                  .filter(
+                    (char) =>
+                      !selectedServer || char.ServerName === selectedServer
+                  ) // 🔹 서버 선택 전이면 전체 표시
+                  .map((char) => (
+                    <CharacterCard
+                      key={char.CharacterName}
+                      isSelected={selectedCharacter === char.CharacterName}
+                      onClick={() =>
+                        setSelectedCharacter((prev) =>
+                          prev === char.CharacterName
+                            ? null
+                            : char.CharacterName
+                        )
+                      }
+                    >
+                      {ClassIcon[char.CharacterClassName] && (
+                        <CharacterClassIcon
+                          src={ClassIcon[char.CharacterClassName]}
+                          alt={char.CharacterClassName}
+                        />
+                      )}
+                      <CharacterImage
+                        src={
+                          char?.CharacterImage &&
+                          char?.CharacterImage !== "null"
+                            ? char.CharacterImage
+                            : ClassImage[char?.CharacterClassName] ||
+                              "/img/default-character.png"
+                        }
+                        alt={char?.CharacterName || "No Character Selected"}
+                      />
+                      <CharacterInfoOverlay>
+                        <CharacterName>
+                          {char?.CharacterName || "No Name"}
+                        </CharacterName>
+                        <CharacterItemLevel>
+                          아이템 레벨: {char?.ItemAvgLevel || "N/A"}
+                        </CharacterItemLevel>
+                      </CharacterInfoOverlay>
+                    </CharacterCard>
+                  ))}
               </CharacterListWrapper>
             </CharacterList>
           </CharacterContainer>
