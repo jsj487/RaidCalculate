@@ -10,7 +10,7 @@ import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져�
 import { RaidValues } from "../components/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
-import { getMaterialImagePath } from "../utils/NameMap";
+import { getMaterialImagePath, ClassImage } from "../utils/NameMap";
 
 const slideIn = keyframes`
   from {
@@ -192,10 +192,11 @@ const ArrowIcon = styled(IoIosArrowDown)<{ isOpen: boolean }>`
 const CharacterRow = styled.div`
   display: flex;
   gap: 20px;
-  justify-content: flex-start;
-  align-items: stretch; /* 모든 자식 요소의 height를 동일하게 맞춤 */
+  justify-content: center; /* 🔹 카드 개수가 적을 때 중앙 정렬 */
+  align-items: stretch;
   flex-wrap: wrap;
   margin-top: 20px;
+
   @media (max-width: 768px) {
     gap: 10px;
     margin-top: 10px;
@@ -203,7 +204,9 @@ const CharacterRow = styled.div`
 `;
 
 const CharacterCard = styled.div`
-  flex: 1; /* 부모 요소와 동일한 높이 설정 */
+  flex: 1;
+  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
+  max-width: 250px; /* 🔹 최대 크기 제한 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -327,6 +330,30 @@ const AddCharacterButtonNormalView = styled.div`
   &:hover {
     border-color: #aaa;
   }
+`;
+
+const AddCharacterContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
+  max-width: 250px; /* 🔹 최대 크기 제한 */
+  flex-grow: 0; /* 🔹 크기 조정 방지 */
+  flex-shrink: 0; /* 🔹 크기 축소 방지 */
+`;
+
+const AddCharacterButtonNormalViewStyled = styled(AddCharacterButtonNormalView)`
+  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
+  max-width: 250px; /* 🔹 최대 크기 제한 */
+  height: 320px; /* CharacterCard와 동일한 높이 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ddd;
+  background-color: transparent;
+  margin: 0 auto;
+  flex-shrink: 0; /* 🔹 크기 축소 방지 */
 `;
 
 const PlusIcon = styled(FaUserPlus)`
@@ -1264,6 +1291,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
               {displayedCharacters.map(
                 (
                   char: {
+                    CharacterClassName: any;
                     CharacterImage: any;
                     CharacterName: string;
                     ItemAvgLevel: any;
@@ -1273,7 +1301,12 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                 ) => (
                   <CharacterCard key={index}>
                     <CharacterImage
-                      src={char?.CharacterImage || "/img/default-character.png"}
+                      src={
+                        char?.CharacterImage && char?.CharacterImage !== "null"
+                          ? char.CharacterImage
+                          : ClassImage[char?.CharacterClassName] ||
+                            "/img/default-character.png"
+                      }
                       alt={char?.CharacterName || "No Character Selected"}
                       onClick={() =>
                         handleImageClick(char?.CharacterImage || "")
@@ -1619,21 +1652,13 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     alignItems: "center",
                   }}
                 >
-                  <AddCharacterButtonNormalView
-                    onClick={toggleCharacterListModal}
-                    style={{
-                      width: "540px", // CharacterCard와 동일한 너비
-                      height: "400px", // CharacterCard와 동일한 높이
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      border: "2px dashed #ddd", // 스타일 유지
-                      backgroundColor: "transparent", // 투명 배경
-                      margin: "0 auto", // 가운데 정렬
-                    }}
-                  >
-                    <PlusIcon />
-                  </AddCharacterButtonNormalView>
+                  <AddCharacterContainer>
+                    <AddCharacterButtonNormalViewStyled
+                      onClick={toggleCharacterListModal}
+                    >
+                      <PlusIcon />
+                    </AddCharacterButtonNormalViewStyled>
+                  </AddCharacterContainer>
                 </div>
               </div>
             </CharacterRow>

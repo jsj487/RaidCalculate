@@ -53,6 +53,14 @@ const ActionButtons = styled.div`
   justify-content: space-between;
 `;
 
+const CharacterActionButtons = styled.div`
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+`;
+
 const JoinButton = styled.button`
   flex: 1;
   padding: 12px;
@@ -68,7 +76,7 @@ const JoinButton = styled.button`
 
   &:hover {
     background: #005bb5; /* 🔹 hover 시 더 어두운 블루 */
-    transform: scale(1.05);
+    transform: scale(1.01);
   }
 
   &:active {
@@ -92,7 +100,7 @@ const CloseButton = styled.button`
 
   &:hover {
     background: #b71c1c; /* 🔹 hover 시 더 어두운 레드 */
-    transform: scale(1.05);
+    transform: scale(1.01);
   }
 
   &:active {
@@ -101,45 +109,89 @@ const CloseButton = styled.button`
   }
 `;
 
-const CharacterListContainer = styled.div<{ isVisible: boolean }>`
+const CharacterSelectionContainer = styled.div`
   position: fixed;
-  bottom: ${({ isVisible }) => (isVisible ? "0" : "-100%")};
-  left: 0;
-  width: 100%;
-  background: #1e1e1e; /* 🔹 다크 모드 스타일 적용 */
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 10px);
+  max-width: 95%;
+  background: #1e1e1e;
   color: white;
   padding: 20px;
   transition: bottom 0.3s ease-in-out;
   text-align: center;
   z-index: 100001;
-  box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.5); /* 🔹 위쪽 그림자 추가 */
+  box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.5);
+`;
+
+const ServerContainer = styled.div`
+  padding-bottom: 20px;
+  border-bottom: 1px solid #444;
+`;
+
+const ServerList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+`;
+
+const ServerButton = styled.button<{ isSelected: boolean }>`
+  padding: 10px 15px;
+  border: none;
+  background: ${({ isSelected }) =>
+    isSelected ? "#0073e6" : "#2d2d2d"}; /* 🔹 선택된 서버 강조 */
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.3s;
+
+  &:hover {
+    background: ${({ isSelected }) => (isSelected ? "#005bb5" : "#444")};
+  }
+`;
+
+const CharacterContainer = styled.div`
+  display: block;
+  margin-top: 20px;
+`;
+
+const CharacterListWrapper = styled.div`
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px; /* 🔹 카드 간 간격 */
+  padding: 0; /* 🔹 좌우 padding 균등 적용 */
+  width: 100%;
 `;
 
 const CharacterList = styled.div`
   display: flex;
   flex-wrap: nowrap;
-  gap: 20px; /* 🔹 카드 간 간격 증가 */
+  gap: 20px;
   justify-content: flex-start;
   max-height: 350px;
-  overflow-x: auto; /* 🔹 좌우 스크롤 가능하게 설정 */
-  padding: 10px 20px 10px 20px; /* 🔹 좌우 padding 유지 */
-  width: calc(100% + 20px); /* 🔹 오른쪽 끝이 안 짤리도록 width 확장 */
+  overflow-x: auto;
+  padding: 10px 0px;
+  width: 100%;
+  margin: 0 auto; /* 🔹 가운데 정렬 */
   align-items: stretch;
   scroll-padding: 20px;
 
   /* 🔹 스크롤바 디자인 수정 */
   &::-webkit-scrollbar {
-    height: 10px; /* 🔹 스크롤바 높이 설정 */
+    height: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: #555; /* 🔹 스크롤바 색상 변경 */
+    background-color: #555;
     border-radius: 10px;
-    border: 2px solid #333; /* 🔹 테두리 추가 */
+    border: 2px solid #333;
   }
 
   &::-webkit-scrollbar-track {
-    background-color: #222; /* 🔹 스크롤 트랙 색상 변경 */
+    background-color: #222;
   }
 `;
 
@@ -222,6 +274,8 @@ export const EventModal = ({
   );
   const [isSelectingCharacter, setIsSelectingCharacter] = useState(false); // 🔹 캐릭터 선택 UI 활성화 여부
   const [loading, setLoading] = useState(false);
+  const [selectedServer, setSelectedServer] = useState<string | null>(null);
+  const [isCharacterListVisible, setIsCharacterListVisible] = useState(false);
 
   const nickname = localStorage.getItem("nickname") || "";
 
@@ -300,6 +354,12 @@ export const EventModal = ({
       return;
     }
 
+    // 중복 참가자 확인
+    if (participants.includes(selectedCharacter)) {
+      alert("이미 참가한 캐릭터입니다!");
+      return;
+    }
+
     try {
       const scheduleRef = doc(db, "schedules", scheduleId);
       const scheduleSnap = await getDoc(scheduleRef);
@@ -319,7 +379,7 @@ export const EventModal = ({
         return;
       }
 
-      // 🔹 참가자 목록 업데이트
+      // 참가자 목록 업데이트 (중복 검사 통과한 경우만 추가)
       const updatedEvents = [...scheduleData.events];
       updatedEvents[eventIndex].participants = [
         ...(updatedEvents[eventIndex].participants || []),
@@ -330,7 +390,7 @@ export const EventModal = ({
 
       alert(`${selectedCharacter} 캐릭터가 일정에 참가했습니다!`);
 
-      // ✅ Firestore에서 최신 데이터 가져오기
+      // Firestore에서 최신 데이터 가져오기
       const updatedScheduleSnap = await getDoc(scheduleRef);
       const updatedScheduleData = updatedScheduleSnap.data();
       if (updatedScheduleData) {
@@ -382,51 +442,95 @@ export const EventModal = ({
       </ModalContent>
 
       {/* 🔹 캐릭터 선택 모달 (닫히지 않도록 stopPropagation 적용) */}
+
       {isSelectingCharacter && (
-        <CharacterListContainer
-          isVisible={isSelectingCharacter}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h2>캐릭터 리스트</h2>
-          <CharacterList>
-            {characters.map((char) => (
-              <CharacterCard
-                key={char.CharacterName}
-                isSelected={selectedCharacter === char.CharacterName}
-                onClick={() =>
-                  setSelectedCharacter((prev) =>
-                    prev === char.CharacterName ? null : char.CharacterName
-                  )
-                }
-              >
-                {ClassIcon[char.CharacterClassName] && (
-                  <CharacterClassIcon
-                    src={ClassIcon[char.CharacterClassName]}
-                    alt={char.CharacterClassName}
-                  />
-                )}{" "}
-                <CharacterImage
-                  src={
-                    char?.CharacterImage && char?.CharacterImage !== "null"
-                      ? char.CharacterImage
-                      : ClassImage[char?.CharacterClassName] ||
-                        "/img/default-character.png"
-                  }
-                  alt={char?.CharacterName || "No Character Selected"}
-                />
-                <CharacterInfoOverlay>
-                  <CharacterName>
-                    {char?.CharacterName || "No Name"}
-                  </CharacterName>
-                  <CharacterItemLevel>
-                    아이템 레벨: {char?.ItemAvgLevel || "N/A"}
-                  </CharacterItemLevel>
-                </CharacterInfoOverlay>
-              </CharacterCard>
-            ))}
-          </CharacterList>
-          <JoinButton onClick={handleJoinEvent}>참가하기</JoinButton>
-        </CharacterListContainer>
+        <CharacterSelectionContainer onClick={(e) => e.stopPropagation()}>
+          {/* ✅ 서버 리스트 */}
+          <ServerContainer>
+            <h2>서버 선택</h2>
+            <ServerList>
+              {["아브렐슈드", "카제로스", "루페온", "실리안", "카마인"].map(
+                (server) => (
+                  <ServerButton
+                    key={server}
+                    isSelected={selectedServer === server}
+                    onClick={() => {
+                      setSelectedServer(server); // ✅ 서버 선택
+                      setIsSelectingCharacter(true); // ✅ 모달 유지
+                    }}
+                  >
+                    {server}
+                  </ServerButton>
+                )
+              )}
+            </ServerList>
+          </ServerContainer>
+
+          {/* ✅ 캐릭터 리스트 (항상 표시) */}
+          <CharacterContainer>
+            <h2>캐릭터 리스트</h2>
+            <CharacterList>
+              <CharacterListWrapper>
+                {selectedServer
+                  ? characters
+                      .filter((char) => char.ServerName === selectedServer)
+                      .map((char) => (
+                        <CharacterCard
+                          key={char.CharacterName}
+                          isSelected={selectedCharacter === char.CharacterName}
+                          onClick={() =>
+                            setSelectedCharacter((prev) =>
+                              prev === char.CharacterName
+                                ? null
+                                : char.CharacterName
+                            )
+                          }
+                        >
+                          {ClassIcon[char.CharacterClassName] && (
+                            <CharacterClassIcon
+                              src={ClassIcon[char.CharacterClassName]}
+                              alt={char.CharacterClassName}
+                            />
+                          )}
+                          <CharacterImage
+                            src={
+                              char?.CharacterImage &&
+                              char?.CharacterImage !== "null"
+                                ? char.CharacterImage
+                                : ClassImage[char?.CharacterClassName] ||
+                                  "/img/default-character.png"
+                            }
+                            alt={char?.CharacterName || "No Character Selected"}
+                          />
+                          <CharacterInfoOverlay>
+                            <CharacterName>
+                              {char?.CharacterName || "No Name"}
+                            </CharacterName>
+                            <CharacterItemLevel>
+                              아이템 레벨: {char?.ItemAvgLevel || "N/A"}
+                            </CharacterItemLevel>
+                          </CharacterInfoOverlay>
+                        </CharacterCard>
+                      ))
+                  : null}{" "}
+                {/* ✅ 서버가 선택되지 않았을 경우 아무것도 출력하지 않음 */}
+              </CharacterListWrapper>
+            </CharacterList>
+          </CharacterContainer>
+
+          {/* ✅ 참가 & 닫기 버튼 */}
+          <CharacterActionButtons>
+            <JoinButton onClick={handleJoinEvent}>참가하기</JoinButton>
+            <CloseButton
+              onClick={() => {
+                setIsSelectingCharacter(false);
+                setSelectedServer(null); // ✅ 서버 선택 초기화
+              }}
+            >
+              닫기
+            </CloseButton>
+          </CharacterActionButtons>
+        </CharacterSelectionContainer>
       )}
     </ModalOverlay>
   );
