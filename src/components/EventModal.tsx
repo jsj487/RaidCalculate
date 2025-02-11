@@ -5,6 +5,7 @@ import { db } from "../utils/FireBase"; // Firestore 연결
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ClassIcon, ClassImage } from "../utils/NameMap";
 import axios from "axios";
+import React from "react";
 
 const BASE_URL =
   process.env.NODE_ENV === "production"
@@ -35,10 +36,12 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background-color: #0c0c0c;
   padding: 20px;
   border-radius: 10px;
-  width: 600px;
+  min-width: 600px;
+  width: auto; /* 🔹 참가자 수에 맞게 자동 조정 */
+  max-width: 90vw; /* 🔹 화면 크기를 넘지 않도록 설정 */
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
@@ -59,6 +62,111 @@ const CharacterActionButtons = styled.div`
   justify-content: space-between;
   gap: 10px;
   margin-top: 20px;
+`;
+
+const ParticipantsGrid = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 60px; /* 🔹 파티 간 간격 */
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const PartyContainer = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 🔹 2x2 그리드 (4명 배치) */
+  gap: 20px;
+`;
+
+const ParticipantCard = styled.div<{ rowIndex: number }>`
+  position: relative;
+  width: 180px;
+  height: 320px;
+  overflow: hidden;
+  background: #2a2a2a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+
+  /* 🔹 상단 or 하단 그라데이션 띠 추가 */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 12px; /* 띠의 높이 */
+    background: linear-gradient(
+      to right,
+      rgba(231, 128, 11, 0.7),
+      rgb(253, 253, 253),
+      rgba(231, 128, 11, 0.7)
+    ); /* 금색 그라데이션 */
+    ${({ rowIndex }) => (rowIndex < 2 ? "top: 0;" : "bottom: 0;")}
+  }
+`;
+
+const PartyBadge = styled.div`
+  position: absolute;
+  bottom: 50%; /* 파티 중앙 아래 배치 */
+  left: 50%;
+  transform: translate(-50%, 50%); /* 정확한 중앙 배치 */
+  text-align: center;
+  font-size: 28px; /* 숫자 크기 증가 */
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(
+    to bottom,
+    #b37a30,
+    #d4a373
+  ); /* 밝은 금색 → 어두운 금색 */
+  border: 3px solid #5a3e1b; /* 어두운 갈색 테두리 */
+  border-radius: 8px;
+  padding: 15px 10px;
+  width: 50px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 5; /* 캐릭터 카드 위로 배치 */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5); /* 그림자 효과 */
+
+  span {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    text-shadow: -1px -1px 0 #b37a30, 1px -1px 0 #b37a30, -1px 1px 0 #b37a30,
+      1px 1px 0 #b37a30; /* 주황색 테두리 효과 */
+  }
+`;
+
+const ParticipantImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const ParticipantInfo = styled.div`
+  position: absolute;
+  bottom: 60px;
+  width: 90%;
+  left: 5%;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  padding: 10px 0;
+`;
+
+const ClassName = styled.p`
+  margin: 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffcc00;
+`;
+
+const ParticipantName = styled.p`
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0;
 `;
 
 const JoinButton = styled.button`
@@ -107,6 +215,29 @@ const CloseButton = styled.button`
     background: #8e0000; /* 🔹 클릭 시 더 깊은 레드 */
     transform: scale(0.98);
   }
+`;
+
+const EventTitle = styled.h2`
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff; /* 🔹 노란색 강조 */
+  margin-bottom: 4px;
+`;
+
+const EventDetails = styled.p`
+  font-size: 16px;
+  font-weight: normal;
+  color: #94c1d3;
+  text-align: center;
+  margin: 2px 0;
+`;
+
+const EventContainer = styled.div`
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 `;
 
 const CharacterSelectionContainer = styled.div`
@@ -256,6 +387,12 @@ const CharacterItemLevel = styled.p`
   color: #ddd;
 `;
 
+type Participant = {
+  CharacterClassName: string;
+  CharacterName: string;
+  CharacterImage: string;
+};
+
 export const EventModal = ({
   event,
   scheduleId,
@@ -265,9 +402,7 @@ export const EventModal = ({
   scheduleId: string;
   onClose: () => void;
 }) => {
-  const [participants, setParticipants] = useState<string[]>(
-    event.participants || []
-  );
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [characters, setCharacters] = useState<any[]>([]);
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
     null
@@ -275,13 +410,42 @@ export const EventModal = ({
   const [isSelectingCharacter, setIsSelectingCharacter] = useState(false); // 🔹 캐릭터 선택 UI 활성화 여부
   const [loading, setLoading] = useState(false);
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
-  const [isCharacterListVisible, setIsCharacterListVisible] = useState(false);
 
   const nickname = localStorage.getItem("nickname") || "";
 
   useEffect(() => {
-    setParticipants(event.participants || []);
-  }, [event]);
+    console.log("Updated participants:", participants);
+  }, [participants]);
+
+  useEffect(() => {
+    if (event.participants && Array.isArray(event.participants)) {
+      if (typeof event.participants[0] === "string") {
+        // participants가 문자열 배열이라면, 기존 characters 데이터와 매칭하여 객체 배열로 변환
+        const formattedParticipants = event.participants.map((p) => {
+          const character = characters.find((char) => char.CharacterName === p);
+          return character
+            ? {
+                CharacterClassName: character.CharacterClassName,
+                CharacterName: character.CharacterName,
+                CharacterImage:
+                  character.CharacterImage || "/img/default-character.png",
+              }
+            : {
+                CharacterClassName: "알 수 없음",
+                CharacterName: p,
+                CharacterImage: "/img/default-character.png",
+              };
+        });
+
+        setParticipants(formattedParticipants);
+      } else {
+        // 이미 객체 배열인 경우 바로 저장
+        setParticipants(event.participants as unknown as Participant[]);
+      }
+    } else {
+      setParticipants([]);
+    }
+  }, [event, characters]);
 
   useEffect(() => {
     if (nickname) {
@@ -315,6 +479,15 @@ export const EventModal = ({
 
     fetchUpdatedParticipants(); // 🔹 모달이 열릴 때 Firestore 최신 데이터 가져오기
   }, [event, scheduleId]); // 🔹 event가 바뀔 때마다 최신화
+
+  // 참가자 목록을 두 개의 컬럼으로 정렬하는 로직
+
+  const formattedParticipants = participants.reduce((acc, p, index) => {
+    const groupIndex = Math.floor(index / 4); // 4개 단위로 그룹 생성
+    acc[groupIndex] = acc[groupIndex] || [];
+    acc[groupIndex].push(p);
+    return acc;
+  }, [] as Participant[][]);
 
   const handleSearch = async (searchQuery: string) => {
     setLoading(true);
@@ -354,8 +527,22 @@ export const EventModal = ({
       return;
     }
 
-    // 중복 참가자 확인
-    if (participants.includes(selectedCharacter)) {
+    // 선택된 캐릭터 정보 가져오기
+    const selectedCharacterData = characters.find(
+      (char) => char.CharacterName === selectedCharacter
+    );
+
+    if (!selectedCharacterData) {
+      alert("캐릭터 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    // ✅ 중복 체크 (기존에 같은 캐릭터가 참가 중인지 확인)
+    if (
+      participants.some(
+        (p) => p.CharacterName === selectedCharacterData.CharacterName
+      )
+    ) {
       alert("이미 참가한 캐릭터입니다!");
       return;
     }
@@ -379,16 +566,26 @@ export const EventModal = ({
         return;
       }
 
-      // 참가자 목록 업데이트 (중복 검사 통과한 경우만 추가)
-      const updatedEvents = [...scheduleData.events];
-      updatedEvents[eventIndex].participants = [
-        ...(updatedEvents[eventIndex].participants || []),
-        selectedCharacter,
+      // ✅ 참가자 목록 업데이트 (객체 형태로 추가)
+      const updatedParticipants = [
+        ...(scheduleData.events[eventIndex].participants || []),
+        {
+          CharacterClassName: selectedCharacterData.CharacterClassName,
+          CharacterName: selectedCharacterData.CharacterName,
+          CharacterImage:
+            selectedCharacterData.CharacterImage ||
+            "/img/default-character.png",
+        },
       ];
+
+      const updatedEvents = [...scheduleData.events];
+      updatedEvents[eventIndex].participants = updatedParticipants;
 
       await updateDoc(scheduleRef, { events: updatedEvents });
 
-      alert(`${selectedCharacter} 캐릭터가 일정에 참가했습니다!`);
+      alert(
+        `${selectedCharacterData.CharacterName} 캐릭터가 일정에 참가했습니다!`
+      );
 
       // Firestore에서 최신 데이터 가져오기
       const updatedScheduleSnap = await getDoc(scheduleRef);
@@ -409,25 +606,53 @@ export const EventModal = ({
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <h2>{event.title}</h2>
-        <p>
-          <strong>레이드:</strong> {event.raid}
-        </p>
-        <p>
-          <strong>난이도:</strong> {event.level}
-        </p>
-        <p>
-          <strong>날짜:</strong> {event.date}
-        </p>
+        <EventContainer>
+          <EventTitle>
+            [{event.level}]{" "}
+            <span style={{ color: "#ffcc00" }}>{event.raid}</span>
+            <span> 파티 모집 상세 정보</span>
+          </EventTitle>
+          <EventDetails>
+            [{event.date}]{" "}
+            <span style={{ color: "#ffffff", fontWeight: "bold" }}>
+              {event.title}
+            </span>
+          </EventDetails>
+        </EventContainer>
 
         {/* 참가자 목록 */}
-        <h3>참가자 목록</h3>
         {participants.length > 0 ? (
-          <ul>
-            {participants.map((p, i) => (
-              <li key={i}>{p}</li>
+          <ParticipantsGrid>
+            {formattedParticipants.map((group, groupIndex) => (
+              <PartyContainer key={`group-${groupIndex}`}>
+                {/* 🔹 4명의 참가자를 배치 */}
+                {group.map((p, rowIndex) => (
+                  <ParticipantCard
+                    key={`group-${groupIndex}-row-${rowIndex}`}
+                    rowIndex={rowIndex} // ✅ rowIndex 전달
+                  >
+                    {" "}
+                    <ParticipantImage
+                      src={p.CharacterImage || "/img/default-character.png"}
+                      alt={p.CharacterName}
+                    />
+                    <ParticipantInfo>
+                      <ClassName>{p.CharacterClassName}</ClassName>
+                      <ParticipantName>{p.CharacterName}</ParticipantName>
+                    </ParticipantInfo>
+                  </ParticipantCard>
+                ))}
+
+                {/* 🔹 파티 배지 (아래 중앙에 배치) */}
+                <PartyBadge>
+                  {groupIndex + 1}
+                  <span>
+                    {groupIndex === 0 ? "ST" : groupIndex === 1 ? "ND" : "RD"}
+                  </span>
+                </PartyBadge>
+              </PartyContainer>
             ))}
-          </ul>
+          </ParticipantsGrid>
         ) : (
           <p>아직 참가자가 없습니다.</p>
         )}

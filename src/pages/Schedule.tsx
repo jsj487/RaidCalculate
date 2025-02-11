@@ -346,16 +346,16 @@ const EventItem = styled.li`
 
 const RaidInfo = styled.div`
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   font-weight: bold;
   margin-bottom: 5px;
 
-  .raid-name {
-    color: #007bff;
-  }
-
   .raid-level {
-    color: #ff5733;
+    color: #000;
+    margin-right: 10px;
+  }
+  .raid-name {
+    color: rgb(255, 204, 0);
   }
 `;
 
@@ -1189,8 +1189,8 @@ const Schedule: React.FC = () => {
                           onClick={() => handleEventClick(event)}
                         >
                           <RaidInfo>
+                            <span className="raid-level">[{event.level}] </span>
                             <span className="raid-name">{event.raid}</span>
-                            <span className="raid-level">{event.level}</span>
                           </RaidInfo>
                           <p
                             className="event-title"
