@@ -6,6 +6,7 @@
     "@fontsource/acme": "^5.1.0",
     "@fontsource/anton": "^5.1.0",
     "@fontsource/jaro": "^5.1.0",
+    "@hello-pangea/dnd": "^18.0.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

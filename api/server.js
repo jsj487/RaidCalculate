@@ -112,5 +112,33 @@ app.get("*", (req, res) => {
   });
 });
 
+app.post("/api/participants/update", async (req, res) => {
+  const { eventId, participants } = req.body;
+
+  if (!eventId || !Array.isArray(participants)) {
+    return res.status(400).json({ error: "Invalid request data" });
+  }
+
+  try {
+    // Firestore에서 해당 이벤트 문서 가져오기
+    const eventRef = db.collection("schedules").doc(eventId);
+    const eventSnapshot = await eventRef.get();
+
+    if (!eventSnapshot.exists) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Firestore에 참가자 목록 업데이트
+    await eventRef.update({
+      participants: participants,
+    });
+
+    res.json({ success: true, message: "Participants updated successfully" });
+  } catch (error) {
+    console.error("Error updating participants:", error);
+    res.status(500).json({ error: "Failed to update participants" });
+  }
+});
+
 // 서버 실행
 app.listen(PORT, () => {});

@@ -387,6 +387,22 @@ const CharacterItemLevel = styled.p`
   color: #ddd;
 `;
 
+const OrderSelector = styled.select<{ position: number }>`
+  position: absolute;
+  ${({ position }) =>
+    position < 2 ? "bottom: 10px;" : "top: 10px;"} /* ✅ 하단 또는 상단 배치 */
+  ${({ position }) =>
+    position % 2 === 0
+      ? "left: 10px;"
+      : "right: 10px;"} /* ✅ 좌측 또는 우측 배치 */
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+`;
 type Participant = {
   CharacterClassName: string;
   CharacterName: string;
@@ -603,6 +619,62 @@ export const EventModal = ({
     }
   };
 
+  const moveParticipantTo = (fromIndex: number, toIndex: number) => {
+    const updatedParticipants = [...participants];
+    const [movedParticipant] = updatedParticipants.splice(fromIndex, 1);
+    updatedParticipants.splice(toIndex, 0, movedParticipant);
+
+    setParticipants(updatedParticipants);
+
+    // DB에 업데이트 적용
+    updateParticipantsInDB(updatedParticipants);
+  };
+
+  // 🔹 DB에 참가자 순서 업데이트 함수
+  const updateParticipantsInDB = async (updatedParticipants: Participant[]) => {
+    if (!event || !event.id) {
+      console.error("❌ Event ID not found!");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/participants/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: event.id, // ✅ 현재 이벤트 ID 사용
+          participants: updatedParticipants,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log("✅ Participants updated successfully in DB.");
+      } else {
+        console.error("❌ Failed to update participants:", data.error);
+      }
+    } catch (error) {
+      console.error("❌ Error updating participants in DB:", error);
+    }
+  };
+
+  // 🔹 Modal이 열릴 때 DB에서 최신 데이터 불러오기
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const response = await fetch(`/api/getParticipants`);
+        const data = await response.json();
+        setParticipants(data.participants);
+      } catch (error) {
+        console.error("❌ 참가자 데이터를 불러오는 중 오류 발생:", error);
+      }
+    };
+
+    fetchParticipants();
+  }, [event]); // ✅ event 변경 시 참가자 최신 데이터 불러오기
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -625,25 +697,45 @@ export const EventModal = ({
           <ParticipantsGrid>
             {formattedParticipants.map((group, groupIndex) => (
               <PartyContainer key={`group-${groupIndex}`}>
-                {/* 🔹 4명의 참가자를 배치 */}
-                {group.map((p, rowIndex) => (
-                  <ParticipantCard
-                    key={`group-${groupIndex}-row-${rowIndex}`}
-                    rowIndex={rowIndex} // ✅ rowIndex 전달
-                  >
-                    {" "}
-                    <ParticipantImage
-                      src={p.CharacterImage || "/img/default-character.png"}
-                      alt={p.CharacterName}
-                    />
-                    <ParticipantInfo>
-                      <ClassName>{p.CharacterClassName}</ClassName>
-                      <ParticipantName>{p.CharacterName}</ParticipantName>
-                    </ParticipantInfo>
-                  </ParticipantCard>
-                ))}
+                {group.map((p, rowIndex) => {
+                  const positionNumber = groupIndex * 4 + rowIndex + 1; // ✅ 전체 자리 번호 계산
 
-                {/* 🔹 파티 배지 (아래 중앙에 배치) */}
+                  return (
+                    <ParticipantCard
+                      key={`group-${groupIndex}-row-${rowIndex}`}
+                      rowIndex={rowIndex}
+                    >
+                      <ParticipantImage
+                        src={p.CharacterImage || "/img/default-character.png"}
+                        alt={p.CharacterName}
+                      />
+                      <ParticipantInfo>
+                        <ClassName>{p.CharacterClassName}</ClassName>
+                        <ParticipantName>{p.CharacterName}</ParticipantName>
+                      </ParticipantInfo>
+
+                      {/* 🔹 자리 선택 드롭다운 (전체 자리 1~8번 표시) */}
+                      <OrderSelector
+                        value={positionNumber}
+                        onChange={(e) =>
+                          moveParticipantTo(
+                            positionNumber - 1,
+                            Number(e.target.value) - 1
+                          )
+                        }
+                        position={rowIndex}
+                      >
+                        {participants.map((_, i) => (
+                          <option key={i} value={i + 1}>
+                            {i + 1}번 자리
+                          </option>
+                        ))}
+                      </OrderSelector>
+                    </ParticipantCard>
+                  );
+                })}
+
+                {/* 🔹 파티 배지 (중앙 배치) */}
                 <PartyBadge>
                   {groupIndex + 1}
                   <span>
