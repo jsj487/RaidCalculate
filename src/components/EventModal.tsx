@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { EventType } from "../pages/Schedule";
 import { db } from "../utils/FireBase"; // Firestore 연결
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, getDocFromServer } from "firebase/firestore";
 import { ClassIcon, ClassImage } from "../utils/NameMap";
 import axios from "axios";
 import React from "react";
@@ -630,28 +630,43 @@ export const EventModal = ({
     updateParticipantsInDB(updatedParticipants);
   };
 
-  // 🔹 DB에 참가자 순서 업데이트 함수
   const updateParticipantsInDB = async (updatedParticipants: Participant[]) => {
-    if (!event || !event.id) {
-      console.error("❌ Event ID not found!");
+    if (!event?.date || !event?.title || !scheduleId) {
+      console.error(
+        "⚠️ Event date, title, or Schedule ID is missing!",
+        event.date,
+        event.title,
+        scheduleId
+      );
       return;
     }
 
     try {
-      const response = await fetch("/api/participants/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId: event.id, // ✅ 현재 이벤트 ID 사용
-          participants: updatedParticipants,
-        }),
-      });
+      const requestBody = {
+        scheduleId: scheduleId,
+        date: event.date,
+        title: event.title,
+        participants: updatedParticipants,
+      };
+
+      console.log(
+        "📢 Sending request to /api/participants/update with data:",
+        requestBody
+      );
+
+      const response = await fetch(
+        "http://localhost:5000/api/participants/update",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
         console.log("✅ Participants updated successfully in DB.");
+        console.log("🔹 Updated Participants:", updatedParticipants);
       } else {
         console.error("❌ Failed to update participants:", data.error);
       }
@@ -660,20 +675,45 @@ export const EventModal = ({
     }
   };
 
-  // 🔹 Modal이 열릴 때 DB에서 최신 데이터 불러오기
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        const response = await fetch(`/api/getParticipants`);
-        const data = await response.json();
-        setParticipants(data.participants);
+        console.log(
+          "📢 Fetching participants for schedule:",
+          scheduleId,
+          "event:",
+          event.date,
+          event.title
+        );
+
+        const scheduleRef = doc(db, "schedules", scheduleId);
+        const scheduleSnap = await getDocFromServer(scheduleRef);
+
+        if (!scheduleSnap.exists()) {
+          console.error("❌ Schedule not found in Firestore.");
+          return;
+        }
+
+        const scheduleData = scheduleSnap.data();
+        const eventData = scheduleData.events.find(
+          (e: { date: string; title: string }) =>
+            e.date === event.date && e.title === event.title
+        );
+
+        if (!eventData) {
+          console.error("❌ Event not found in schedule.");
+          return;
+        }
+
+        console.log("🔹 최신 참가자 데이터:", eventData.participants);
+        setParticipants(eventData.participants || []);
       } catch (error) {
         console.error("❌ 참가자 데이터를 불러오는 중 오류 발생:", error);
       }
     };
 
     fetchParticipants();
-  }, [event]); // ✅ event 변경 시 참가자 최신 데이터 불러오기
+  }, [event]);
 
   return (
     <ModalOverlay onClick={onClose}>

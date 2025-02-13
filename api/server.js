@@ -8,6 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const admin = require("firebase-admin");
+
 const PORT = process.env.PORT || 5000; // 배포 환경에서 사용할 포트
 const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
 
@@ -112,30 +114,72 @@ app.get("*", (req, res) => {
   });
 });
 
-app.post("/api/participants/update", async (req, res) => {
-  const { eventId, participants } = req.body;
+const serviceAccount = require("./serviceAccountKey.json"); // 서비스 계정 키 추가
 
-  if (!eventId || !Array.isArray(participants)) {
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
+const db = admin.firestore();
+
+app.post("/api/participants/update", async (req, res) => {
+  const { scheduleId, date, title, participants } = req.body;
+
+  if (!scheduleId || !date || !title || !Array.isArray(participants)) {
+    console.error("❌ Invalid request data:", req.body);
     return res.status(400).json({ error: "Invalid request data" });
   }
 
   try {
-    // Firestore에서 해당 이벤트 문서 가져오기
-    const eventRef = db.collection("schedules").doc(eventId);
-    const eventSnapshot = await eventRef.get();
+    const scheduleRef = db.collection("schedules").doc(scheduleId);
+    const scheduleSnap = await scheduleRef.get();
 
-    if (!eventSnapshot.exists) {
-      return res.status(404).json({ error: "Event not found" });
+    if (!scheduleSnap.exists) {
+      console.error(`❌ Schedule ${scheduleId} not found.`);
+      return res.status(404).json({ error: "Schedule not found" });
     }
 
-    // Firestore에 참가자 목록 업데이트
-    await eventRef.update({
-      participants: participants,
+    const scheduleData = scheduleSnap.data();
+
+    if (!scheduleData.events || !Array.isArray(scheduleData.events)) {
+      console.error(`❌ No events found in schedule ${scheduleId}`);
+      return res.status(404).json({ error: "No events found in schedule" });
+    }
+
+    console.log(
+      "🔹 BEFORE Firestore update:",
+      JSON.stringify(scheduleData, null, 2)
+    );
+
+    // 🔹 `date`와 `title`을 이용하여 특정 이벤트 찾기
+    const updatedEvents = scheduleData.events.map((event) => {
+      if (event.date === date && event.title === title) {
+        console.log(
+          `🔹 Updating participants for event ${title} on ${date} in schedule ${scheduleId}`
+        );
+        return { ...event, participants };
+      }
+      return event;
     });
 
+    // 🔹 Firestore에 전체 `events` 배열을 다시 저장
+    await scheduleRef.set({ events: updatedEvents }, { merge: true });
+
+    // 🔥 Firestore에서 업데이트된 데이터 즉시 확인
+    const updatedScheduleSnap = await scheduleRef.get();
+    console.log(
+      "🔹 AFTER Firestore update:",
+      JSON.stringify(updatedScheduleSnap.data(), null, 2)
+    );
+
+    console.log(
+      `✅ Firestore updated successfully for event ${title} on ${date} in schedule ${scheduleId}`
+    );
     res.json({ success: true, message: "Participants updated successfully" });
   } catch (error) {
-    console.error("Error updating participants:", error);
+    console.error("❌ Error updating participants in Firestore:", error);
     res.status(500).json({ error: "Failed to update participants" });
   }
 });
