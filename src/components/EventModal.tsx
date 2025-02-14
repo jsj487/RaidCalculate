@@ -436,32 +436,18 @@ export const EventModal = ({
   useEffect(() => {
     if (event.participants && Array.isArray(event.participants)) {
       if (typeof event.participants[0] === "string") {
-        // participants가 문자열 배열이라면, 기존 characters 데이터와 매칭하여 객체 배열로 변환
-        const formattedParticipants = event.participants.map((p) => {
-          const character = characters.find((char) => char.CharacterName === p);
-          return character
-            ? {
-                CharacterClassName: character.CharacterClassName,
-                CharacterName: character.CharacterName,
-                CharacterImage:
-                  character.CharacterImage || "/img/default-character.png",
-              }
-            : {
-                CharacterClassName: "알 수 없음",
-                CharacterName: p,
-                CharacterImage: "/img/default-character.png",
-              };
-        });
-
-        setParticipants(formattedParticipants);
-      } else {
-        // 이미 객체 배열인 경우 바로 저장
-        setParticipants(event.participants as unknown as Participant[]);
+        console.log(
+          "🔹 `event.participants` 값 유지됨 - Firestore 최신 데이터 적용 필요!"
+        );
+        return;
       }
-    } else {
-      setParticipants([]);
+
+      console.log(
+        "✅ Firestore에서 불러온 참가자 데이터 유지:",
+        event.participants
+      );
     }
-  }, [event, characters]);
+  }, [event]); // 🔹 `event` 변경 시 실행됨
 
   useEffect(() => {
     if (nickname) {
@@ -470,31 +456,49 @@ export const EventModal = ({
   }, [nickname]);
 
   useEffect(() => {
+    if (!event) return; // ✅ 이벤트가 없을 경우 실행하지 않음
+
     const fetchUpdatedParticipants = async () => {
       try {
+        console.log(
+          "📢 Modal이 다시 열렸을 때 Firestore에서 최신 데이터 가져오기:",
+          scheduleId,
+          "event:",
+          event.date,
+          event.title
+        );
+
         const scheduleRef = doc(db, "schedules", scheduleId);
-        const scheduleSnap = await getDoc(scheduleRef);
+        const scheduleSnap = await getDocFromServer(scheduleRef);
 
         if (!scheduleSnap.exists()) {
-          console.error("해당 스케줄을 찾을 수 없습니다.");
+          console.error("❌ Schedule not found in Firestore.");
           return;
         }
 
         const scheduleData = scheduleSnap.data();
-        const eventIndex = scheduleData.events.findIndex(
-          (e: any) => e.date === event.date && e.title === event.title
+        const eventData = scheduleData.events.find(
+          (e: { date: string; title: string }) =>
+            e.date === event.date && e.title === event.title
         );
 
-        if (eventIndex !== -1) {
-          setParticipants(scheduleData.events[eventIndex].participants || []);
+        if (!eventData) {
+          console.error("❌ Event not found in schedule.");
+          return;
         }
+
+        console.log(
+          "🔹 Firestore에서 가져온 최신 참가자 데이터:",
+          eventData.participants
+        );
+        setParticipants(eventData.participants || []);
       } catch (error) {
-        console.error("참가자 목록 갱신 실패:", error);
+        console.error("❌ 참가자 데이터를 불러오는 중 오류 발생:", error);
       }
     };
 
-    fetchUpdatedParticipants(); // 🔹 모달이 열릴 때 Firestore 최신 데이터 가져오기
-  }, [event, scheduleId]); // 🔹 event가 바뀔 때마다 최신화
+    fetchUpdatedParticipants();
+  }, [onClose]); // 🔹 Modal을 닫았다가 다시 열 때 Firestore 데이터 강제 업데이트
 
   // 참가자 목록을 두 개의 컬럼으로 정렬하는 로직
 
@@ -520,15 +524,9 @@ export const EventModal = ({
         return;
       }
 
-      // 🔹 높은 레벨 순으로 정렬하여 저장
-      const sortedCharacters = [...data].sort(
-        (a: any, b: any) =>
-          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
-          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
-      );
-      console.log("🔍 정렬된 캐릭터 데이터:", sortedCharacters); // 🔹 정렬된 데이터 출력
+      console.log("🔍 캐릭터 데이터 가져옴 (정렬 없음):", data);
 
-      setCharacters(sortedCharacters);
+      setCharacters(data);
     } catch (error) {
       console.error("캐릭터 검색 실패:", error);
       setCharacters([]); // 🔹 오류 발생 시 빈 배열로 설정
@@ -621,8 +619,12 @@ export const EventModal = ({
 
   const moveParticipantTo = (fromIndex: number, toIndex: number) => {
     const updatedParticipants = [...participants];
-    const [movedParticipant] = updatedParticipants.splice(fromIndex, 1);
-    updatedParticipants.splice(toIndex, 0, movedParticipant);
+
+    // 🔹 두 위치의 참가자 교환
+    [updatedParticipants[fromIndex], updatedParticipants[toIndex]] = [
+      updatedParticipants[toIndex],
+      updatedParticipants[fromIndex],
+    ];
 
     setParticipants(updatedParticipants);
 
@@ -676,7 +678,7 @@ export const EventModal = ({
   };
 
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const fetchUpdatedParticipants = async () => {
       try {
         console.log(
           "📢 Fetching participants for schedule:",
@@ -712,7 +714,7 @@ export const EventModal = ({
       }
     };
 
-    fetchParticipants();
+    fetchUpdatedParticipants();
   }, [event]);
 
   return (
