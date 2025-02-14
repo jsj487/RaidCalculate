@@ -125,9 +125,9 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 app.post("/api/participants/update", async (req, res) => {
-  const { scheduleId, date, title, participants } = req.body;
+  const { scheduleId, eventId, participants } = req.body;
 
-  if (!scheduleId || !date || !title || !Array.isArray(participants)) {
+  if (!scheduleId || !eventId || !Array.isArray(participants)) {
     console.error("❌ Invalid request data:", req.body);
     return res.status(400).json({ error: "Invalid request data" });
   }
@@ -148,34 +148,22 @@ app.post("/api/participants/update", async (req, res) => {
       return res.status(404).json({ error: "No events found in schedule" });
     }
 
-    console.log(
-      "🔹 BEFORE Firestore update:",
-      JSON.stringify(scheduleData, null, 2)
-    );
-
-    // 🔹 `date`와 `title`을 이용하여 특정 이벤트 찾기
+    // 🔹 `eventId`를 이용하여 특정 이벤트 찾기
     const updatedEvents = scheduleData.events.map((event) => {
-      if (event.date === date && event.title === title) {
+      if (String(event.eventId) === String(eventId)) {
         console.log(
-          `🔹 Updating participants for event ${title} on ${date} in schedule ${scheduleId}`
+          `🔹 Updating participants for event ${eventId} in schedule ${scheduleId}`
         );
         return { ...event, participants };
       }
       return event;
     });
 
-    // 🔹 Firestore에 전체 `events` 배열을 다시 저장
+    // 🔹 Firestore에 전체 `events` 배열을 다시 설정
     await scheduleRef.set({ events: updatedEvents }, { merge: true });
 
-    // 🔥 Firestore에서 업데이트된 데이터 즉시 확인
-    const updatedScheduleSnap = await scheduleRef.get();
     console.log(
-      "🔹 AFTER Firestore update:",
-      JSON.stringify(updatedScheduleSnap.data(), null, 2)
-    );
-
-    console.log(
-      `✅ Firestore updated successfully for event ${title} on ${date} in schedule ${scheduleId}`
+      `✅ Firestore updated successfully for event ${eventId} in schedule ${scheduleId}`
     );
     res.json({ success: true, message: "Participants updated successfully" });
   } catch (error) {

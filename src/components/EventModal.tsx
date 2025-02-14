@@ -524,9 +524,20 @@ export const EventModal = ({
         return;
       }
 
-      console.log("🔍 캐릭터 데이터 가져옴 (정렬 없음):", data);
+      // 🔹 캐릭터 리스트를 `ItemLevel` 기준으로 정렬 (참가자 리스트에는 영향 없음)
+      const sortedCharacters = [...data].sort(
+        (a: any, b: any) =>
+          parseFloat(b.ItemAvgLevel.replace(/,/g, "")) -
+          parseFloat(a.ItemAvgLevel.replace(/,/g, ""))
+      );
 
-      setCharacters(data);
+      console.log(
+        "🔍 정렬된 캐릭터 리스트 (참가자 리스트에는 영향 없음):",
+        sortedCharacters
+      );
+
+      // 🔥 참가자 리스트는 Firestore 원본을 유지해야 하므로 변경하지 않음
+      setCharacters(sortedCharacters);
     } catch (error) {
       console.error("캐릭터 검색 실패:", error);
       setCharacters([]); // 🔹 오류 발생 시 빈 배열로 설정
@@ -551,16 +562,6 @@ export const EventModal = ({
       return;
     }
 
-    // ✅ 중복 체크 (기존에 같은 캐릭터가 참가 중인지 확인)
-    if (
-      participants.some(
-        (p) => p.CharacterName === selectedCharacterData.CharacterName
-      )
-    ) {
-      alert("이미 참가한 캐릭터입니다!");
-      return;
-    }
-
     try {
       const scheduleRef = doc(db, "schedules", scheduleId);
       const scheduleSnap = await getDoc(scheduleRef);
@@ -571,8 +572,10 @@ export const EventModal = ({
       }
 
       const scheduleData = scheduleSnap.data();
+
+      // 🔹 `eventId`를 사용하여 정확한 이벤트 찾기
       const eventIndex = scheduleData.events.findIndex(
-        (e: any) => e.date === event.date && e.title === event.title
+        (e: any) => e.eventId === event.eventId
       );
 
       if (eventIndex === -1) {
@@ -580,7 +583,7 @@ export const EventModal = ({
         return;
       }
 
-      // ✅ 참가자 목록 업데이트 (객체 형태로 추가)
+      // ✅ 참가자 목록 업데이트
       const updatedParticipants = [
         ...(scheduleData.events[eventIndex].participants || []),
         {
@@ -602,15 +605,7 @@ export const EventModal = ({
       );
 
       // Firestore에서 최신 데이터 가져오기
-      const updatedScheduleSnap = await getDoc(scheduleRef);
-      const updatedScheduleData = updatedScheduleSnap.data();
-      if (updatedScheduleData) {
-        setParticipants(
-          updatedScheduleData.events[eventIndex].participants || []
-        );
-      }
-
-      setIsSelectingCharacter(false);
+      setParticipants(updatedEvents[eventIndex].participants);
     } catch (error) {
       console.error("❌ 참가 실패:", error);
       alert("이벤트 참가 중 오류가 발생했습니다.");
@@ -681,33 +676,36 @@ export const EventModal = ({
     const fetchUpdatedParticipants = async () => {
       try {
         console.log(
-          "📢 Fetching participants for schedule:",
+          "📢 Firestore에서 참가자 데이터 가져오기:",
           scheduleId,
-          "event:",
-          event.date,
-          event.title
+          "eventId:",
+          event.eventId
         );
 
         const scheduleRef = doc(db, "schedules", scheduleId);
         const scheduleSnap = await getDocFromServer(scheduleRef);
 
         if (!scheduleSnap.exists()) {
-          console.error("❌ Schedule not found in Firestore.");
+          console.error("❌ Firestore에서 해당 스케줄을 찾을 수 없음.");
           return;
         }
 
         const scheduleData = scheduleSnap.data();
         const eventData = scheduleData.events.find(
-          (e: { date: string; title: string }) =>
-            e.date === event.date && e.title === event.title
+          (e: { eventId: string }) => e.eventId === event.eventId
         );
 
         if (!eventData) {
-          console.error("❌ Event not found in schedule.");
+          console.error("❌ Firestore에서 해당 이벤트를 찾을 수 없음.");
           return;
         }
 
-        console.log("🔹 최신 참가자 데이터:", eventData.participants);
+        console.log(
+          "🔹 Firestore에서 불러온 참가자 리스트:",
+          eventData.participants
+        );
+
+        // 🔥 Firestore 데이터를 그대로 유지
         setParticipants(eventData.participants || []);
       } catch (error) {
         console.error("❌ 참가자 데이터를 불러오는 중 오류 발생:", error);
@@ -715,7 +713,7 @@ export const EventModal = ({
     };
 
     fetchUpdatedParticipants();
-  }, [event]);
+  }, [event]); // 🔹 `eventId` 변경 시 실행됨
 
   return (
     <ModalOverlay onClick={onClose}>

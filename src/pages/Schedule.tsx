@@ -18,6 +18,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid"; // 🔹 UUID 라이브러리 추가
 import { db } from "../utils/FireBase";
 
 // Styled Components
@@ -473,7 +474,7 @@ type Schedule = {
 };
 
 export type EventType = {
-  id: string;
+  eventId: string;
   title: string;
   raid: string;
   level: string;
@@ -497,7 +498,7 @@ const Schedule: React.FC = () => {
 
   const [selectedEvents, setSelectedEvents] = useState<
     {
-      id: string; // Firestore에서 `date`와 `index` 조합
+      eventId: string; // Firestore에서 `date`와 `index` 조합
       title: string;
       raid: string;
       level: string;
@@ -681,7 +682,10 @@ const Schedule: React.FC = () => {
   };
 
   const handleEventClick = (event: EventType) => {
-    setSelectedEvent(event);
+    setSelectedEvent({
+      ...event,
+      eventId: event.eventId || `${event.date}-default`, // 🔹 eventId 기본값 추가
+    });
   };
 
   const handleJoinSchedule = async () => {
@@ -909,21 +913,27 @@ const Schedule: React.FC = () => {
       const scheduleData = scheduleSnap.data();
       const existingEvents = scheduleData.events || [];
 
-      // 새로운 이벤트 데이터 추가
+      // 🔹 새로운 이벤트 ID 생성
+      const eventId = uuidv4();
+
+      // 🔹 새로운 이벤트 데이터 추가
       const newEvent = {
+        eventId, // 🔹 고유한 eventId 추가
         title: title || `${raid} - ${level}`,
         raid,
         level,
         date: selectedDate,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(), // 🔹 ISO 날짜 형식으로 저장
+        participants: [], // 🔹 기본값 설정
       };
 
-      // Firestore 문서 업데이트 (events 배열 업데이트)
+      // 🔹 Firestore 문서 업데이트 (events 배열 업데이트)
       await updateDoc(scheduleRef, {
         events: [...existingEvents, newEvent], // 기존 events 배열에 추가
       });
 
       alert("공대 일정이 저장되었습니다.");
+      console.log("✅ 저장된 이벤트:", newEvent);
     } catch (error) {
       console.error("일정 저장 실패:", error);
       alert("일정 저장 중 문제가 발생했습니다.");
@@ -1185,7 +1195,7 @@ const Schedule: React.FC = () => {
                     <EventList>
                       {selectedEvents.map((event) => (
                         <EventItem
-                          key={event.id}
+                          key={event.eventId}
                           onClick={() => handleEventClick(event)}
                         >
                           <RaidInfo>

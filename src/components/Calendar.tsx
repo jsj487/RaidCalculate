@@ -90,6 +90,7 @@ const Calendar = ({
   const currentYear = format(currentDate, "yyyy", { locale: ko });
   const [events, setEvents] = useState<
     {
+      eventId: string;
       createdAt: any;
       level: string;
       raid: string;
@@ -222,15 +223,15 @@ const Calendar = ({
     const dayEvents: EventType[] = events
       .filter((event) => event.date === formattedDate)
       .map((event, index) => ({
-        id: `${event.date}-${index}`, // 🔹 id 생성 (date + index 조합)
-        title: event.title || "제목 없음", // 🔹 기본값 추가
-        raid: event.raid || "알 수 없음", // 🔹 기본값 추가
-        level: event.level || "알 수 없음", // 🔹 기본값 추가
+        eventId: event.eventId || `${event.date}-${index}`, // 🔹 eventId 추가
+        title: event.title || "제목 없음",
+        raid: event.raid || "알 수 없음",
+        level: event.level || "알 수 없음",
         date: event.date,
         createdAt: event.createdAt
           ? String(event.createdAt)
-          : new Date().toISOString(), // 🔹 Firestore Timestamp 변환
-        participants: event.participants,
+          : new Date().toISOString(),
+        participants: event.participants || [],
       }));
 
     console.log(`📌 ${formattedDate}에 해당하는 이벤트:`, dayEvents);
