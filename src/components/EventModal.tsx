@@ -156,6 +156,29 @@ const ParticipantInfo = styled.div`
   padding: 10px 0;
 `;
 
+const DeleteButton = styled.button`
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    color: grey;
+  }
+`;
+
 const ClassName = styled.p`
   margin: 0;
   font-size: 14px;
@@ -724,6 +747,60 @@ export const EventModal = ({
     fetchUpdatedParticipants();
   }, [event]); // 🔹 `eventId` 변경 시 실행됨
 
+  const handleRemoveParticipant = async (characterName: string) => {
+    if (!isLeader) {
+      alert("대장만 참가자를 삭제할 수 있습니다.");
+      return;
+    }
+
+    if (!window.confirm(`${characterName}님을 참가자에서 제거하시겠습니까?`)) {
+      return;
+    }
+
+    if (!event?.eventId) {
+      console.error("❌ 이벤트 정보가 없습니다.");
+      alert("이벤트 정보를 불러오지 못했습니다.");
+      return;
+    }
+
+    try {
+      const scheduleRef = doc(db, "schedules", scheduleId);
+      const scheduleSnap = await getDoc(scheduleRef);
+
+      if (!scheduleSnap.exists()) {
+        alert("해당 스케줄을 찾을 수 없습니다.");
+        return;
+      }
+
+      const scheduleData = scheduleSnap.data();
+
+      // 🔹 `event?.eventId`를 사용하여 안전하게 참조
+      const eventIndex = scheduleData.events.findIndex(
+        (e: any) => e.eventId === event?.eventId
+      );
+
+      if (eventIndex === -1) {
+        alert("해당 이벤트를 찾을 수 없습니다.");
+        return;
+      }
+
+      const updatedEvents = [...scheduleData.events];
+      const targetEvent = updatedEvents[eventIndex];
+
+      // 🔹 참가자 제거
+      targetEvent.participants = targetEvent.participants.filter(
+        (p: Participant) => p.CharacterName !== characterName
+      );
+
+      await updateDoc(scheduleRef, { events: updatedEvents });
+
+      alert(`${characterName}님이 참가자 목록에서 삭제되었습니다.`);
+      setParticipants(targetEvent.participants);
+    } catch (error) {
+      console.error("❌ 참가자 삭제 중 오류 발생:", error);
+    }
+  };
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -759,6 +836,15 @@ export const EventModal = ({
                         alt={p.CharacterName}
                       />
                       <ParticipantInfo>
+                        {isLeader && (
+                          <DeleteButton
+                            onClick={() =>
+                              handleRemoveParticipant(p.CharacterName)
+                            }
+                          >
+                            ✕
+                          </DeleteButton>
+                        )}
                         <ClassName>{p.CharacterClassName}</ClassName>
                         <ParticipantName>{p.CharacterName}</ParticipantName>
                       </ParticipantInfo>
