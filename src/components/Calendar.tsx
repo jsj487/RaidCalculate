@@ -90,6 +90,7 @@ const Calendar = ({
   const currentYear = format(currentDate, "yyyy", { locale: ko });
   const [events, setEvents] = useState<
     {
+      leader: string;
       eventId: string;
       createdAt: any;
       level: string;
@@ -228,6 +229,7 @@ const Calendar = ({
         raid: event.raid || "알 수 없음",
         level: event.level || "알 수 없음",
         date: event.date,
+        leader: event.leader,
         createdAt: event.createdAt
           ? String(event.createdAt)
           : new Date().toISOString(),

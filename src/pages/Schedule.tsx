@@ -467,20 +467,21 @@ const CloseButton = styled.button`
 `;
 
 type Schedule = {
-  id: string; // 🔹 Firestore 문서 ID는 `string`이어야 함
+  id: string;
   name: string;
   code: string;
   participants: string[];
 };
 
 export type EventType = {
+  leader: string;
   eventId: string;
   title: string;
   raid: string;
   level: string;
   date: string;
   createdAt: string;
-  participants: string[]; // 🔹 새로운 필드 추가
+  participants: string[];
 };
 
 // Main Component
@@ -498,6 +499,7 @@ const Schedule: React.FC = () => {
 
   const [selectedEvents, setSelectedEvents] = useState<
     {
+      leader: string;
       eventId: string; // Firestore에서 `date`와 `index` 조합
       title: string;
       raid: string;
@@ -913,6 +915,9 @@ const Schedule: React.FC = () => {
       const scheduleData = scheduleSnap.data();
       const existingEvents = scheduleData.events || [];
 
+      // 🔹 `nickname`을 가져와서 대장으로 설정
+      const leaderNickname = localStorage.getItem("nickname") || "Unknown";
+
       // 🔹 새로운 이벤트 ID 생성
       const eventId = uuidv4();
 
@@ -924,6 +929,7 @@ const Schedule: React.FC = () => {
         level,
         date: selectedDate,
         createdAt: new Date().toISOString(), // 🔹 ISO 날짜 형식으로 저장
+        leader: leaderNickname, // 🔹 대장 추가
         participants: [], // 🔹 기본값 설정
       };
 

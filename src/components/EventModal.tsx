@@ -423,11 +423,20 @@ export const EventModal = ({
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
     null
   );
+  const [isLeader, setIsLeader] = useState(false);
   const [isSelectingCharacter, setIsSelectingCharacter] = useState(false); // 🔹 캐릭터 선택 UI 활성화 여부
   const [loading, setLoading] = useState(false);
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
 
   const nickname = localStorage.getItem("nickname") || "";
+
+  useEffect(() => {
+    if (event?.leader && localStorage.getItem("nickname") === event.leader) {
+      setIsLeader(true);
+    } else {
+      setIsLeader(false);
+    }
+  }, [event]);
 
   useEffect(() => {
     console.log("Updated participants:", participants);
@@ -872,6 +881,14 @@ export const EventModal = ({
               </CharacterListWrapper>
             </CharacterList>
           </CharacterContainer>
+
+          {isLeader && (
+            <div>
+              <h3>대장 관리 메뉴</h3>
+              <button>이벤트 삭제</button>
+              <button>참가자 관리</button>
+            </div>
+          )}
 
           {/* ✅ 참가 & 닫기 버튼 */}
           <CharacterActionButtons>
