@@ -836,6 +836,15 @@ export const EventModal = ({
                         alt={p.CharacterName}
                       />
                       <ParticipantInfo>
+                        {/* 🔹 참가자 직업 아이콘 추가 (좌측 상단) */}
+                        {ClassIcon[p.CharacterClassName] && (
+                          <CharacterClassIcon
+                            src={ClassIcon[p.CharacterClassName]}
+                            alt={p.CharacterClassName}
+                          />
+                        )}
+
+                        {/* 🔹 대장(Leader)만 삭제 버튼 표시 */}
                         {isLeader && (
                           <DeleteButton
                             onClick={() =>
@@ -845,6 +854,7 @@ export const EventModal = ({
                             ✕
                           </DeleteButton>
                         )}
+
                         <ClassName>{p.CharacterClassName}</ClassName>
                         <ParticipantName>{p.CharacterName}</ParticipantName>
                       </ParticipantInfo>
@@ -967,14 +977,6 @@ export const EventModal = ({
               </CharacterListWrapper>
             </CharacterList>
           </CharacterContainer>
-
-          {isLeader && (
-            <div>
-              <h3>대장 관리 메뉴</h3>
-              <button>이벤트 삭제</button>
-              <button>참가자 관리</button>
-            </div>
-          )}
 
           {/* ✅ 참가 & 닫기 버튼 */}
           <CharacterActionButtons>
