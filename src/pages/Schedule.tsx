@@ -434,36 +434,24 @@ const EventInputContainer = styled.div<{ isAdding: boolean }>`
   }
 `;
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+const CheckboxContainer = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
+  gap: 16px;
+  margin-top: 8px;
 
-const ModalContent = styled.div`
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 350px;
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-`;
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
 
-const CloseButton = styled.button`
-  margin-top: 10px;
-  padding: 10px;
-  background: red;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  width: 100%;
+    input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+  }
 `;
 
 type Schedule = {
@@ -510,6 +498,8 @@ const Schedule: React.FC = () => {
     }[]
   >([]);
 
+  const [isFirstComeFirstServe, setIsFirstComeFirstServe] = useState(false);
+  const [isApplicationBased, setIsApplicationBased] = useState(false);
   const [pin, setPin] = useState(""); // PIN을 관리하는 상태 추가
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -931,6 +921,8 @@ const Schedule: React.FC = () => {
         createdAt: new Date().toISOString(), // 🔹 ISO 날짜 형식으로 저장
         leader: leaderNickname, // 🔹 대장 추가
         participants: [], // 🔹 기본값 설정
+        isFirstComeFirstServe, // 🔹 Firestore에 저장
+        isApplicationBased, // 🔹 Firestore에 저장
       };
 
       // 🔹 Firestore 문서 업데이트 (events 배열 업데이트)
@@ -1276,6 +1268,33 @@ const Schedule: React.FC = () => {
                       onChange={(e) => setRaidTitle(e.target.value)}
                       placeholder="공대 제목 (선택)"
                     />
+
+                    {/* 🔹 체크박스 추가 */}
+                    <CheckboxContainer>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={isFirstComeFirstServe}
+                          onChange={() => {
+                            setIsFirstComeFirstServe(!isFirstComeFirstServe);
+                            setIsApplicationBased(false); // 하나만 선택 가능
+                          }}
+                        />
+                        선착순
+                      </label>
+
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={isApplicationBased}
+                          onChange={() => {
+                            setIsApplicationBased(!isApplicationBased);
+                            setIsFirstComeFirstServe(false); // 하나만 선택 가능
+                          }}
+                        />
+                        신청
+                      </label>
+                    </CheckboxContainer>
 
                     <button onClick={handleSaveEvent}>저장</button>
                   </EventInputContainer>
