@@ -446,6 +446,9 @@ export const EventModal = ({
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
     null
   );
+  const [pendingParticipants, setPendingParticipants] = useState<Participant[]>(
+    []
+  );
   const [isLeader, setIsLeader] = useState(false);
   const [isSelectingCharacter, setIsSelectingCharacter] = useState(false); // 🔹 캐릭터 선택 UI 활성화 여부
   const [loading, setLoading] = useState(false);
@@ -493,37 +496,42 @@ export const EventModal = ({
     const fetchUpdatedParticipants = async () => {
       try {
         console.log(
-          "📢 Modal이 다시 열렸을 때 Firestore에서 최신 데이터 가져오기:",
+          "📢 Firestore에서 참가자 데이터 가져오기:",
           scheduleId,
-          "event:",
-          event.date,
-          event.title
+          "eventId:",
+          event.eventId
         );
 
         const scheduleRef = doc(db, "schedules", scheduleId);
         const scheduleSnap = await getDocFromServer(scheduleRef);
 
         if (!scheduleSnap.exists()) {
-          console.error("❌ Schedule not found in Firestore.");
+          console.error("❌ Firestore에서 해당 스케줄을 찾을 수 없음.");
           return;
         }
 
         const scheduleData = scheduleSnap.data();
         const eventData = scheduleData.events.find(
-          (e: { date: string; title: string }) =>
-            e.date === event.date && e.title === event.title
+          (e: { eventId: string }) => e.eventId === event.eventId
         );
 
         if (!eventData) {
-          console.error("❌ Event not found in schedule.");
+          console.error("❌ Firestore에서 해당 이벤트를 찾을 수 없음.");
           return;
         }
 
         console.log(
-          "🔹 Firestore에서 가져온 최신 참가자 데이터:",
+          "🔹 Firestore에서 불러온 참가자 리스트:",
           eventData.participants
         );
+        console.log(
+          "🔹 Firestore에서 불러온 신청자 리스트:",
+          eventData.pendingParticipants
+        );
+
+        // 🔥 Firestore 데이터를 그대로 유지
         setParticipants(eventData.participants || []);
+        setPendingParticipants(eventData.pendingParticipants || []);
       } catch (error) {
         console.error("❌ 참가자 데이터를 불러오는 중 오류 발생:", error);
       }
@@ -594,6 +602,11 @@ export const EventModal = ({
       return;
     }
 
+    if (!event?.eventId) {
+      alert("이벤트 정보가 없습니다.");
+      return;
+    }
+
     try {
       const scheduleRef = doc(db, "schedules", scheduleId);
       const scheduleSnap = await getDoc(scheduleRef);
@@ -605,7 +618,7 @@ export const EventModal = ({
 
       const scheduleData = scheduleSnap.data();
 
-      // 🔹 `eventId`를 사용하여 정확한 이벤트 찾기
+      // 🔹 `eventId`를 직접 사용하여 정확한 이벤트 찾기
       const eventIndex = scheduleData.events.findIndex(
         (e: any) => e.eventId === event.eventId
       );
@@ -615,32 +628,110 @@ export const EventModal = ({
         return;
       }
 
-      // ✅ 참가자 목록 업데이트
-      const updatedParticipants = [
-        ...(scheduleData.events[eventIndex].participants || []),
-        {
-          CharacterClassName: selectedCharacterData.CharacterClassName,
-          CharacterName: selectedCharacterData.CharacterName,
-          CharacterImage:
-            selectedCharacterData.CharacterImage ||
-            "/img/default-character.png",
-        },
-      ];
-
       const updatedEvents = [...scheduleData.events];
-      updatedEvents[eventIndex].participants = updatedParticipants;
+      const targetEvent = updatedEvents[eventIndex]; // 🔹 event 대신 targetEvent 사용
+
+      const newParticipant = {
+        CharacterClassName: selectedCharacterData.CharacterClassName,
+        CharacterName: selectedCharacterData.CharacterName,
+        CharacterImage:
+          selectedCharacterData.CharacterImage || "/img/default-character.png",
+      };
+
+      if (targetEvent.isApplicationBased) {
+        // 🔹 "신청" 방식이면 pendingParticipants에 추가
+        targetEvent.pendingParticipants = [
+          ...(targetEvent.pendingParticipants || []),
+          newParticipant,
+        ];
+        alert(
+          `${selectedCharacterData.CharacterName}님이 신청자 목록에 추가되었습니다.`
+        );
+      } else {
+        // 🔹 "선착순" 방식이면 바로 참가자로 추가
+        targetEvent.participants = [
+          ...(targetEvent.participants || []),
+          newParticipant,
+        ];
+        alert(
+          `${selectedCharacterData.CharacterName}님이 참가자로 추가되었습니다.`
+        );
+      }
 
       await updateDoc(scheduleRef, { events: updatedEvents });
 
-      alert(
-        `${selectedCharacterData.CharacterName} 캐릭터가 일정에 참가했습니다!`
-      );
-
-      // Firestore에서 최신 데이터 가져오기
-      setParticipants(updatedEvents[eventIndex].participants);
+      // UI 업데이트
+      if (targetEvent.isApplicationBased) {
+        setPendingParticipants(targetEvent.pendingParticipants);
+      } else {
+        setParticipants(targetEvent.participants);
+      }
     } catch (error) {
       console.error("❌ 참가 실패:", error);
       alert("이벤트 참가 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleApproveParticipant = async (characterName: string) => {
+    if (!isLeader) {
+      alert("대장만 참가자를 승인할 수 있습니다.");
+      return;
+    }
+
+    if (!event?.eventId) {
+      alert("이벤트 정보가 없습니다.");
+      return;
+    }
+
+    try {
+      const scheduleRef = doc(db, "schedules", scheduleId);
+      const scheduleSnap = await getDoc(scheduleRef);
+
+      if (!scheduleSnap.exists()) {
+        alert("해당 스케줄을 찾을 수 없습니다.");
+        return;
+      }
+
+      const scheduleData = scheduleSnap.data();
+
+      // 🔹 `eventId`를 직접 사용하여 정확한 이벤트 찾기
+      const eventIndex = scheduleData.events.findIndex(
+        (e: any) => e.eventId === event.eventId
+      );
+
+      if (eventIndex === -1) {
+        alert("해당 이벤트를 찾을 수 없습니다.");
+        return;
+      }
+
+      const updatedEvents = [...scheduleData.events];
+      const targetEvent = updatedEvents[eventIndex]; // 🔹 event 대신 targetEvent 사용
+
+      // 🔹 신청자 목록에서 해당 참가자를 찾아서 참가자로 이동
+      const approvedParticipant = targetEvent.pendingParticipants.find(
+        (p: Participant) => p.CharacterName === characterName
+      );
+
+      if (!approvedParticipant) {
+        alert("해당 참가자를 찾을 수 없습니다.");
+        return;
+      }
+
+      targetEvent.participants = [
+        ...targetEvent.participants,
+        approvedParticipant,
+      ];
+      targetEvent.pendingParticipants = targetEvent.pendingParticipants.filter(
+        (p: Participant) => p.CharacterName !== characterName
+      );
+
+      await updateDoc(scheduleRef, { events: updatedEvents });
+
+      alert(`${characterName}님이 참가자로 승인되었습니다.`);
+      setParticipants(targetEvent.participants);
+      setPendingParticipants(targetEvent.pendingParticipants);
+    } catch (error) {
+      console.error("❌ 참가 승인 중 오류 발생:", error);
     }
   };
 
@@ -817,6 +908,26 @@ export const EventModal = ({
             </span>
           </EventDetails>
         </EventContainer>
+
+        {isLeader &&
+          event.isApplicationBased &&
+          pendingParticipants.length > 0 && (
+            <div>
+              <h3>신청자 목록</h3>
+              <ul>
+                {pendingParticipants.map((p) => (
+                  <li key={p.CharacterName}>
+                    {p.CharacterClassName} - {p.CharacterName}
+                    <button
+                      onClick={() => handleApproveParticipant(p.CharacterName)}
+                    >
+                      승인
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
         {/* 참가자 목록 */}
         {participants.length > 0 ? (

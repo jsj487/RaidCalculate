@@ -462,14 +462,16 @@ type Schedule = {
 };
 
 export type EventType = {
-  leader: string;
   eventId: string;
   title: string;
   raid: string;
   level: string;
   date: string;
   createdAt: string;
-  participants: string[];
+  participants: string[]; // 기존 참가자 목록
+  leader: string; // 🔹 대장 (이벤트 생성자의 닉네임)
+  pendingParticipants: string[]; // 🔹 승인 대기 참가자 목록
+  isApplicationBased: boolean; // 🔹 "신청" 방식 여부 (true면 신청, false면 선착순)
 };
 
 // Main Component
@@ -487,14 +489,16 @@ const Schedule: React.FC = () => {
 
   const [selectedEvents, setSelectedEvents] = useState<
     {
-      leader: string;
-      eventId: string; // Firestore에서 `date`와 `index` 조합
+      eventId: string;
       title: string;
       raid: string;
       level: string;
       date: string;
-      createdAt: string; // Firestore Timestamp를 문자열로 변환
-      participants: string[];
+      createdAt: string;
+      participants: string[]; // 기존 참가자 목록
+      leader: string; // 🔹 대장 (이벤트 생성자의 닉네임)
+      pendingParticipants: string[]; // 🔹 승인 대기 참가자 목록
+      isApplicationBased: boolean; // 🔹 "신청" 방식 여부 (true면 신청, false면 선착순)
     }[]
   >([]);
 

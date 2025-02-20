@@ -90,14 +90,16 @@ const Calendar = ({
   const currentYear = format(currentDate, "yyyy", { locale: ko });
   const [events, setEvents] = useState<
     {
-      leader: string;
       eventId: string;
-      createdAt: any;
-      level: string;
-      raid: string;
       title: string;
+      raid: string;
+      level: string;
       date: string;
-      participants: string[];
+      createdAt: string;
+      participants: string[]; // 기존 참가자 목록
+      leader: string; // 🔹 대장 (이벤트 생성자의 닉네임)
+      pendingParticipants: string[]; // 🔹 승인 대기 참가자 목록
+      isApplicationBased: boolean; // 🔹 "신청" 방식 여부 (true면 신청, false면 선착순)
     }[]
   >([]);
 
@@ -229,11 +231,13 @@ const Calendar = ({
         raid: event.raid || "알 수 없음",
         level: event.level || "알 수 없음",
         date: event.date,
-        leader: event.leader,
+        leader: event.leader || "Unknown", // 🔹 leader 기본값 추가
         createdAt: event.createdAt
           ? String(event.createdAt)
           : new Date().toISOString(),
         participants: event.participants || [],
+        pendingParticipants: event.pendingParticipants || [], // 🔹 신청자 목록 추가
+        isApplicationBased: event.isApplicationBased ?? false, // 🔹 신청 방식 여부 추가 (기본값: false)
       }));
 
     console.log(`📌 ${formattedDate}에 해당하는 이벤트:`, dayEvents);
