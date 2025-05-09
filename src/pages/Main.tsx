@@ -11,7 +11,7 @@ const MainImage = styled.div`
   align-items: center;
   height: 100vh; /* 화면 전체 높이 */
   background-image: url(${process.env
-    .PUBLIC_URL}/img/Main_Background.png); /* 배경 이미지 경로 */
+    .PUBLIC_URL}/img/Main_Background.jpg); /* 배경 이미지 경로 */
   background-size: cover; /* 화면에 꽉 차게 */
   background-position: center; /* 중앙 정렬 */
   background-repeat: no-repeat; /* 반복하지 않음 */

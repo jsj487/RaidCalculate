@@ -273,7 +273,7 @@ interface RaidTableProps {
           minItemLevel: number;
           phases: Array<{
             clearGold: number;
-            bonusGold: number;
+            bonusCost: number;
             clearMaterials: Material[];
             bonusMaterials: Material[];
           }>;
@@ -330,7 +330,7 @@ function RaidTable({
     minItemLevel: number;
     phases: Array<{
       clearGold: number;
-      bonusGold: number;
+      bonusCost: number;
       clearMaterials: Material[];
       bonusMaterials: Material[];
     }>;
@@ -398,7 +398,7 @@ function RaidTable({
             newState === 1
               ? phaseData.clearGold
               : newState === 2
-              ? phaseData.bonusGold
+              ? phaseData.bonusCost
               : -(phaseData.clearGold || 0);
 
           setToggleStates(key, newState);

@@ -451,7 +451,7 @@ const MenuButton = styled.div<{ isOpen: boolean }>`
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 1100;
+  z-index: 1001;
   border-radius: 0 5px 5px 0; /* 둥근 모서리 */
 
   &:hover {
@@ -881,12 +881,22 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
           const raidData = Object.values(RaidValues || {}).reduce(
             (found, category) =>
               found || category?.[raidName]?.[raidLevel]?.phases?.[phaseIndex],
-            undefined as { clearGold?: number; bonusGold?: number } | undefined
+            undefined as
+              | {
+                  clearGold?: number;
+                  bonusCost?: number;
+                }
+              | undefined
           );
 
           if (raidData) {
-            if (toggleStates[key] === 1) sum += raidData.clearGold || 0;
-            else if (toggleStates[key] === 2) sum += raidData.bonusGold || 0;
+            const { clearGold = 0, bonusCost = 0 } = raidData;
+
+            if (toggleStates[key] === 1) {
+              sum += clearGold;
+            } else if (toggleStates[key] === 2) {
+              sum += clearGold - bonusCost; // ✅ 핵심 변경: 실제 수령 금액 계산
+            }
           }
         }
         return sum;

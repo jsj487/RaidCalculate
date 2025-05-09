@@ -28,7 +28,7 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1500;
 `;
 
 const ModalContent = styled.div`
@@ -153,7 +153,7 @@ const GoldModal = () => {
         <ModalOverlay onClick={closeModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <CloseButton onClick={closeModal}>닫기</CloseButton>
-            <Title>레이드 보상(재료는 시험용이라 정확하지 않아요)</Title>
+            <Title>레이드 보상</Title>
 
             {Object.entries(RaidValues).map(([category, raids]) => (
               <div key={category}>
@@ -200,7 +200,7 @@ const GoldModal = () => {
                                 0
                               );
                               const totalBonusGold = data.phases.reduce(
-                                (sum, phase) => sum + phase.bonusGold,
+                                (sum, phase) => sum + phase.bonusCost,
                                 0
                               );
 
@@ -274,7 +274,7 @@ const GoldModal = () => {
                                                   style={{ color: "#FF69B4" }}
                                                 >
                                                   (
-                                                  {phase.bonusGold.toLocaleString()}
+                                                  {phase.bonusCost.toLocaleString()}
                                                   )
                                                 </span>
                                               )}
@@ -295,6 +295,7 @@ const GoldModal = () => {
                                         }}
                                       >
                                         <img
+                                          src={`${process.env.PUBLIC_URL}/img/gold.png`}
                                           style={{
                                             width: "20px",
                                             height: "20px",
