@@ -99,6 +99,78 @@ app.get("/api/characters/siblings", async (req, res) => {
   }
 });
 
+// 경매장 아이템 검색 API
+app.post("/api/market/items", async (req, res) => {
+  console.log("요청 body:", req.body); // ★ 추가
+  try {
+    const response = await axios.post(
+      "https://developer-lostark.game.onstove.com/markets/items",
+      req.body,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error(
+      "로스트아크 API 호출 오류:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/market/items/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const response = await axios.get(
+      `https://developer-lostark.game.onstove.com/markets/items/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error(
+      "단일 아이템 시세 조회 실패:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch market item details" });
+  }
+});
+
+// 경매장 옵션 정보 가져오기
+app.get("/api/market/options", async (req, res) => {
+  try {
+    const response = await axios.get(
+      "https://developer-lostark.game.onstove.com/markets/options",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error(
+      "경매장 옵션 요청 오류:",
+      error.response?.data || error.message
+    );
+    res.status(500).json({ error: "Failed to fetch market options" });
+  }
+});
+
 // 정적 파일 제공 (React 빌드 결과물)
 const buildPath = path.join(__dirname, "../build");
 app.use(express.static(buildPath));
