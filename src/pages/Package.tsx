@@ -93,18 +93,69 @@ const Container = styled.div`
   color: white;
 `;
 
+//재료 모달창
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalBox = styled.div`
+  background-color: #222;
+  padding: 24px;
+  border-radius: 12px;
+  width: 400px;
+  color: white;
+`;
+
+const MaterialOption = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #444;
+  }
+`;
+
+const MaterialIcon = styled.img`
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+`;
+
+const ModalTitle = styled.h3`
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 20px;
+`;
+
 interface MarketItem {
-  BundleCount: number;
   Id: number;
   Name: string;
   Icon: string;
   RecentPrice: number;
   CurrentMinPrice: number;
   YDayAvgPrice: number;
+  BundleCount?: number;
 }
 
 function Package() {
   const [goldRate, setGoldRate] = useState(0);
+  const [selectedTier, setSelectedTier] = useState<"T3" | "T4" | "all">("all");
   const [packagePrice, setPackagePrice] = useState<number>(0);
   const [priceType, setPriceType] = useState<"cash" | "crystal">("cash");
   const [crystalRate, setCrystalRate] = useState(0);
@@ -128,11 +179,64 @@ function Package() {
   } | null>(null);
 
   const presetMaterials = [
-    { name: "운명의 파괴석", categoryCode: 50000 },
-    { name: "운명의 돌파석", categoryCode: 50000 },
-    { name: "운명의 수호석", categoryCode: 50000 },
-    { name: "아비도스 융화 재료", categoryCode: 50000 },
+    {
+      name: "운명의 파괴석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_88.png",
+      tier: "T4",
+    },
+    {
+      name: "운명의 수호석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_89.png",
+      tier: "T4",
+    },
+    {
+      name: "운명의 돌파석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_85.png",
+      tier: "T4",
+    },
+    {
+      name: "아비도스 융화 재료",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_86.png",
+      tier: "T4",
+    },
+    {
+      name: "운명의 파편 주머니(소)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_91.png",
+      tier: "T4",
+    },
+    {
+      name: "운명의 파편 주머니(중)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_92.png",
+      tier: "T4",
+    },
+    {
+      name: "운명의 파편 주머니(대)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_93.png",
+      tier: "T4",
+    },
+    {
+      name: "용암의 숨결",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_171.png",
+      tier: "T4",
+    },
+    {
+      name: "빙하의 숨결",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_172.png",
+      tier: "T4",
+    },
   ];
+  const filteredMaterials = presetMaterials.filter(
+    (m) => selectedTier === "all" || m.tier === selectedTier
+  );
 
   const addMaterialByName = async (name: string, categoryCode: number) => {
     try {
@@ -168,11 +272,13 @@ function Package() {
         return;
       }
 
+      // 이미 추가된 재료인지 확인
       if (materials.some((m) => m.name === match!.Name)) {
-        alert(`"${match!.Name}"은 이미 추가된 재료입니다.`);
+        alert(`"${match.Name}"은 이미 추가된 재료입니다.`);
         return;
       }
 
+      // 재료 정보 state에 추가
       setMaterials([
         ...materials,
         {
@@ -183,7 +289,7 @@ function Package() {
           recent: match.RecentPrice,
           min: match.CurrentMinPrice,
           avg: match.YDayAvgPrice,
-          bundle: match.BundleCount ?? 1, // 기본값 1
+          bundle: match.BundleCount ?? 1, // default to 1 if undefined
         },
       ]);
     } catch (err) {
@@ -227,7 +333,7 @@ function Package() {
       const goldCostInKRW = goldRate ? (totalGold * goldRate) / 100 : 0;
       const crystalAmount = crystalRate ? totalGold / (crystalRate / 95) : 0;
 
-      resultText += `현재 구성된 재료 기준:\n`;
+      resultText += `패키지 구성 값:\n`;
       resultText += `총 ${totalGold.toLocaleString()} 골드\n`;
 
       if (priceType === "cash") {
@@ -307,12 +413,14 @@ function Package() {
           value={goldRate || ""}
           onChange={(e) => setGoldRate(Number(e.target.value))}
         />
-        <Input
-          placeholder="크리스탈 비율 (예: 95)"
-          type="number"
-          value={crystalRate || ""}
-          onChange={(e) => setCrystalRate(Number(e.target.value))}
-        />
+        {priceType === "crystal" && (
+          <Input
+            placeholder="크리스탈 비율 (예: 95)"
+            type="number"
+            value={crystalRate || ""}
+            onChange={(e) => setCrystalRate(Number(e.target.value))}
+          />
+        )}
       </Row>
 
       <Table>
@@ -379,21 +487,41 @@ function Package() {
         </Result>
       )}
       {showModal && (
-        <Modal>
-          <h3>재료 추가</h3>
-          {presetMaterials.map(({ name, categoryCode }) => (
-            <div
-              key={name}
-              style={{ cursor: "pointer", marginBottom: 5 }}
-              onClick={() => {
-                addMaterialByName(name, categoryCode);
-                setShowModal(false);
-              }}
-            >
-              {name}
+        <ModalOverlay onClick={() => setShowModal(false)}>
+          <ModalBox onClick={(e) => e.stopPropagation()}>
+            <ModalTitle>재료 선택</ModalTitle>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "10px" }}>
+              {["all", "T3", "T4"].map((tier) => (
+                <button
+                  key={tier}
+                  onClick={() => setSelectedTier(tier as "T3" | "T4" | "all")}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "6px",
+                    backgroundColor: selectedTier === tier ? "#3a72e8" : "#555",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {tier === "all" ? "전체" : tier}
+                </button>
+              ))}
             </div>
-          ))}
-        </Modal>
+            {filteredMaterials.map(({ name, icon, categoryCode }) => (
+              <MaterialOption
+                key={name}
+                onClick={() => {
+                  addMaterialByName(name, categoryCode);
+                  setShowModal(false);
+                }}
+              >
+                <MaterialIcon src={icon} alt={name} />
+                <div>{name}</div>
+              </MaterialOption>
+            ))}
+          </ModalBox>
+        </ModalOverlay>
       )}
     </Container>
   );
