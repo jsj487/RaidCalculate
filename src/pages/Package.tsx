@@ -1,9 +1,10 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import ChartModal from "../components/ChartModal";
 
 const Table = styled.table`
-  width: 80%;
+  width: 60%;
   color: white;
   border-collapse: collapse;
   border: 1px solid #444;
@@ -54,13 +55,6 @@ const ActionButton = styled.button`
   margin-top: 10px;
 `;
 
-const Modal = styled.div`
-  background-color: #222;
-  padding: 20px;
-  border-radius: 10px;
-  color: white;
-`;
-
 const Row = styled.div`
   display: flex;
   gap: 20px;
@@ -108,11 +102,13 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalBox = styled.div`
-  background-color: #222;
-  padding: 24px;
+  background-color: #2a2a2a;
   border-radius: 12px;
-  width: 400px;
-  color: white;
+  padding: 20px;
+  max-height: 80vh;
+  width: 600px;
+  overflow-y: auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
 `;
 
 const MaterialOption = styled.div`
@@ -143,6 +139,29 @@ const ModalTitle = styled.h3`
   font-size: 20px;
 `;
 
+const ScrollableBox = styled.div`
+  max-height: 400px;
+  overflow-y: auto;
+
+  /* 스크롤바 커스터마이징 */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #222;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+  }
+`;
+
+interface Stat {
+  Date: string;
+  AvgPrice: number;
+  TradeCount: number;
+}
+
 interface MarketItem {
   Id: number;
   Name: string;
@@ -151,11 +170,19 @@ interface MarketItem {
   CurrentMinPrice: number;
   YDayAvgPrice: number;
   BundleCount?: number;
+  stats: Stat[];
 }
 
 function Package() {
   const [goldRate, setGoldRate] = useState(0);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [selectedChartIndex, setSelectedChartIndex] = useState<number | null>(
+    null
+  );
   const [selectedTier, setSelectedTier] = useState<"T3" | "T4" | "all">("all");
+  const [selectedType, setSelectedType] = useState<
+    "파괴석" | "수호석" | "돌파석" | "융화" | "파편" | "숨결" | "all"
+  >("all");
   const [packagePrice, setPackagePrice] = useState<number>(0);
   const [priceType, setPriceType] = useState<"cash" | "crystal">("cash");
   const [crystalRate, setCrystalRate] = useState(0);
@@ -170,6 +197,11 @@ function Package() {
       min: number;
       avg: number;
       bundle: number; // <- 추가
+      stats: {
+        Date: string;
+        AvgPrice: number;
+        TradeCount: number;
+      }[];
     }[]
   >([]);
   const [result, setResult] = useState<{
@@ -184,58 +216,204 @@ function Package() {
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_88.png",
       tier: "T4",
+      type: "파괴석",
     },
     {
       name: "운명의 수호석",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_89.png",
       tier: "T4",
+      type: "수호석",
     },
     {
       name: "운명의 돌파석",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_85.png",
       tier: "T4",
+      type: "돌파석",
     },
     {
       name: "아비도스 융화 재료",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_86.png",
       tier: "T4",
-    },
-    {
-      name: "운명의 파편 주머니(소)",
-      categoryCode: 50000,
-      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_91.png",
-      tier: "T4",
-    },
-    {
-      name: "운명의 파편 주머니(중)",
-      categoryCode: 50000,
-      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_92.png",
-      tier: "T4",
+      type: "융화",
     },
     {
       name: "운명의 파편 주머니(대)",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_93.png",
       tier: "T4",
+      type: "파편",
+    },
+    {
+      name: "운명의 파편 주머니(중)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_92.png",
+      tier: "T4",
+      type: "파편",
+    },
+    {
+      name: "운명의 파편 주머니(소)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_91.png",
+      tier: "T4",
+      type: "파편",
     },
     {
       name: "용암의 숨결",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_171.png",
       tier: "T4",
+      type: "숨결",
     },
     {
       name: "빙하의 숨결",
       categoryCode: 50000,
       icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_12_172.png",
       tier: "T4",
+      type: "숨결",
+    },
+
+    {
+      name: "정제된 파괴강석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_11_15.png",
+      tier: "T3",
+      type: "파괴석",
+    },
+    {
+      name: "파괴강석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_10_58.png",
+      tier: "T3",
+      type: "파괴석",
+    },
+    {
+      name: "파괴석 결정",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_6_105.png",
+      tier: "T3",
+      type: "파괴석",
+    },
+    {
+      name: "정제된 수호강석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_11_16.png",
+      tier: "T3",
+      type: "수호석",
+    },
+    {
+      name: "수호강석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_10_59.png",
+      tier: "T3",
+      type: "수호석",
+    },
+    {
+      name: "수호석 결정",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_6_104.png",
+      tier: "T3",
+      type: "수호석",
+    },
+    {
+      name: "찬란한 명예의 돌파석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_11_17.png",
+      tier: "T3",
+      type: "돌파석",
+    },
+    {
+      name: "경이로운 명예의 돌파석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_157.png",
+      tier: "T3",
+      type: "돌파석",
+    },
+    {
+      name: "위대한 명예의 돌파석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_156.png",
+      tier: "T3",
+      type: "돌파석",
+    },
+    {
+      name: "명예의 돌파석",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_155.png",
+      tier: "T3",
+      type: "돌파석",
+    },
+    {
+      name: "최상급 오레하 융화 재료",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_11_29.png",
+      tier: "T3",
+      type: "융화",
+    },
+    {
+      name: "상급 오레하 융화 재료",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_8_109.png",
+      tier: "T3",
+      type: "융화",
+    },
+    {
+      name: "오레하 융화 재료",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_9_71.png",
+      tier: "T3",
+      type: "융화",
+    },
+    {
+      name: "명예의 파편 주머니(대)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_8_227.png",
+      tier: "T3",
+      type: "파편",
+    },
+    {
+      name: "명예의 파편 주머니(중)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_8_226.png",
+      tier: "T3",
+      type: "파편",
+    },
+    {
+      name: "명예의 파편 주머니(소)",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_8_225.png",
+      tier: "T3",
+      type: "파편",
+    },
+    {
+      name: "태양의 가호",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_163.png",
+      tier: "T3",
+      type: "숨결",
+    },
+    {
+      name: "태양의 축복",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_162.png",
+      tier: "T3",
+      type: "숨결",
+    },
+    {
+      name: "태양의 은총",
+      categoryCode: 50000,
+      icon: "https://cdn-lostark.game.onstove.com/efui_iconatlas/use/use_7_161.png",
+      tier: "T3",
+      type: "숨결",
     },
   ];
+
   const filteredMaterials = presetMaterials.filter(
-    (m) => selectedTier === "all" || m.tier === selectedTier
+    (m) =>
+      (selectedTier === "all" || m.tier === selectedTier) &&
+      (selectedType === "all" || m.type === selectedType)
   );
 
   const addMaterialByName = async (name: string, categoryCode: number) => {
@@ -272,6 +450,13 @@ function Package() {
         return;
       }
 
+      const itemId = match.Id;
+      const detailRes = await axios.get(`/api/market/items/${itemId}`);
+      console.log("상세 응답 전체:", detailRes.data);
+      const detail = Array.isArray(detailRes.data)
+        ? detailRes.data[0]
+        : detailRes.data;
+
       // 이미 추가된 재료인지 확인
       if (materials.some((m) => m.name === match!.Name)) {
         alert(`"${match.Name}"은 이미 추가된 재료입니다.`);
@@ -279,9 +464,9 @@ function Package() {
       }
 
       // 재료 정보 state에 추가
-      setMaterials([
-        ...materials,
-        {
+      if (editIndex !== null) {
+        const updated = [...materials];
+        updated[editIndex] = {
           name: match.Name,
           quantity: 1,
           price: match.RecentPrice,
@@ -289,9 +474,26 @@ function Package() {
           recent: match.RecentPrice,
           min: match.CurrentMinPrice,
           avg: match.YDayAvgPrice,
-          bundle: match.BundleCount ?? 1, // default to 1 if undefined
-        },
-      ]);
+          bundle: match.BundleCount ?? 1,
+          stats: detail.Stats?.slice(0, 7) ?? [],
+        };
+        setMaterials(updated);
+      } else {
+        setMaterials([
+          ...materials,
+          {
+            name: match.Name,
+            quantity: 1,
+            price: match.RecentPrice,
+            icon: match.Icon,
+            recent: match.RecentPrice,
+            min: match.CurrentMinPrice,
+            avg: match.YDayAvgPrice,
+            bundle: match.BundleCount ?? 1,
+            stats: detail.Stats?.slice(0, 7) ?? [],
+          },
+        ]);
+      }
     } catch (err) {
       console.error("재료 시세 요청 실패:", err);
     }
@@ -387,6 +589,18 @@ function Package() {
     setMaterials(updated);
   }
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [showModal]);
+
   return (
     <Container>
       <Row>
@@ -426,7 +640,7 @@ function Package() {
       <Table>
         <thead>
           <tr>
-            {["이름", "수량", "전일 평균", "최근 거래", "최저가"].map(
+            {["이름", "수량", "전일 평균", "최근 거래", "최저가", "시세"].map(
               (label, i, arr) => (
                 <Th key={label} isLast={i === arr.length - 1}>
                   {label}
@@ -438,7 +652,24 @@ function Package() {
         <tbody>
           {materials.map((m, index) => (
             <TableRow key={index}>
-              <Td>
+              <Td
+                style={{
+                  borderRight: "1px solid #444",
+                  padding: "8px",
+                  cursor: "pointer",
+                  backgroundColor: "#1e1e1e",
+                }}
+                onClick={() => {
+                  setShowModal(true);
+                  setEditIndex(index);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#2a2a2a";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1e1e1e";
+                }}
+              >
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "12px" }}
                 >
@@ -472,6 +703,16 @@ function Package() {
               <Td center noRight>
                 {m.min ?? "-"}
               </Td>
+              <Td style={{ textAlign: "center" }}>
+                <button
+                  onClick={() => {
+                    console.log("시세 버튼 클릭됨", index);
+                    setSelectedChartIndex(index);
+                  }}
+                >
+                  📈
+                </button>
+              </Td>
             </TableRow>
           ))}
         </tbody>
@@ -486,12 +727,13 @@ function Package() {
           <span style={{ color: result.color }}>{result.diff}%</span>
         </Result>
       )}
+
       {showModal && (
         <ModalOverlay onClick={() => setShowModal(false)}>
           <ModalBox onClick={(e) => e.stopPropagation()}>
             <ModalTitle>재료 선택</ModalTitle>
             <div style={{ display: "flex", gap: "12px", marginBottom: "10px" }}>
-              {["all", "T3", "T4"].map((tier) => (
+              {["all", "T4", "T3"].map((tier) => (
                 <button
                   key={tier}
                   onClick={() => setSelectedTier(tier as "T3" | "T4" | "all")}
@@ -504,25 +746,75 @@ function Package() {
                     cursor: "pointer",
                   }}
                 >
-                  {tier === "all" ? "전체" : tier}
+                  {tier === "all" ? "전체 티어" : tier}
                 </button>
               ))}
             </div>
-            {filteredMaterials.map(({ name, icon, categoryCode }) => (
-              <MaterialOption
-                key={name}
-                onClick={() => {
-                  addMaterialByName(name, categoryCode);
-                  setShowModal(false);
-                }}
-              >
-                <MaterialIcon src={icon} alt={name} />
-                <div>{name}</div>
-              </MaterialOption>
-            ))}
+
+            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+              {[
+                "all",
+                "파괴석",
+                "수호석",
+                "돌파석",
+                "융화",
+                "파편",
+                "숨결",
+              ].map((type) => (
+                <button
+                  key={type}
+                  onClick={() =>
+                    setSelectedType(
+                      type as
+                        | "파괴석"
+                        | "수호석"
+                        | "돌파석"
+                        | "융화"
+                        | "파편"
+                        | "숨결"
+                        | "all"
+                    )
+                  }
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "6px",
+                    backgroundColor: selectedType === type ? "#3a72e8" : "#555",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {type === "all" ? "전체 종류" : type}
+                </button>
+              ))}
+            </div>
+            <ScrollableBox>
+              {filteredMaterials.map(({ name, icon, categoryCode }) => (
+                <MaterialOption
+                  key={name}
+                  onClick={() => {
+                    addMaterialByName(name, categoryCode);
+                    setShowModal(false);
+                    setEditIndex(null);
+                  }}
+                >
+                  <MaterialIcon src={icon} alt={name} />
+                  <div>{name}</div>
+                </MaterialOption>
+              ))}
+            </ScrollableBox>
           </ModalBox>
         </ModalOverlay>
       )}
+
+      <ChartModal
+        open={selectedChartIndex !== null}
+        onClose={() => setSelectedChartIndex(null)}
+        itemName={materials[selectedChartIndex!]?.name ?? ""}
+        stats={materials[selectedChartIndex!]?.stats ?? []}
+        icon={""}
+        bundle={0}
+      />
     </Container>
   );
 }
