@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { FaChartLine } from "react-icons/fa";
 import styled from "styled-components";
 import ChartModal from "../components/ChartModal";
 
@@ -85,6 +86,22 @@ const Container = styled.div`
   background-color: #1e1e1e;
   min-height: 100vh;
   color: white;
+`;
+
+const ChartButton = styled.button`
+  background-color: #333;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: #555;
+  }
 `;
 
 //재료 모달창
@@ -190,7 +207,7 @@ function Package() {
   const [materials, setMaterials] = useState<
     {
       name: string;
-      quantity: number;
+      quantity: number | string;
       price: number;
       icon: string;
       recent: number;
@@ -500,11 +517,8 @@ function Package() {
   };
 
   const calculatePackageGoldValue = () => {
-    const goldFromCash = (packagePrice / goldRate) * 100;
-    const netGold = goldFromCash * 0.95;
-
     const totalGold = materials.reduce(
-      (sum, m) => sum + m.price * m.quantity,
+      (sum, m) => sum + m.price * Number(m.quantity),
       0
     );
 
@@ -523,10 +537,7 @@ function Package() {
         const goldFromCrystal = (packagePrice * crystalRate) / 95;
         resultText += `크리스탈 ${packagePrice}개 → 약 ${Math.floor(
           goldFromCrystal
-        ).toLocaleString()} 골드 가치\n`;
-        resultText += `(1크당 ${Math.floor(
-          goldFromCrystal / packagePrice
-        )} 골드)\n\n`;
+        ).toLocaleString()} 골드 가치\n\n`;
       }
     }
 
@@ -545,9 +556,7 @@ function Package() {
       }
 
       if (priceType === "crystal") {
-        resultText += `→ 크리스탈 기준: 약 ${Math.ceil(
-          crystalAmount
-        )} 개 (95% 적용)\n`;
+        resultText += `→ 크리스탈 기준: 약 ${Math.ceil(crystalAmount)} 개\n`;
       }
 
       // 기준 골드 가치와 비교하여 효율 계산
@@ -576,18 +585,18 @@ function Package() {
     }
   };
 
-  function handleMaterialChange(
+  const handleMaterialChange = (
     index: number,
-    field: "quantity",
-    value: string
-  ) {
+    field: string,
+    value: string | number
+  ) => {
     const updated = [...materials];
     updated[index] = {
       ...updated[index],
-      [field]: Number(value),
+      [field]: field === "quantity" ? value : Number(value),
     };
     setMaterials(updated);
-  }
+  };
 
   useEffect(() => {
     if (showModal) {
@@ -629,7 +638,7 @@ function Package() {
         />
         {priceType === "crystal" && (
           <Input
-            placeholder="크리스탈 비율 (예: 95)"
+            placeholder="크리스탈 비율 (예: 6000)"
             type="number"
             value={crystalRate || ""}
             onChange={(e) => setCrystalRate(Number(e.target.value))}
@@ -691,7 +700,7 @@ function Package() {
               <Td center>
                 <input
                   type="number"
-                  value={m.quantity}
+                  value={m.quantity === 0 ? "" : m.quantity}
                   onChange={(e) =>
                     handleMaterialChange(index, "quantity", e.target.value)
                   }
@@ -700,17 +709,22 @@ function Package() {
               </Td>
               <Td center>{m.avg ?? "-"}</Td>
               <Td center>{m.recent ?? "-"}</Td>
+              <Td center>{m.min ?? "-"}</Td>
               <Td center noRight>
-                {m.min ?? "-"}
-              </Td>
-              <Td style={{ textAlign: "center" }}>
                 <button
                   onClick={() => {
-                    console.log("시세 버튼 클릭됨", index);
                     setSelectedChartIndex(index);
                   }}
+                  style={{
+                    backgroundColor: "#2a2a2a",
+                    border: "none",
+                    borderRadius: "50%",
+                    padding: "8px",
+                    cursor: "pointer",
+                  }}
+                  title="시세 보기"
                 >
-                  📈
+                  <FaChartLine size={18} color="#fff" />
                 </button>
               </Td>
             </TableRow>
@@ -810,10 +824,10 @@ function Package() {
       <ChartModal
         open={selectedChartIndex !== null}
         onClose={() => setSelectedChartIndex(null)}
-        itemName={materials[selectedChartIndex!]?.name ?? ""}
-        stats={materials[selectedChartIndex!]?.stats ?? []}
-        icon={""}
-        bundle={0}
+        itemName={materials[selectedChartIndex!]?.name || ""}
+        icon={materials[selectedChartIndex!]?.icon || ""}
+        bundle={materials[selectedChartIndex!]?.bundle || 1}
+        stats={materials[selectedChartIndex!]?.stats || []}
       />
     </Container>
   );

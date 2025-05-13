@@ -1,97 +1,16 @@
 import React from "react";
 import styled from "styled-components";
 import {
-  BarChart,
+  ResponsiveContainer,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
-  Line,
-  LineChart,
+  Legend,
+  CartesianGrid,
 } from "recharts";
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-`;
-
-const Modal = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #1e1e1e;
-  color: white;
-  width: 1200px;
-  max-height: 90vh;
-  overflow-y: auto;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #444;
-`;
-
-const Title = styled.div`
-  font-size: 20px;
-  font-weight: bold;
-`;
-
-const CloseButton = styled.button`
-  background: transparent;
-  color: white;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-`;
-
-const StatSummary = styled.div`
-  display: flex;
-  justify-content: space-around;
-  background: #2a2a2a;
-  padding: 12px 0;
-`;
-
-const StatItem = styled.div`
-  text-align: center;
-  font-size: 14px;
-`;
-
-const ChartWrapper = styled.div`
-  display: flex;
-  padding: 20px;
-  gap: 16px;
-`;
-
-const Table = styled.table`
-  border-collapse: collapse;
-  color: white;
-  width: 450px;
-  font-size: 12px;
-`;
-
-const Th = styled.th`
-  border-bottom: 1px solid #444;
-  padding: 8px;
-  text-align: left;
-`;
-
-const Td = styled.td`
-  border-bottom: 1px solid #333;
-  padding: 6px 8px;
-`;
 
 interface Stat {
   Date: string;
@@ -108,6 +27,114 @@ interface ChartModalProps {
   stats: Stat[];
 }
 
+const Overlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+`;
+
+const Modal = styled.div`
+  background: #1e1e1e;
+  color: white;
+  padding: 24px;
+  width: 1000px;
+  max-width: 90vw;
+  position: absolute;
+  top: 20%; // 필요시 조절
+  left: 50%;
+  transform: translate(-50%, 0); // 위로 안 움직이도록 y는 0
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+`;
+
+const Header = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const Icon = styled.img`
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+`;
+
+const StatInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Title = styled.div`
+  font-size: 18px;
+  font-weight: bold;
+`;
+
+const Bundle = styled.div`
+  font-size: 14px;
+  color: #aaa;
+`;
+
+const CloseButton = styled.button`
+  background: #444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  float: right;
+`;
+
+const StatChart = ({ stats }: { stats: Stat[] }) => {
+  const data = stats.map((s) => ({
+    date: s.Date.slice(5), // MM-DD
+    avg: s.AvgPrice,
+    count: s.TradeCount,
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <ComposedChart data={data}>
+        <CartesianGrid stroke="#444" />
+        <XAxis dataKey="date" />
+        <YAxis yAxisId="left" stroke="#3a8" />
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          stroke="#fa0"
+          tickFormatter={(value) => value.toLocaleString()}
+          width={100}
+        />
+        <Tooltip />
+        <Legend />
+
+        <Bar
+          yAxisId="right"
+          dataKey="count"
+          name="판매 건수"
+          fill="#fa0"
+          barSize={20}
+        />
+
+        <Line
+          yAxisId="left"
+          type="monotone"
+          dataKey="avg"
+          name="평균 거래가"
+          stroke="#3cf"
+          strokeWidth={2}
+          dot={{ r: 4, fill: "#3cf", stroke: "#1ad", strokeWidth: 1.5 }}
+          activeDot={{ r: 5 }}
+        />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+};
+
 const ChartModal: React.FC<ChartModalProps> = ({
   open,
   onClose,
@@ -118,86 +145,22 @@ const ChartModal: React.FC<ChartModalProps> = ({
 }) => {
   if (!open) return null;
 
-  const today = stats[0]?.AvgPrice ?? 0;
-  const max = Math.max(...stats.map((s) => s.AvgPrice));
-  const min = Math.min(...stats.map((s) => s.AvgPrice));
-
   return (
-    <>
-      <Overlay onClick={onClose} />
-      <Modal>
+    <Overlay onClick={onClose}>
+      <Modal onClick={(e) => e.stopPropagation()}>
         <Header>
-          <Title>📈 {itemName} 시세 확인</Title>
-          <CloseButton onClick={onClose}>×</CloseButton>
+          <Icon src={icon} alt={itemName} />
+          <StatInfo>
+            <Title>{itemName}</Title>
+            {bundle > 1 && <Bundle>[{bundle}개 단위 판매]</Bundle>}
+          </StatInfo>
         </Header>
 
-        <div style={{ display: "flex", alignItems: "center", padding: "16px" }}>
-          <img
-            src={icon}
-            alt={itemName}
-            style={{ width: 48, height: 48, marginRight: 16 }}
-          />
-          <div>
-            <div style={{ fontWeight: "bold" }}>{itemName}</div>
-            {bundle > 1 && (
-              <div style={{ fontSize: 12, color: "#aaa" }}>
-                [{bundle}개 단위 판매]
-              </div>
-            )}
-          </div>
-        </div>
+        <StatChart stats={stats} />
 
-        <StatSummary>
-          <StatItem>
-            <div>오늘 평균가</div>
-            <div>{today} G</div>
-          </StatItem>
-          <StatItem>
-            <div>7일 최고가</div>
-            <div>{max} G</div>
-          </StatItem>
-          <StatItem>
-            <div>7일 최저가</div>
-            <div>{min} G</div>
-          </StatItem>
-        </StatSummary>
-
-        <ChartWrapper>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={stats}>
-              <XAxis dataKey="Date" tick={{ fill: "white", fontSize: 10 }} />
-              <YAxis tick={{ fill: "white", fontSize: 10 }} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="AvgPrice"
-                stroke="#8884d8"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-
-          <Table>
-            <thead>
-              <tr>
-                <Th>날짜</Th>
-                <Th>평균가</Th>
-                <Th>판매 수량</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map((s, i) => (
-                <tr key={i}>
-                  <Td>{s.Date}</Td>
-                  <Td>{s.AvgPrice}</Td>
-                  <Td>{s.TradeCount.toLocaleString()}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </ChartWrapper>
+        <CloseButton onClick={onClose}>닫기</CloseButton>
       </Modal>
-    </>
+    </Overlay>
   );
 };
 
