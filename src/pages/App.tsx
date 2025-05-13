@@ -12,6 +12,7 @@ import Main from "./Main";
 import GoldCalc from "./GoldCalc";
 import Schedule from "./Schedule";
 import Package from "./Package";
+import Auction from "./Auction";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/GoldCalc" element={<GoldCalc tabId={0} />} />
                 <Route path="/Schedule" element={<Schedule />} />
                 <Route path="/Package" element={<Package />} />
+                <Route path="/Auction" element={<Auction />} />
               </Routes>
             </Layout>
           </LayoutProvider>
