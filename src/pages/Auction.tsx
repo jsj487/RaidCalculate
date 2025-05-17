@@ -82,11 +82,14 @@ const Auction = () => {
 
   const getPerPersonShare = (bid: number, memberCount: number): number => {
     if (memberCount <= 1) return 0;
-    return Math.floor(bid / memberCount); // 내림 처리
+    return Math.floor(bid / (memberCount - 1)); // ✅ 입찰자를 제외한 인원
   };
 
-  const saleBid = getSaleBid(Number(price), memberCount);
-  const perShare = getPerPersonShare(saleBid, memberCount);
+  const useBid = getUseBid(); // 사용 시 입찰가
+  const saleBid = getSaleBid(parsedPrice, memberCount); // 판매 시 입찰가
+
+  const perShareUse = getPerPersonShare(useBid, memberCount); // 사용 시 기준 분배금
+  const perShareSale = getPerPersonShare(saleBid, memberCount); // 판매 시 기준 분배금
 
   return (
     <Container>
@@ -117,14 +120,14 @@ const Auction = () => {
         <ResultLine>
           사용 시 입찰가: {getUseBid().toLocaleString()} G
           <span style={{ color: "#888", fontSize: "14px" }}>
-            (1인당 분배금: {perShare.toLocaleString()} G)
+            (1인당 분배금: {perShareUse.toLocaleString()} G)
           </span>
         </ResultLine>
         <ResultLine>
           판매 시 입찰가:{" "}
           {getSaleBid(Number(price), memberCount).toLocaleString()} G
           <span style={{ color: "#888", fontSize: "14px" }}>
-            (1인당 분배금: {perShare.toLocaleString()} G)
+            (1인당 분배금: {perShareSale.toLocaleString()} G)
           </span>
         </ResultLine>
       </ResultBox>
