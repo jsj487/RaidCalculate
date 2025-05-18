@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { SpecialOptions } from "../utils/SpecialOptions";
+import { logBraceletResult } from "../utils/BraceletLogger";
 
 const Container = styled.div`
   max-width: 500px;
@@ -26,6 +27,9 @@ const ResultBox = styled.div`
 `;
 
 const OptionLine = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin: 6px 0;
 `;
 
@@ -55,7 +59,7 @@ const Button = styled.button`
 `;
 
 type OptionTier = {
-  value: string[]; // ✅ value 배열로 바뀜
+  value: string[];
   grade: string;
   probability: number;
 };
@@ -65,7 +69,10 @@ type Option = {
   tiers: OptionTier[];
 };
 
-const fixedOptions = ["힘 +10368"];
+type GeneratedOption = {
+  parts: (string | { value: string; grade: string })[];
+  locked: boolean;
+};
 
 function pickTier(tiers: OptionTier[]) {
   const total = tiers.reduce((acc, t) => acc + t.probability, 0);
@@ -115,34 +122,88 @@ function generateOptions(options: Option[], count: number) {
 }
 
 const BraceletGachaSimulator = () => {
-  const [generated, setGenerated] = useState<
-    { parts: (string | { value: string; grade: string })[] }[]
-  >([]);
+  const [generated, setGenerated] = useState<GeneratedOption[]>([]);
+  const [log, setLog] = useState<GeneratedOption[][]>([]);
 
   const handleGenerate = () => {
-    const rolled = generateOptions(SpecialOptions, 3);
-    setGenerated(rolled);
+    setGenerated((prev) => {
+      const newGenerated: GeneratedOption[] = [];
+
+      for (let i = 0; i < 3; i++) {
+        if (prev[i]?.locked) {
+          newGenerated.push(prev[i]);
+        } else {
+          const newOption = generateOptions(SpecialOptions, 1)[0];
+          newGenerated.push({ ...newOption, locked: false });
+        }
+      }
+
+      logBraceletResult(newGenerated);
+      return newGenerated;
+    });
   };
 
   return (
     <Container>
       <Title>팔찌 가챠 시뮬레이터</Title>
       <ResultBox>
-        <OptionLine>고정 옵션: {fixedOptions[0]}</OptionLine>
         {generated.map((opt, i) => (
           <OptionLine key={i}>
-            {opt.parts.map((part, j) =>
-              typeof part === "string" ? (
-                <span key={j}>{part}</span>
-              ) : (
-                <ValueSpan key={j} grade={part.grade}>
-                  {part.value}
-                </ValueSpan>
-              )
-            )}
+            <button
+              onClick={() => {
+                const updated = [...generated];
+                updated[i].locked = !updated[i].locked;
+                setGenerated(updated);
+              }}
+              style={{
+                marginLeft: "10px",
+                backgroundColor: opt.locked ? "#FFA500" : "#444",
+                color: "white",
+                fontWeight: "bold",
+                border: "none",
+                borderRadius: "5px",
+                padding: "2px 8px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {opt.locked ? "잠금" : "해제"}
+            </button>
+            <div style={{ lineHeight: "1.6" }}>
+              {opt.parts.map((part, j) =>
+                typeof part === "string" ? (
+                  <span key={j}>{part}</span>
+                ) : (
+                  <ValueSpan key={j} grade={part.grade}>
+                    {part.value}
+                  </ValueSpan>
+                )
+              )}
+            </div>
           </OptionLine>
         ))}
       </ResultBox>
+      <h3 style={{ marginTop: "30px" }}>뽑기 기록</h3>
+      {log.map((entry, index) => (
+        <ResultBox key={index}>
+          {entry.map((opt, i) => (
+            <OptionLine key={i}>
+              <div>
+                {opt.parts.map((part, j) =>
+                  typeof part === "string" ? (
+                    <span key={j}>{part}</span>
+                  ) : (
+                    <ValueSpan key={j} grade={part.grade}>
+                      {part.value}
+                    </ValueSpan>
+                  )
+                )}
+              </div>
+            </OptionLine>
+          ))}
+        </ResultBox>
+      ))}
+
       <Button onClick={handleGenerate}>뽑기</Button>
     </Container>
   );
