@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
 import { logBraceletResult } from "../utils/BraceletLogger";
 import { generateFinalOptions } from "../utils/GachaGenerator";
@@ -12,26 +13,76 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../utils/FireBase";
 
 const Container = styled.div`
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 30px;
+  height: 100vh;
   background-color: #111;
   color: white;
   font-family: sans-serif;
 `;
 
-const Title = styled.h1`
-  font-size: 22px;
-  margin-bottom: 20px;
-  text-align: center;
+const BraceletBox = styled.div`
+  background-color: #1e1e1e;
+  border: 1px solid #555;
+  padding: 20px;
+  border-radius: 12px;
+  width: 500px;
+  margin: 0 auto;
 `;
 
-const ResultBox = styled.div`
-  border: 1px solid #888;
+const BraceletImage = styled.img`
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 12px;
+  display: block;
+`;
+
+const BraceletName = styled.h2`
+  font-size: 20px;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 16px;
+`;
+
+const Divider = styled.hr`
+  border: none;
+  height: 1px;
+  background-color: #444;
+  margin: 16px 0;
+`;
+
+const SectionTitle = styled.h3`
+  color: #f2c94c;
+  font-size: 16px;
+  margin-bottom: 10px;
+`;
+
+const EffectBox = styled.div`
+  border: 1px solid #444;
   border-radius: 10px;
-  padding: 20px;
-  background-color: #1e1e1e;
-  margin-bottom: 20px;
+  background-color: #181818;
+  padding: 16px;
+  margin-top: 12px;
+`;
+
+const Button = styled.button`
+  background-color: #2e8b57;
+  color: white;
+  padding: 10px 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #276849;
+  }
+`;
+
+const CenterButton = styled(Button)`
+  display: block;
+  margin: 24px auto 0;
 `;
 
 const OptionLine = styled.div`
@@ -50,20 +101,6 @@ const ValueSpan = styled.span<{ grade: string }>`
       : grade === "하옵"
       ? "#1E90FF"
       : "white"};
-`;
-
-const Button = styled.button`
-  background-color: #2e8b57;
-  color: white;
-  padding: 10px 20px;
-  font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #276849;
-  }
 `;
 
 type GeneratedOption = {
@@ -133,6 +170,12 @@ const BraceletGachaSimulator = () => {
   const [baseStats, setBaseStats] = useState<CategoryStats>({});
   const [combatStats, setCombatStats] = useState<CombatStatsMap>({});
   const [specialStats, setSpecialStats] = useState<SpecialStatsMap>({});
+
+  const [expanded, setExpanded] = useState({
+    기본효과: true,
+    전투특성: true,
+    특수효과: true,
+  });
 
   const handleGenerate = () => {
     const previous = generated;
@@ -259,48 +302,65 @@ const BraceletGachaSimulator = () => {
     });
   });
 
+  const totalSpecialCount = Object.values(specialStats).reduce(
+    (acc, counts) => acc + counts.하옵 + counts.중옵 + counts.상옵,
+    0
+  );
+  const percent = (n: number) => ((n / totalSpecialCount) * 100).toFixed(2);
+
+  const toggleExpand = (key: keyof typeof expanded) => {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <Container>
-      <Title>팔찌 가챠 시뮬레이터</Title>
-      <ResultBox>
-        {generated.map((opt, i) => (
-          <OptionLine key={i}>
-            <button
-              onClick={() => {
-                const updated = [...generated];
-                updated[i].locked = !updated[i].locked;
-                setGenerated(updated);
-              }}
-              style={{
-                marginLeft: "10px",
-                backgroundColor: opt.locked ? "#FFA500" : "#444",
-                color: "white",
-                fontWeight: "bold",
-                border: "none",
-                borderRadius: "5px",
-                padding: "2px 8px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {opt.locked ? "잠금" : "해제"}
-            </button>
-            <div style={{ lineHeight: "1.6" }}>
-              {opt.parts.map((part, j) =>
-                typeof part === "string" ? (
-                  <span key={j}>{part}</span>
-                ) : (
-                  <ValueSpan key={j} grade={part.grade}>
-                    {part.value}
-                  </ValueSpan>
-                )
-              )}
-            </div>
-          </OptionLine>
-        ))}
-      </ResultBox>
-      <Button onClick={() => setIsModalOpen(true)}>로그 기록 보기</Button>
-      <Button onClick={handleGenerate}>뽑기</Button>
+      <BraceletBox>
+        <BraceletImage src="/img/bracelet.png" alt="Bracelet" />
+        <BraceletName>찬란한 영웅의 팔찌</BraceletName>
+
+        <Divider />
+
+        <SectionTitle>부여 효과</SectionTitle>
+        <EffectBox>
+          {generated.map((opt, i) => (
+            <OptionLine key={i}>
+              <button
+                onClick={() => {
+                  const updated = [...generated];
+                  updated[i].locked = !updated[i].locked;
+                  setGenerated(updated);
+                }}
+                style={{
+                  marginLeft: "10px",
+                  backgroundColor: opt.locked ? "#FFA500" : "#444",
+                  color: "white",
+                  fontWeight: "bold",
+                  border: "none",
+                  borderRadius: "5px",
+                  padding: "2px 8px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {opt.locked ? "잠금" : "해제"}
+              </button>
+              <div style={{ lineHeight: "1.6" }}>
+                {opt.parts.map((part, j) =>
+                  typeof part === "string" ? (
+                    <span key={j}>{part}</span>
+                  ) : (
+                    <ValueSpan key={j} grade={part.grade}>
+                      {part.value}
+                    </ValueSpan>
+                  )
+                )}
+              </div>
+            </OptionLine>
+          ))}
+        </EffectBox>
+
+        <CenterButton onClick={handleGenerate}>뽑기</CenterButton>
+      </BraceletBox>
 
       {isModalOpen && (
         <div
@@ -329,15 +389,260 @@ const BraceletGachaSimulator = () => {
             }}
             onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 닫히지 않도록
           >
-            <h2 style={{ color: "white" }}>기본 효과 통계</h2>
-            {Object.entries(baseStats).map(([type, rangeMap]) => {
-              const total = Object.values(rangeMap).reduce((a, b) => a + b, 0);
+            <h2
+              onClick={() => toggleExpand("기본효과")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                color: "white",
+                fontSize: "18px",
+                marginBottom: "8px",
+              }}
+            >
+              <span style={{ marginRight: "8px" }}>
+                {expanded.기본효과 ? "▼" : "▶"}
+              </span>
+              기본 효과 통계 (힘/민/지, 체력)
+            </h2>
 
-              return (
-                <div key={type} style={{ marginBottom: "20px" }}>
-                  <h3 style={{ color: "white" }}>
-                    {type} (총 {total}회)
-                  </h3>
+            <AnimatePresence initial={false}>
+              {expanded.기본효과 && (
+                <motion.div
+                  key="base-stats"
+                  initial={{ opacity: 0, y: -20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -20, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {Object.entries(baseStats).map(([type, rangeMap]) => {
+                    const total = Object.values(rangeMap).reduce(
+                      (a, b) => a + b,
+                      0
+                    );
+
+                    return (
+                      <div key={type} style={{ marginBottom: "20px" }}>
+                        <h3 style={{ color: "white" }}>
+                          {type} (총 {total}회)
+                        </h3>
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            fontSize: "14px",
+                            color: "white",
+                          }}
+                        >
+                          <thead>
+                            <tr>
+                              <th
+                                style={{
+                                  padding: "8px",
+                                  borderBottom: "1px solid #555",
+                                }}
+                              >
+                                수치 범위
+                              </th>
+                              <th
+                                style={{
+                                  padding: "8px",
+                                  borderBottom: "1px solid #555",
+                                }}
+                              >
+                                등장 횟수
+                              </th>
+                              <th
+                                style={{
+                                  padding: "8px",
+                                  borderBottom: "1px solid #555",
+                                }}
+                              >
+                                등장 비율 (%)
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(rangeMap)
+                              .sort((a, b) => {
+                                const aStart = parseInt(a[0].split("~")[0]);
+                                const bStart = parseInt(b[0].split("~")[0]);
+                                return aStart - bStart;
+                              })
+                              .map(([range, count]) => (
+                                <tr key={range}>
+                                  <td style={{ padding: "6px" }}>{range}</td>
+                                  <td
+                                    style={{
+                                      padding: "6px",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {count}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "6px",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {((count / total) * 100).toFixed(2)}%
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <h2
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                color: "white",
+                fontSize: "18px",
+                marginBottom: "8px",
+              }}
+              onClick={() => toggleExpand("전투특성")}
+            >
+              <span style={{ marginRight: "8px" }}>
+                {expanded.전투특성 ? "▼" : "▶"}
+              </span>
+              전투 특성 통계 (치,특,신)
+            </h2>
+
+            <AnimatePresence initial={false}>
+              {expanded.전투특성 && (
+                <motion.div
+                  key="base-stats"
+                  initial={{ opacity: 0, y: -20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -20, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {Object.entries(combatStats)
+                    .sort(
+                      ([a], [b]) =>
+                        STAT_ORDER.indexOf(a) - STAT_ORDER.indexOf(b)
+                    )
+                    .map(([type, rangeMap]) => {
+                      const total = Object.values(rangeMap).reduce(
+                        (a, b) => a + b,
+                        0
+                      );
+
+                      return (
+                        <div key={type} style={{ marginBottom: "20px" }}>
+                          <h3 style={{ color: "white" }}>
+                            {type} (총 {total}회)
+                          </h3>
+                          <table
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              fontSize: "14px",
+                              color: "white",
+                            }}
+                          >
+                            <thead>
+                              <tr>
+                                <th
+                                  style={{
+                                    padding: "8px",
+                                    borderBottom: "1px solid #555",
+                                  }}
+                                >
+                                  수치 범위
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "8px",
+                                    borderBottom: "1px solid #555",
+                                  }}
+                                >
+                                  등장 횟수
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "8px",
+                                    borderBottom: "1px solid #555",
+                                  }}
+                                >
+                                  등장 비율 (%)
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(rangeMap)
+                                .sort(
+                                  (a, b) =>
+                                    parseInt(a[0].split("~")[0]) -
+                                    parseInt(b[0].split("~")[0])
+                                )
+                                .map(([range, count]) => (
+                                  <tr key={range}>
+                                    <td style={{ padding: "6px" }}>{range}</td>
+                                    <td
+                                      style={{
+                                        padding: "6px",
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      {count}
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "6px",
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      {((count / total) * 100).toFixed(2)}%
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <h2
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                color: "white",
+                fontSize: "18px",
+                marginBottom: "8px",
+              }}
+              onClick={() => toggleExpand("특수효과")}
+            >
+              <span style={{ marginRight: "8px" }}>
+                {expanded.특수효과 ? "▼" : "▶"}
+              </span>
+              특수 효과 통계
+            </h2>
+
+            <AnimatePresence initial={false}>
+              {expanded.특수효과 && (
+                <motion.div
+                  key="special-stats"
+                  initial={{ opacity: 0, y: -20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -20, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
                   <table
                     style={{
                       width: "100%",
@@ -348,198 +653,60 @@ const BraceletGachaSimulator = () => {
                   >
                     <thead>
                       <tr>
-                        <th
-                          style={{
-                            padding: "8px",
-                            borderBottom: "1px solid #555",
-                          }}
-                        >
-                          수치 범위
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          옵션
                         </th>
-                        <th
-                          style={{
-                            padding: "8px",
-                            borderBottom: "1px solid #555",
-                          }}
-                        >
-                          등장 횟수
+                        <th style={{ textAlign: "center", padding: "8px" }}>
+                          하옵 (%)
                         </th>
-                        <th
-                          style={{
-                            padding: "8px",
-                            borderBottom: "1px solid #555",
-                          }}
-                        >
-                          등장 비율 (%)
+                        <th style={{ textAlign: "center", padding: "8px" }}>
+                          중옵 (%)
+                        </th>
+                        <th style={{ textAlign: "center", padding: "8px" }}>
+                          상옵 (%)
+                        </th>
+                        <th style={{ textAlign: "center", padding: "8px" }}>
+                          총합 (%)
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(rangeMap)
+                      {Object.entries(specialStats)
                         .sort((a, b) => {
-                          // "10241~10880" → 10241, "12161~12800" → 12161
-                          const aStart = parseInt(a[0].split("~")[0]);
-                          const bStart = parseInt(b[0].split("~")[0]);
-                          return aStart - bStart;
+                          const totalA = a[1].하옵 + a[1].중옵 + a[1].상옵;
+                          const totalB = b[1].하옵 + b[1].중옵 + b[1].상옵;
+                          return totalB - totalA;
                         })
-                        .map(([range, count]) => (
-                          <tr key={range}>
-                            <td style={{ padding: "6px" }}>{range}</td>
-                            <td style={{ padding: "6px", textAlign: "center" }}>
-                              {count}
-                            </td>
-                            <td style={{ padding: "6px", textAlign: "center" }}>
-                              {((count / total) * 100).toFixed(2)}%
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-            <h2 style={{ color: "white", marginTop: "40px" }}>
-              전투 특성 통계
-            </h2>
-            {Object.entries(combatStats)
-              .sort(
-                ([a], [b]) => STAT_ORDER.indexOf(a) - STAT_ORDER.indexOf(b) // 정해진 순서로 정렬
-              )
-              .map(([type, rangeMap]) => {
-                const total = Object.values(rangeMap).reduce(
-                  (a, b) => a + b,
-                  0
-                );
-
-                return (
-                  <div key={type} style={{ marginBottom: "20px" }}>
-                    <h3 style={{ color: "white" }}>
-                      {type} (총 {total}회)
-                    </h3>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: "14px",
-                        color: "white",
-                      }}
-                    >
-                      <thead>
-                        <tr>
-                          <th
-                            style={{
-                              padding: "8px",
-                              borderBottom: "1px solid #555",
-                            }}
-                          >
-                            수치 범위
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px",
-                              borderBottom: "1px solid #555",
-                            }}
-                          >
-                            등장 횟수
-                          </th>
-                          <th
-                            style={{
-                              padding: "8px",
-                              borderBottom: "1px solid #555",
-                            }}
-                          >
-                            등장 비율 (%)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(rangeMap)
-                          .sort(
-                            (a, b) =>
-                              parseInt(a[0].split("~")[0]) -
-                              parseInt(b[0].split("~")[0])
-                          )
-                          .map(([range, count]) => (
-                            <tr key={range}>
-                              <td style={{ padding: "6px" }}>{range}</td>
-                              <td
-                                style={{ padding: "6px", textAlign: "center" }}
-                              >
-                                {count}
+                        .map(([template, counts]) => {
+                          const total = counts.하옵 + counts.중옵 + counts.상옵;
+                          return (
+                            <tr key={template}>
+                              <td>{template}</td>
+                              <td style={{ textAlign: "center" }}>
+                                {percent(counts.하옵)}%
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                {percent(counts.중옵)}%
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                {percent(counts.상옵)}%
                               </td>
                               <td
-                                style={{ padding: "6px", textAlign: "center" }}
+                                style={{
+                                  textAlign: "center",
+                                  fontWeight: "bold",
+                                }}
                               >
-                                {((count / total) * 100).toFixed(2)}%
+                                {percent(total)}%
                               </td>
                             </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
-            <h2 style={{ color: "white", marginTop: "40px" }}>
-              특수 효과 통계
-            </h2>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-                color: "white",
-              }}
-            >
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: "8px" }}>옵션</th>
-                  <th style={{ textAlign: "center", padding: "8px" }}>
-                    하옵 (%)
-                  </th>
-                  <th style={{ textAlign: "center", padding: "8px" }}>
-                    중옵 (%)
-                  </th>
-                  <th style={{ textAlign: "center", padding: "8px" }}>
-                    상옵 (%)
-                  </th>
-                  <th style={{ textAlign: "center", padding: "8px" }}>
-                    총합 (%)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(specialStats)
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .map(([template, counts]) => {
-                    const total = counts.total;
-                    const percent = (n: number) =>
-                      ((n / total) * 100).toFixed(2);
-
-                    return (
-                      <tr key={template}>
-                        <td style={{ padding: "8px" }}>{template}</td>
-                        <td style={{ textAlign: "center" }}>
-                          {percent(counts["하옵"])}%
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {percent(counts["중옵"])}%
-                        </td>
-                        <td style={{ textAlign: "center" }}>
-                          {percent(counts["상옵"])}%
-                        </td>
-                        <td
-                          style={{
-                            textAlign: "center",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {total}
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}

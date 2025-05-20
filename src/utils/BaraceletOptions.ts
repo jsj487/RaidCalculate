@@ -315,20 +315,20 @@ export const SpecialOptions = [
   },
   {
     template:
-      "공격 적중 시 VALUE초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 VALUE초) 해당 효과는 1회 피격 시 사라진다.",
+      "공격 적중 시 VALUE1초 동안 경직 및 피격 이상에 면역이 된다. (재사용 대기 시간 VALUE2초) 해당 효과는 1회 피격 시 사라진다.",
     tiers: [
       {
-        value: ["80"],
+        value: ["80", "80"],
         grade: "하옵",
         probability: 4.2,
       },
       {
-        value: ["70"],
+        value: ["70", "70"],
         grade: "중옵",
         probability: 2.1,
       },
       {
-        value: ["60"],
+        value: ["60", "60"],
         grade: "상옵",
         probability: 0.7,
       },
