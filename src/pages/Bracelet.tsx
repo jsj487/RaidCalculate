@@ -9,6 +9,7 @@ import {
   SpecialOptions,
 } from "../utils/BaraceletOptions";
 
+import { v4 as uuidv4 } from "uuid";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../utils/FireBase";
 
@@ -16,8 +17,6 @@ const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
   padding: 30px;
-  height: 100vh;
-  background-color: #111;
   color: white;
   font-family: sans-serif;
 `;
@@ -60,6 +59,7 @@ const SectionTitle = styled.h3`
 
 const EffectBox = styled.div`
   border: 1px solid #444;
+  height: 300px;
   border-radius: 10px;
   background-color: #181818;
   padding: 16px;
@@ -67,22 +67,39 @@ const EffectBox = styled.div`
 `;
 
 const Button = styled.button`
-  background-color: #2e8b57;
+  background-color: #333;
   color: white;
+  border: 1px solid #fff;
+  border-radius: 6px;
   padding: 10px 20px;
   font-weight: bold;
-  border: none;
-  border-radius: 5px;
   cursor: pointer;
 
   &:hover {
-    background-color: #276849;
+    background-color: #444;
   }
 `;
 
 const CenterButton = styled(Button)`
   display: block;
   margin: 24px auto 0;
+`;
+
+const LogButton = styled.button`
+  position: absolute;
+  top: 120px;
+  right: 50px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #444;
+  }
 `;
 
 const OptionLine = styled.div`
@@ -104,6 +121,7 @@ const ValueSpan = styled.span<{ grade: string }>`
 `;
 
 type GeneratedOption = {
+  id: string;
   parts: (string | { value: string; grade: string })[];
   locked: boolean;
 };
@@ -124,6 +142,16 @@ type SpecialStatsMap = {
     total: number;
   };
 };
+
+function buildPartsFromOption(opt: {
+  category: "기본 효과" | "전투 특성" | "특수 효과";
+  name: string;
+  value: string;
+  grade?: string;
+}): (string | { value: string; grade: string })[] {
+  const values = opt.value ? opt.value.split(" ") : [];
+  return parseTemplate(opt.name, values, opt.grade ?? "하옵");
+}
 
 function parseTemplate(template: string, values: string[], grade: string) {
   const parts: (string | { value: string; grade: string })[] = [];
@@ -206,7 +234,12 @@ const BraceletGachaSimulator = () => {
 
       if (lockedTemplates.has(template)) continue;
 
-      newGenerated.push({ parts, locked: false });
+      newGenerated.push({
+        parts,
+        locked: false,
+        id: uuidv4(),
+      });
+
       lockedTemplates.add(template);
     }
 
@@ -322,44 +355,57 @@ const BraceletGachaSimulator = () => {
 
         <SectionTitle>부여 효과</SectionTitle>
         <EffectBox>
-          {generated.map((opt, i) => (
-            <OptionLine key={i}>
-              <button
-                onClick={() => {
-                  const updated = [...generated];
-                  updated[i].locked = !updated[i].locked;
-                  setGenerated(updated);
-                }}
-                style={{
-                  marginLeft: "10px",
-                  backgroundColor: opt.locked ? "#FFA500" : "#444",
-                  color: "white",
-                  fontWeight: "bold",
-                  border: "none",
-                  borderRadius: "5px",
-                  padding: "2px 8px",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
+          <AnimatePresence>
+            {generated.map((opt, i) => (
+              <motion.div
+                key={opt.id}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                {opt.locked ? "잠금" : "해제"}
-              </button>
-              <div style={{ lineHeight: "1.6" }}>
-                {opt.parts.map((part, j) =>
-                  typeof part === "string" ? (
-                    <span key={j}>{part}</span>
-                  ) : (
-                    <ValueSpan key={j} grade={part.grade}>
-                      {part.value}
-                    </ValueSpan>
-                  )
-                )}
-              </div>
-            </OptionLine>
-          ))}
+                <OptionLine>
+                  <button
+                    onClick={() => {
+                      const updated = [...generated];
+                      updated[i].locked = !updated[i].locked;
+                      setGenerated(updated);
+                    }}
+                    style={{
+                      marginLeft: "10px",
+                      backgroundColor: opt.locked ? "#FFA500" : "#444",
+                      color: "white",
+                      fontWeight: "bold",
+                      border: "none",
+                      borderRadius: "5px",
+                      padding: "2px 8px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {opt.locked ? "잠금" : "해제"}
+                  </button>
+                  <div style={{ lineHeight: "1.6" }}>
+                    {opt.parts.map((part, j) =>
+                      typeof part === "string" ? (
+                        <span key={j}>{part}</span>
+                      ) : (
+                        <ValueSpan key={j} grade={part.grade}>
+                          {part.value}
+                        </ValueSpan>
+                      )
+                    )}
+                  </div>
+                </OptionLine>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </EffectBox>
 
         <CenterButton onClick={handleGenerate}>뽑기</CenterButton>
+        <LogButton onClick={() => setIsModalOpen(true)}>
+          로그 기록 보기
+        </LogButton>
       </BraceletBox>
 
       {isModalOpen && (

@@ -88,22 +88,6 @@ const Container = styled.div`
   color: white;
 `;
 
-const ChartButton = styled.button`
-  background-color: #333;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background-color: #555;
-  }
-`;
-
 //재료 모달창
 const ModalOverlay = styled.div`
   position: fixed;
