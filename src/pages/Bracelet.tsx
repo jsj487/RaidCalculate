@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
 import { logBraceletResult } from "../utils/BraceletLogger";
@@ -21,7 +21,17 @@ const Container = styled.div`
   font-family: sans-serif;
 `;
 
+const Wrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
 const BraceletBox = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: #1e1e1e;
   border: 1px solid #555;
   padding: 20px;
@@ -64,6 +74,11 @@ const EffectBox = styled.div`
   background-color: #181818;
   padding: 16px;
   margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow-y: auto;
 `;
 
 const Button = styled.button`
@@ -194,16 +209,19 @@ function parseTemplate(template: string, values: string[], grade: string) {
 const BraceletGachaSimulator = () => {
   const [generated, setGenerated] = useState<GeneratedOption[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [baseStats, setBaseStats] = useState<CategoryStats>({});
   const [combatStats, setCombatStats] = useState<CombatStatsMap>({});
   const [specialStats, setSpecialStats] = useState<SpecialStatsMap>({});
-
   const [expanded, setExpanded] = useState({
     기본효과: true,
     전투특성: true,
     특수효과: true,
   });
+  const [categoryCounts, setCategoryCounts] = useState<{
+    기본효과: number;
+    전투특성: number;
+    특수효과: number;
+  }>({ 기본효과: 0, 전투특성: 0, 특수효과: 0 });
 
   const handleGenerate = () => {
     const previous = generated;
@@ -255,11 +273,17 @@ const BraceletGachaSimulator = () => {
         const combat: CombatStatsMap = {};
         const special: SpecialStatsMap = {};
 
+        // 카테고리별 총 등장 횟수 카운터
+        let baseCount = 0;
+        let combatCount = 0;
+        let specialCount = 0;
+
         snapshot.forEach((doc) => {
           const data = doc.data().options;
 
           if (data) {
             if (Array.isArray(data["기본 효과"])) {
+              baseCount += data["기본 효과"].length; // 총합 추가
               data["기본 효과"].forEach((opt) => {
                 const type = opt.template.replace("VALUE", "").trim();
                 const range = opt.value.trim();
@@ -271,6 +295,7 @@ const BraceletGachaSimulator = () => {
             }
 
             if (Array.isArray(data["전투 특성"])) {
+              combatCount += data["전투 특성"].length; // 총합 추가
               data["전투 특성"].forEach((opt) => {
                 const type = opt.template.replace("VALUE", "").trim();
                 const range = opt.value.trim();
@@ -282,24 +307,33 @@ const BraceletGachaSimulator = () => {
             }
 
             if (Array.isArray(data["특수 효과"])) {
+              specialCount += data["특수 효과"].length; // 총합 추가
               data["특수 효과"].forEach((opt) => {
                 const template = opt.template;
                 const grade = opt.grade as "하옵" | "중옵" | "상옵";
 
                 if (!special[template]) {
-                  special[template] = { 하옵: 0, 중옵: 0, 상옵: 0, total: 0 }; // ✅ total 포함
+                  special[template] = { 하옵: 0, 중옵: 0, 상옵: 0, total: 0 };
                 }
 
                 special[template][grade]++;
-                special[template].total++; // ✅ total 증가
+                special[template].total++;
               });
             }
           }
         });
 
+        // 상태 업데이트
         setBaseStats(base);
         setCombatStats(combat);
         setSpecialStats(special);
+
+        // 카테고리 비율용 상태도 업데이트
+        setCategoryCounts({
+          기본효과: baseCount,
+          전투특성: combatCount,
+          특수효과: specialCount,
+        });
       }
     );
 
@@ -345,68 +379,64 @@ const BraceletGachaSimulator = () => {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const totalOptions =
+    categoryCounts.기본효과 + categoryCounts.전투특성 + categoryCounts.특수효과;
+
+  const categoryPercent = (count: number) =>
+    totalOptions > 0 ? ((count / totalOptions) * 100).toFixed(2) : "0.00";
+
   return (
     <Container>
-      <BraceletBox>
-        <BraceletImage src="/img/bracelet.png" alt="Bracelet" />
-        <BraceletName>찬란한 영웅의 팔찌</BraceletName>
+      <LogButton onClick={() => setIsModalOpen(true)}>로그 기록 보기</LogButton>
+      <Wrapper>
+        <BraceletBox>
+          <BraceletImage src="/img/bracelet.png" alt="Bracelet" />
+          <BraceletName>찬란한 영웅의 팔찌</BraceletName>
 
-        <Divider />
+          <Divider />
 
-        <SectionTitle>부여 효과</SectionTitle>
-        <EffectBox>
-          <AnimatePresence>
+          <SectionTitle>부여 효과</SectionTitle>
+          <EffectBox>
             {generated.map((opt, i) => (
-              <motion.div
-                key={opt.id}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                <OptionLine>
-                  <button
-                    onClick={() => {
-                      const updated = [...generated];
-                      updated[i].locked = !updated[i].locked;
-                      setGenerated(updated);
-                    }}
-                    style={{
-                      marginLeft: "10px",
-                      backgroundColor: opt.locked ? "#FFA500" : "#444",
-                      color: "white",
-                      fontWeight: "bold",
-                      border: "none",
-                      borderRadius: "5px",
-                      padding: "2px 8px",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {opt.locked ? "잠금" : "해제"}
-                  </button>
-                  <div style={{ lineHeight: "1.6" }}>
-                    {opt.parts.map((part, j) =>
-                      typeof part === "string" ? (
-                        <span key={j}>{part}</span>
-                      ) : (
-                        <ValueSpan key={j} grade={part.grade}>
-                          {part.value}
-                        </ValueSpan>
-                      )
-                    )}
-                  </div>
-                </OptionLine>
-              </motion.div>
+              <OptionLine key={opt.id}>
+                <button
+                  onClick={() => {
+                    const updated = [...generated];
+                    updated[i].locked = !updated[i].locked;
+                    setGenerated(updated);
+                  }}
+                  style={{
+                    marginLeft: "10px",
+                    backgroundColor: opt.locked ? "#FFA500" : "#444",
+                    color: "white",
+                    fontWeight: "bold",
+                    border: "none",
+                    borderRadius: "5px",
+                    padding: "2px 8px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {opt.locked ? "잠금" : "해제"}
+                </button>
+                <div style={{ lineHeight: "1.6", marginTop: "2px" }}>
+                  {opt.parts.map((part, j) =>
+                    typeof part === "string" ? (
+                      <span key={j}>{part}</span>
+                    ) : (
+                      <ValueSpan key={j} grade={part.grade}>
+                        {part.value}
+                      </ValueSpan>
+                    )
+                  )}
+                </div>
+              </OptionLine>
             ))}
-          </AnimatePresence>
-        </EffectBox>
+          </EffectBox>
 
-        <CenterButton onClick={handleGenerate}>뽑기</CenterButton>
-        <LogButton onClick={() => setIsModalOpen(true)}>
-          로그 기록 보기
-        </LogButton>
-      </BraceletBox>
+          <CenterButton onClick={handleGenerate}>뽑기</CenterButton>
+        </BraceletBox>
+      </Wrapper>
 
       {isModalOpen && (
         <div
@@ -449,7 +479,8 @@ const BraceletGachaSimulator = () => {
               <span style={{ marginRight: "8px" }}>
                 {expanded.기본효과 ? "▼" : "▶"}
               </span>
-              기본 효과 통계 (힘/민/지, 체력)
+              기본 효과: {categoryCounts.기본효과}회 (
+              {categoryPercent(categoryCounts.기본효과)}%)
             </h2>
 
             <AnimatePresence initial={false}>
@@ -560,7 +591,8 @@ const BraceletGachaSimulator = () => {
               <span style={{ marginRight: "8px" }}>
                 {expanded.전투특성 ? "▼" : "▶"}
               </span>
-              전투 특성 통계 (치,특,신)
+              전투 특성: {categoryCounts.전투특성}회 (
+              {categoryPercent(categoryCounts.전투특성)}%)
             </h2>
 
             <AnimatePresence initial={false}>
@@ -676,7 +708,8 @@ const BraceletGachaSimulator = () => {
               <span style={{ marginRight: "8px" }}>
                 {expanded.특수효과 ? "▼" : "▶"}
               </span>
-              특수 효과 통계
+              특수 효과: {categoryCounts.특수효과}회 (
+              {categoryPercent(categoryCounts.특수효과)}%)
             </h2>
 
             <AnimatePresence initial={false}>
