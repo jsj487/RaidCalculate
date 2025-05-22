@@ -14,6 +14,7 @@ import Schedule from "./Schedule";
 import Package from "./Package";
 import Auction from "./Auction";
 import Bracelet from "./Bracelet";
+import JewelFriend from "./JewelFriend";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
@@ -38,7 +39,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Main />} />
                 <Route path="/GoldCalc" element={<GoldCalc tabId={0} />} />
-                <Route path="/Schedule" element={<Schedule />} />
+                <Route path="/JewelFriend" element={<JewelFriend />} />
                 <Route path="/Package" element={<Package />} />
                 <Route path="/Auction" element={<Auction />} />
                 <Route path="/Bracelet" element={<Bracelet />} />

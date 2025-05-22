@@ -90,8 +90,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <NavLink to="/GoldCalc" $isActive={location.pathname === "/GoldCalc"}>
             주간 레이드 계산기
           </NavLink>
-          <NavLink to="/Schedule" $isActive={location.pathname === "/Schedule"}>
-            레이드 스케줄(미완)
+          <NavLink
+            to="/JewelFriend"
+            $isActive={location.pathname === "/JewelFriend"}
+          >
+            보석 깐부 찾기
           </NavLink>
           <NavLink to="/Package" $isActive={location.pathname === "/Package"}>
             패키지 계산기
