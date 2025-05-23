@@ -99,6 +99,68 @@ app.get("/api/characters/siblings", async (req, res) => {
   }
 });
 
+// 캐릭터 착용 장비 정보 (보석 포함) 가져오기
+app.get("/api/characters/gems", async (req, res) => {
+  const { name } = req.query;
+  console.log("서버 수신 캐릭터 닉네임(name):", name);
+
+  if (!name) {
+    console.warn("name 쿼리 누락됨");
+    return res.status(400).json({ error: "Character name is required" });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://developer-lostark.game.onstove.com/armories/characters/${encodeURIComponent(
+        name
+      )}/gems`,
+      {
+        headers: {
+          Authorization: `Bearer ${LOST_ARK_API_KEY}`,
+        },
+      }
+    );
+
+    console.log("로스트아크 API 응답:", response.data);
+    res.json(response.data);
+  } catch (error) {
+    console.error("로스트아크 API 요청 실패:", error.message);
+    res.status(500).json({ error: "Failed to fetch character gems" });
+  }
+});
+
+app.get("/api/characters/:endpoint", async (req, res) => {
+  const { name } = req.query;
+  const { endpoint } = req.params;
+
+  if (!name) {
+    return res.status(400).json({ error: "Character name is required" });
+  }
+
+  const validEndpoints = ["arkpassive", "combat-skills", "engravings"];
+
+  if (!validEndpoints.includes(endpoint)) {
+    return res.status(400).json({ error: "Invalid endpoint" });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://developer-lostark.game.onstove.com/armories/characters/${encodeURIComponent(
+        name
+      )}/${endpoint}`,
+      {
+        headers: {
+          Authorization: `Bearer ${LOST_ARK_API_KEY}`,
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("API 요청 실패:", error.message);
+    res.status(500).json({ error: "Failed to fetch character data" });
+  }
+});
+
 // 경매장 아이템 검색 API
 app.post("/api/market/items", async (req, res) => {
   console.log("요청 body:", req.body); // ★ 추가

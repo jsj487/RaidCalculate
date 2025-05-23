@@ -46,10 +46,11 @@ const SearchButton = styled.button.withConfig({
 `;
 
 interface SearchBarProps {
-  ismainpage: boolean; // 메인 페이지 여부
+  ismainpage: boolean;
   search: string;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
+  setSearch: (value: string) => void;
   handleSearch: () => void;
+  placeholder?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -57,6 +58,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   search,
   setSearch,
   handleSearch,
+  placeholder,
 }) => {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
@@ -67,7 +69,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <SearchInput
         ismainpage={ismainpage}
         type="text"
-        placeholder="캐릭터 닉네임을 입력해주세요..."
+        placeholder={placeholder || "캐릭터명을 입력하세요"}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         onKeyDown={handleKeyPress}

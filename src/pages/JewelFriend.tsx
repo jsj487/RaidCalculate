@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import SearchBar from "../components/SearchBar";
+import CharacterDetailModal from "../components/CharacterDetailModal";
+
 import { db } from "../utils/FireBase"; // 너의 FireBase.tsx에 정의된 Firebase 인스턴스
 import {
   collection,
@@ -105,58 +107,103 @@ const CharacterImagePlaceholder = styled.div`
   border-radius: 8px;
 `;
 
-const MatchButton = styled.button`
+const MatchButton = styled.button<{ isMatching: boolean }>`
   padding: 20px;
   border-radius: 50%;
   font-size: 20px;
   font-weight: bold;
-  background-color: #0077cc;
+  background-color: ${(props) => (props.isMatching ? "#aa3333" : "#0077cc")};
   color: white;
   border: none;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #005fa3;
+    background-color: ${(props) => (props.isMatching ? "#992222" : "#005fa3")};
   }
+`;
+
+const JewelListContainer = styled.div`
+  display: inline-block;
+  background-color: #fefefe;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  border: 2px solid #ccc;
+  min-width: 500px; /* 카드 너비보다 넓게 */
+`;
+
+const JewelRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const JewelIcon = styled.div`
+  position: relative;
+`;
+
+const JewelImage = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+`;
+
+const JewelLevel = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 12px;
+  background: black;
+  color: white;
+  padding: 0px 4px;
+  border-radius: 6px;
 `;
 
 const JewelFriend = () => {
   const [mainSearch, setMainSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
+  const [isMatching, setIsMatching] = useState(false);
   const [matchedMainCharacter, setMatchedMainCharacter] = useState<any>(null);
   const [matchedSubCharacter, setMatchedSubCharacter] = useState<any>(null);
   const [mainCharacter, setMainCharacter] = useState<any>(null);
   const [subCharacter, setSubCharacter] = useState<any>(null);
+  const [mainJewels, setMainJewels] = useState<any[]>([]);
+  const [selectedCharacterName, setSelectedCharacterName] = useState<
+    string | null
+  >(null);
 
   const fetchCharacter = async (
     nickname: string,
-    setCharacter: (char: any) => void
+    setCharacter: (char: any) => void,
+    setJewels?: (jewels: any[]) => void // ✅ 선택적 인자
   ) => {
+    console.log("🔍 캐릭터 검색 요청:", nickname);
+
     try {
       const res = await axios.get(`${BASE_URL}/characters/siblings`, {
         params: { name: nickname },
       });
 
-      const data = res.data;
-      if (!Array.isArray(data) || data.length === 0) {
-        alert("검색 결과가 없습니다.");
-        return;
-      }
-
-      const matchedChar = data.find(
+      const matchedChar = res.data.find(
         (char: any) => char.CharacterName === nickname
       );
 
       if (!matchedChar) {
-        alert("입력한 닉네임과 일치하는 캐릭터를 찾을 수 없습니다.");
+        alert("닉네임과 일치하는 캐릭터를 찾을 수 없습니다.");
         return;
       }
 
       setCharacter(matchedChar);
+
+      // ✅ setJewels가 있을 때만 호출
+      if (setJewels) {
+        const jewels = await fetchEquippedGems(matchedChar.CharacterName);
+        setJewels(jewels);
+      }
     } catch (err) {
-      console.error(err);
-      alert("검색 중 오류가 발생했습니다.");
+      console.error("❌ 캐릭터 검색 실패", err);
     }
   };
 
@@ -168,6 +215,7 @@ const JewelFriend = () => {
 
     const myData = {
       nickname: mainCharacter.CharacterName,
+      subnickname: subCharacter.CharacterName,
       mainClass: mainCharacter.CharacterClassName,
       subClass: subCharacter.CharacterClassName,
       server: mainCharacter.ServerName,
@@ -191,29 +239,134 @@ const JewelFriend = () => {
       const matchedDoc = snapshot.docs[0];
       const matchedData = matchedDoc.data();
 
-      // 상태에 저장
       setMatchedMainCharacter({
         CharacterName: matchedData.nickname,
         CharacterClassName: matchedData.mainClass,
         ServerName: matchedData.server,
-        CharacterImage: "/img/default-character.png", // 실제 이미지가 없을 수도 있으니 기본 이미지
+        CharacterImage:
+          !matchedData.characterImageMain ||
+          matchedData.characterImageMain === "null"
+            ? "/img/default-character.png"
+            : matchedData.characterImageMain,
       });
 
       setMatchedSubCharacter({
-        CharacterName: matchedData.nickname + "의 부캐",
+        CharacterName: matchedData.subnickname,
         CharacterClassName: matchedData.subClass,
         ServerName: matchedData.server,
-        CharacterImage: "/img/default-character.png",
+        CharacterImage:
+          !matchedData.characterImageSub ||
+          matchedData.characterImageSub === "null"
+            ? "/img/default-character.png"
+            : matchedData.characterImageSub,
       });
+
+      console.log("매칭된 닉네임:", matchedData.nickname);
 
       // 3. 매칭된 상대, 나 둘 다 queue에서 삭제
       await deleteDoc(matchedDoc.ref);
     } else {
       // 4. 매칭 안 됨 → 대기열에 나 등록
-      await addDoc(queueRef, myData);
-      alert("매칭 대기열에 등록되었습니다. 잠시 후 다시 시도해보세요.");
+      await addDoc(queueRef, {
+        ...myData,
+        characterImageMain: mainCharacter.CharacterImage,
+        characterImageSub: subCharacter.CharacterImage,
+      });
+      setIsMatching(true); // 매칭 등록 후 상태 전환
     }
   };
+
+  const handleCancelMatch = async () => {
+    if (!mainCharacter) return;
+
+    const q = query(
+      collection(db, "jewelMatchingQueue"),
+      where("nickname", "==", mainCharacter.CharacterName)
+    );
+
+    const snapshot = await getDocs(q);
+    snapshot.forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+    });
+
+    setMatchedMainCharacter(null);
+    setMatchedSubCharacter(null);
+    setIsMatching(false);
+  };
+
+  const fetchEquippedGems = async (nickname: string): Promise<any[]> => {
+    console.log("🔍 보석 API 요청 대상 닉네임:", nickname); // ✅ 여기
+
+    if (!nickname) {
+      console.warn("❌ 닉네임이 유효하지 않습니다:", nickname);
+      return [];
+    }
+
+    try {
+      const res = await axios.get(`${BASE_URL}/characters/gems`, {
+        params: { name: nickname }, // 서버에 전달될 name 쿼리
+      });
+
+      console.log("💎 보석 API 응답:", res.data); // ✅ 응답 확인
+
+      if (Array.isArray(res.data.Gems)) {
+        return res.data.Gems;
+      } else {
+        console.warn("❗️Gems 데이터가 배열이 아님:", res.data);
+        return [];
+      }
+    } catch (err) {
+      console.error("보석 정보 실패", err);
+      return [];
+    }
+  };
+
+  const filterJewelsByName = (jewels: any[], keywords: string[]): any[] => {
+    return jewels
+      .filter((jewel) => keywords.some((word) => jewel.Name.includes(word)))
+      .slice(0, 8);
+  };
+
+  const RenderJewelList = ({ jewels }: { jewels: any[] }) => {
+    const damageJewels = filterJewelsByName(jewels, ["멸화", "겁화"]);
+    const cooldownJewels = filterJewelsByName(jewels, ["홍염", "작열"]);
+
+    return (
+      <JewelListContainer>
+        <div style={{ fontWeight: "bold", marginBottom: "6px" }}>거래 보석</div>
+        <JewelRow>
+          {damageJewels.map((jewel, i) => (
+            <JewelIcon key={`dmg-${i}`}>
+              <JewelImage src={jewel.Icon} title={jewel.Name} />
+            </JewelIcon>
+          ))}
+        </JewelRow>
+        <JewelRow>
+          {cooldownJewels.map((jewel, i) => (
+            <JewelIcon key={`dmg-${i}`}>
+              <JewelImage src={jewel.Icon} title={jewel.Name} />
+            </JewelIcon>
+          ))}
+        </JewelRow>
+      </JewelListContainer>
+    );
+  };
+
+  useEffect(() => {
+    const handleUnload = async () => {
+      if (isMatching) {
+        const q = query(
+          collection(db, "jewelMatchingQueue"),
+          where("nickname", "==", mainCharacter?.CharacterName)
+        );
+        const snap = await getDocs(q);
+        snap.forEach((doc) => deleteDoc(doc.ref));
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [isMatching, mainCharacter]);
 
   return (
     <Container>
@@ -224,21 +377,35 @@ const JewelFriend = () => {
             ismainpage={true}
             search={mainSearch}
             setSearch={setMainSearch}
-            handleSearch={() => fetchCharacter(mainSearch, setMainCharacter)}
+            handleSearch={() =>
+              fetchCharacter(mainSearch, setMainCharacter, setMainJewels)
+            }
+            placeholder="본캐 닉네임 입력"
           />
+
           <SearchBar
             ismainpage={true}
             search={subSearch}
             setSearch={setSubSearch}
             handleSearch={() => fetchCharacter(subSearch, setSubCharacter)}
+            placeholder="부캐 닉네임 입력"
           />
         </TopSearchRow>
-
         {/* 캐릭터 정보 + 매칭 버튼 */}
         <MatchLayout>
           {/* 본캐 */}
-          <CharacterColumn>
-            {mainCharacter && (
+          <CharacterColumn
+            onClick={() => {
+              if (mainCharacter) {
+                setSelectedCharacterName(mainCharacter.CharacterName);
+              }
+            }}
+            style={{
+              cursor: mainCharacter ? "pointer" : "default",
+              opacity: mainCharacter ? 1 : 0.5,
+            }}
+          >
+            {mainCharacter ? (
               <>
                 <CharacterImage
                   src={
@@ -255,12 +422,31 @@ const JewelFriend = () => {
                   </div>
                 </InfoBox>
               </>
+            ) : (
+              <>
+                <CharacterImagePlaceholder />
+                <InfoBox>
+                  <div className="nickname">-</div>
+                  <div className="server">서버: -</div>
+                  <div className="job">직업: -</div>
+                </InfoBox>
+              </>
             )}
           </CharacterColumn>
 
           {/* 부캐 */}
-          <CharacterColumn>
-            {subCharacter && (
+          <CharacterColumn
+            onClick={() => {
+              if (subCharacter) {
+                setSelectedCharacterName(subCharacter.CharacterName);
+              }
+            }}
+            style={{
+              cursor: subCharacter ? "pointer" : "default",
+              opacity: subCharacter ? 1 : 0.5,
+            }}
+          >
+            {subCharacter ? (
               <>
                 <CharacterImage
                   src={
@@ -277,14 +463,37 @@ const JewelFriend = () => {
                   </div>
                 </InfoBox>
               </>
+            ) : (
+              <>
+                <CharacterImagePlaceholder />
+                <InfoBox>
+                  <div className="nickname">-</div>
+                  <div className="server">서버: -</div>
+                  <div className="job">직업: -</div>
+                </InfoBox>
+              </>
             )}
           </CharacterColumn>
 
           {/* 매칭 버튼 */}
-          <MatchButton onClick={handleMatch}>매칭</MatchButton>
-
+          <MatchButton
+            onClick={isMatching ? handleCancelMatch : handleMatch}
+            isMatching={isMatching}
+          >
+            {isMatching ? "매칭 취소" : "매칭 찾기"}
+          </MatchButton>
           {/* 상대 본캐 자리 (매칭 성공 시 표시) */}
-          <CharacterColumn>
+          <CharacterColumn
+            onClick={() => {
+              if (matchedMainCharacter) {
+                setSelectedCharacterName(matchedMainCharacter.CharacterName);
+              }
+            }}
+            style={{
+              cursor: matchedMainCharacter ? "pointer" : "default",
+              opacity: matchedMainCharacter ? 1 : 0.5,
+            }}
+          >
             {matchedMainCharacter ? (
               <>
                 <CharacterImage src={matchedMainCharacter.CharacterImage} />
@@ -313,7 +522,17 @@ const JewelFriend = () => {
           </CharacterColumn>
 
           {/* 상대 부캐 자리 */}
-          <CharacterColumn>
+          <CharacterColumn
+            onClick={() => {
+              if (matchedSubCharacter) {
+                setSelectedCharacterName(matchedSubCharacter.CharacterName);
+              }
+            }}
+            style={{
+              cursor: matchedSubCharacter ? "pointer" : "default",
+              opacity: matchedSubCharacter ? 1 : 0.5,
+            }}
+          >
             {matchedSubCharacter ? (
               <>
                 <CharacterImage src={matchedSubCharacter.CharacterImage} />
@@ -342,6 +561,13 @@ const JewelFriend = () => {
           </CharacterColumn>
         </MatchLayout>
       </Wrapper>
+
+      {selectedCharacterName && (
+        <CharacterDetailModal
+          characterName={selectedCharacterName}
+          onClose={() => setSelectedCharacterName(null)}
+        />
+      )}
     </Container>
   );
 };
