@@ -3,6 +3,7 @@ import styled from "styled-components";
 import axios from "axios";
 import SearchBar from "../components/SearchBar";
 import CharacterDetailModal from "../components/CharacterDetailModal";
+import fetchCharacterData from "../components/CharacterDetailModal";
 
 import { db } from "../utils/FireBase"; // 너의 FireBase.tsx에 정의된 Firebase 인스턴스
 import {
@@ -123,44 +124,6 @@ const MatchButton = styled.button<{ isMatching: boolean }>`
   }
 `;
 
-const JewelListContainer = styled.div`
-  display: inline-block;
-  background-color: #fefefe;
-  border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  border: 2px solid #ccc;
-  min-width: 500px; /* 카드 너비보다 넓게 */
-`;
-
-const JewelRow = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 8px;
-`;
-
-const JewelIcon = styled.div`
-  position: relative;
-`;
-
-const JewelImage = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-`;
-
-const JewelLevel = styled.div`
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: 12px;
-  background: black;
-  color: white;
-  padding: 0px 4px;
-  border-radius: 6px;
-`;
-
 const JewelFriend = () => {
   const [mainSearch, setMainSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
@@ -177,7 +140,8 @@ const JewelFriend = () => {
   const fetchCharacter = async (
     nickname: string,
     setCharacter: (char: any) => void,
-    setJewels?: (jewels: any[]) => void // ✅ 선택적 인자
+    setJewels?: (jewels: any[]) => void,
+    setProfile?: (profile: any) => void
   ) => {
     console.log("🔍 캐릭터 검색 요청:", nickname);
 
@@ -197,10 +161,17 @@ const JewelFriend = () => {
 
       setCharacter(matchedChar);
 
-      // ✅ setJewels가 있을 때만 호출
       if (setJewels) {
         const jewels = await fetchEquippedGems(matchedChar.CharacterName);
         setJewels(jewels);
+      }
+
+      if (setProfile) {
+        const profile = await fetchCharacterData(
+          matchedChar.CharacterName,
+          "profiles"
+        );
+        setProfile(profile);
       }
     } catch (err) {
       console.error("❌ 캐릭터 검색 실패", err);
@@ -321,37 +292,6 @@ const JewelFriend = () => {
     }
   };
 
-  const filterJewelsByName = (jewels: any[], keywords: string[]): any[] => {
-    return jewels
-      .filter((jewel) => keywords.some((word) => jewel.Name.includes(word)))
-      .slice(0, 8);
-  };
-
-  const RenderJewelList = ({ jewels }: { jewels: any[] }) => {
-    const damageJewels = filterJewelsByName(jewels, ["멸화", "겁화"]);
-    const cooldownJewels = filterJewelsByName(jewels, ["홍염", "작열"]);
-
-    return (
-      <JewelListContainer>
-        <div style={{ fontWeight: "bold", marginBottom: "6px" }}>거래 보석</div>
-        <JewelRow>
-          {damageJewels.map((jewel, i) => (
-            <JewelIcon key={`dmg-${i}`}>
-              <JewelImage src={jewel.Icon} title={jewel.Name} />
-            </JewelIcon>
-          ))}
-        </JewelRow>
-        <JewelRow>
-          {cooldownJewels.map((jewel, i) => (
-            <JewelIcon key={`dmg-${i}`}>
-              <JewelImage src={jewel.Icon} title={jewel.Name} />
-            </JewelIcon>
-          ))}
-        </JewelRow>
-      </JewelListContainer>
-    );
-  };
-
   useEffect(() => {
     const handleUnload = async () => {
       if (isMatching) {
@@ -368,6 +308,10 @@ const JewelFriend = () => {
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, [isMatching, mainCharacter]);
 
+  function setProfile(profile: any): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <Container>
       <Wrapper>
@@ -378,7 +322,12 @@ const JewelFriend = () => {
             search={mainSearch}
             setSearch={setMainSearch}
             handleSearch={() =>
-              fetchCharacter(mainSearch, setMainCharacter, setMainJewels)
+              fetchCharacter(
+                mainSearch,
+                setMainCharacter,
+                setMainJewels,
+                setProfile
+              )
             }
             placeholder="본캐 닉네임 입력"
           />

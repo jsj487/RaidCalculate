@@ -137,7 +137,12 @@ app.get("/api/characters/:endpoint", async (req, res) => {
     return res.status(400).json({ error: "Character name is required" });
   }
 
-  const validEndpoints = ["arkpassive", "combat-skills", "engravings"];
+  const validEndpoints = [
+    "arkpassive",
+    "combat-skills",
+    "engravings",
+    "profiles",
+  ];
 
   if (!validEndpoints.includes(endpoint)) {
     return res.status(400).json({ error: "Invalid endpoint" });
