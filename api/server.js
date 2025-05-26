@@ -18,10 +18,6 @@ app.get("/api/publicholidays/:year/:country", async (req, res) => {
   const { year, country } = req.params;
 
   try {
-    console.log(
-      `요청 URL: https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`
-    );
-
     const response = await axios.get(
       `https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`,
       {
@@ -30,9 +26,6 @@ app.get("/api/publicholidays/:year/:country", async (req, res) => {
         },
       }
     );
-
-    console.log("API 응답 상태 코드:", response.status);
-    console.log("API 응답 데이터:", response.data);
 
     res.json(response.data); // 정상 응답
   } catch (error) {
@@ -102,7 +95,6 @@ app.get("/api/characters/siblings", async (req, res) => {
 // 캐릭터 착용 장비 정보 (보석 포함) 가져오기
 app.get("/api/characters/gems", async (req, res) => {
   const { name } = req.query;
-  console.log("서버 수신 캐릭터 닉네임(name):", name);
 
   if (!name) {
     console.warn("name 쿼리 누락됨");
@@ -121,7 +113,6 @@ app.get("/api/characters/gems", async (req, res) => {
       }
     );
 
-    console.log("로스트아크 API 응답:", response.data);
     res.json(response.data);
   } catch (error) {
     console.error("로스트아크 API 요청 실패:", error.message);
@@ -168,7 +159,6 @@ app.get("/api/characters/:endpoint", async (req, res) => {
 
 // 경매장 아이템 검색 API
 app.post("/api/market/items", async (req, res) => {
-  console.log("요청 body:", req.body); // ★ 추가
   try {
     const response = await axios.post(
       "https://developer-lostark.game.onstove.com/markets/items",
@@ -290,9 +280,6 @@ app.post("/api/participants/update", async (req, res) => {
     // 🔹 `eventId`를 이용하여 특정 이벤트 찾기
     const updatedEvents = scheduleData.events.map((event) => {
       if (String(event.eventId) === String(eventId)) {
-        console.log(
-          `🔹 Updating participants for event ${eventId} in schedule ${scheduleId}`
-        );
         return { ...event, participants };
       }
       return event;
@@ -301,9 +288,6 @@ app.post("/api/participants/update", async (req, res) => {
     // 🔹 Firestore에 전체 `events` 배열을 다시 설정
     await scheduleRef.set({ events: updatedEvents }, { merge: true });
 
-    console.log(
-      `✅ Firestore updated successfully for event ${eventId} in schedule ${scheduleId}`
-    );
     res.json({ success: true, message: "Participants updated successfully" });
   } catch (error) {
     console.error("❌ Error updating participants in Firestore:", error);

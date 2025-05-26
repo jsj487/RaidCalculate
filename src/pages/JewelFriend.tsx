@@ -15,6 +15,8 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
+  onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 
 const BASE_URL =
@@ -108,19 +110,18 @@ const CharacterImagePlaceholder = styled.div`
   border-radius: 8px;
 `;
 
-const MatchButton = styled.button<{ isMatching: boolean }>`
-  padding: 20px;
-  border-radius: 50%;
-  font-size: 20px;
-  font-weight: bold;
-  background-color: ${(props) => (props.isMatching ? "#aa3333" : "#0077cc")};
+const StyledMatchButton = styled.button`
+  background-color: #2c2c2c;
   color: white;
-  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px 30px;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: ${(props) => (props.isMatching ? "#992222" : "#005fa3")};
+    background-color: rgb(83, 83, 83);
   }
 `;
 
@@ -136,6 +137,11 @@ const JewelFriend = () => {
   const [selectedCharacterName, setSelectedCharacterName] = useState<
     string | null
   >(null);
+  const [pendingMatchedCharacters, setPendingMatchedCharacters] = useState<{
+    main: any;
+    sub: any;
+    waitingForOther?: boolean;
+  } | null>(null);
 
   const fetchCharacter = async (
     nickname: string,
@@ -178,11 +184,12 @@ const JewelFriend = () => {
     }
   };
 
+  //매칭 성공 시 기존 queue에서 삭제 + jewelMatchedPairs 생성
   const handleMatch = async () => {
-    if (!mainCharacter || !subCharacter) {
-      alert("본캐와 부캐 정보를 모두 입력하세요.");
-      return;
-    }
+    if (!mainCharacter || !subCharacter) return;
+
+    const queueRef = collection(db, "jewelMatchingQueue");
+    const matchRef = collection(db, "jewelMatchedPairs");
 
     const myData = {
       nickname: mainCharacter.CharacterName,
@@ -190,12 +197,11 @@ const JewelFriend = () => {
       mainClass: mainCharacter.CharacterClassName,
       subClass: subCharacter.CharacterClassName,
       server: mainCharacter.ServerName,
+      characterImageMain: mainCharacter.CharacterImage,
+      characterImageSub: subCharacter.CharacterImage,
       timestamp: serverTimestamp(),
     };
 
-    const queueRef = collection(db, "jewelMatchingQueue");
-
-    // 1. 반대 조건을 가진 유저 탐색
     const q = query(
       queueRef,
       where("server", "==", myData.server),
@@ -204,65 +210,61 @@ const JewelFriend = () => {
     );
 
     const snapshot = await getDocs(q);
-
     if (!snapshot.empty) {
-      // 2. 매칭 성공 시, 상대 정보 가져오기
       const matchedDoc = snapshot.docs[0];
       const matchedData = matchedDoc.data();
 
-      setMatchedMainCharacter({
-        CharacterName: matchedData.nickname,
-        CharacterClassName: matchedData.mainClass,
-        ServerName: matchedData.server,
-        CharacterImage:
-          !matchedData.characterImageMain ||
-          matchedData.characterImageMain === "null"
-            ? "/img/default-character.png"
-            : matchedData.characterImageMain,
-      });
-
-      setMatchedSubCharacter({
-        CharacterName: matchedData.subnickname,
-        CharacterClassName: matchedData.subClass,
-        ServerName: matchedData.server,
-        CharacterImage:
-          !matchedData.characterImageSub ||
-          matchedData.characterImageSub === "null"
-            ? "/img/default-character.png"
-            : matchedData.characterImageSub,
-      });
-
-      console.log("매칭된 닉네임:", matchedData.nickname);
-
-      // 3. 매칭된 상대, 나 둘 다 queue에서 삭제
       await deleteDoc(matchedDoc.ref);
-    } else {
-      // 4. 매칭 안 됨 → 대기열에 나 등록
-      await addDoc(queueRef, {
-        ...myData,
-        characterImageMain: mainCharacter.CharacterImage,
-        characterImageSub: subCharacter.CharacterImage,
+
+      await addDoc(matchRef, {
+        userA: myData,
+        userB: matchedData,
+        status: {
+          userA: "pending",
+          userB: "pending",
+        },
+        createdAt: serverTimestamp(),
       });
-      setIsMatching(true); // 매칭 등록 후 상태 전환
+    } else {
+      await addDoc(queueRef, myData);
+      setIsMatching(true);
     }
   };
 
   const handleCancelMatch = async () => {
     if (!mainCharacter) return;
 
+    // queue 제거
+    const queueRef = collection(db, "jewelMatchingQueue");
     const q = query(
-      collection(db, "jewelMatchingQueue"),
+      queueRef,
       where("nickname", "==", mainCharacter.CharacterName)
     );
-
     const snapshot = await getDocs(q);
     snapshot.forEach(async (doc) => {
       await deleteDoc(doc.ref);
     });
 
+    // jewelMatchedPairs 제거도 함께!
+    const matchRef = collection(db, "jewelMatchedPairs");
+    const q1 = query(
+      matchRef,
+      where("userA.nickname", "==", mainCharacter.CharacterName)
+    );
+    const q2 = query(
+      matchRef,
+      where("userB.nickname", "==", mainCharacter.CharacterName)
+    );
+    const snap1 = await getDocs(q1);
+    const snap2 = await getDocs(q2);
+
+    snap1.forEach((doc) => deleteDoc(doc.ref));
+    snap2.forEach((doc) => deleteDoc(doc.ref));
+
     setMatchedMainCharacter(null);
     setMatchedSubCharacter(null);
     setIsMatching(false);
+    setPendingMatchedCharacters(null);
   };
 
   const fetchEquippedGems = async (nickname: string): Promise<any[]> => {
@@ -293,20 +295,231 @@ const JewelFriend = () => {
   };
 
   useEffect(() => {
-    const handleUnload = async () => {
-      if (isMatching) {
-        const q = query(
-          collection(db, "jewelMatchingQueue"),
-          where("nickname", "==", mainCharacter?.CharacterName)
-        );
-        const snap = await getDocs(q);
-        snap.forEach((doc) => deleteDoc(doc.ref));
+    if (!mainCharacter) return;
+
+    const matchRef = collection(db, "jewelMatchedPairs");
+
+    const unsubA = onSnapshot(
+      query(
+        matchRef,
+        where("userA.nickname", "==", mainCharacter.CharacterName)
+      ),
+      (snap) => {
+        snap.forEach((doc) => {
+          const data = doc.data();
+          const char = data.userB;
+          const createdAt = data.createdAt?.toDate().getTime();
+          const now = Date.now();
+
+          if (
+            data.userA.nickname === mainCharacter.CharacterName &&
+            !isMatching
+          ) {
+            setIsMatching(true);
+          }
+
+          // 5분 지나면 문서 자동 삭제
+          if (createdAt && now - createdAt > 5 * 60 * 1000) {
+            deleteDoc(doc.ref);
+            return;
+          }
+
+          // 쌍방 수락
+          if (
+            data.status.userA === "accepted" &&
+            data.status.userB === "accepted"
+          ) {
+            const c = data.userB;
+            setMatchedMainCharacter({
+              CharacterName: c.nickname,
+              CharacterClassName: c.mainClass,
+              ServerName: c.server,
+              CharacterImage:
+                c.characterImageMain ?? "/img/default-character.png",
+            });
+            setMatchedSubCharacter({
+              CharacterName: c.subnickname,
+              CharacterClassName: c.subClass,
+              ServerName: c.server,
+              CharacterImage:
+                c.characterImageSub ?? "/img/default-character.png",
+            });
+            setPendingMatchedCharacters(null);
+          }
+
+          // 상대가 거절했을 경우
+          else if (data.status.userB === "rejected") {
+            setTimeout(() => {
+              alert("상대방이 거절했습니다.");
+            }, 100);
+            setPendingMatchedCharacters(null);
+          }
+
+          // 내가 pending 상태이고, 상대가 거절한 게 아닐 때만
+          else if (
+            data.status.userA === "pending" &&
+            data.status.userB !== "rejected"
+          ) {
+            const waiting =
+              data.status.userB !== "accepted" &&
+              data.status.userB !== "rejected";
+
+            setPendingMatchedCharacters({
+              main: {
+                CharacterName: char.nickname,
+                CharacterClassName: char.mainClass,
+                ServerName: char.server,
+                CharacterImage:
+                  !char.characterImageMain || char.characterImageMain === "null"
+                    ? "/img/default-character.png"
+                    : char.characterImageMain,
+              },
+              sub: {
+                CharacterName: char.subnickname,
+                CharacterClassName: char.subClass,
+                ServerName: char.server,
+                CharacterImage:
+                  !char.characterImageSub || char.characterImageSub === "null"
+                    ? "/img/default-character.png"
+                    : char.characterImageSub,
+              },
+              waitingForOther: waiting,
+            });
+          }
+        });
       }
+    );
+
+    const unsubB = onSnapshot(
+      query(
+        matchRef,
+        where("userB.nickname", "==", mainCharacter.CharacterName)
+      ),
+      (snap) => {
+        snap.forEach((doc) => {
+          const data = doc.data();
+          const char = data.userA;
+          const createdAt = data.createdAt?.toDate().getTime();
+          const now = Date.now();
+
+          if (
+            data.userB.nickname === mainCharacter.CharacterName &&
+            !isMatching
+          ) {
+            setIsMatching(true);
+          }
+
+          // 5분 초과 시 자동 삭제
+          if (createdAt && now - createdAt > 5 * 60 * 1000) {
+            deleteDoc(doc.ref);
+            return;
+          }
+
+          // 쌍방 수락 완료
+          if (
+            data.status.userB === "accepted" &&
+            data.status.userA === "accepted"
+          ) {
+            const c = data.userA;
+            setMatchedMainCharacter({
+              CharacterName: c.nickname,
+              CharacterClassName: c.mainClass,
+              ServerName: c.server,
+              CharacterImage:
+                c.characterImageMain ?? "/img/default-character.png",
+            });
+            setMatchedSubCharacter({
+              CharacterName: c.subnickname,
+              CharacterClassName: c.subClass,
+              ServerName: c.server,
+              CharacterImage:
+                c.characterImageSub ?? "/img/default-character.png",
+            });
+            setPendingMatchedCharacters(null);
+          }
+
+          // 상대방 거절 시
+          else if (data.status.userA === "rejected") {
+            setTimeout(() => {
+              alert("상대방이 거절했습니다.");
+            }, 100);
+            setPendingMatchedCharacters(null);
+          }
+
+          // 대기 중 상태 (단, 거절되지 않았을 때만)
+          else if (
+            data.status.userB === "pending" &&
+            data.status.userA !== "rejected"
+          ) {
+            const waiting =
+              data.status.userA !== "accepted" &&
+              data.status.userA !== "rejected";
+
+            setPendingMatchedCharacters({
+              main: {
+                CharacterName: char.nickname,
+                CharacterClassName: char.mainClass,
+                ServerName: char.server,
+                CharacterImage:
+                  !char.characterImageMain || char.characterImageMain === "null"
+                    ? "/img/default-character.png"
+                    : char.characterImageMain,
+              },
+              sub: {
+                CharacterName: char.subnickname,
+                CharacterClassName: char.subClass,
+                ServerName: char.server,
+                CharacterImage:
+                  !char.characterImageSub || char.characterImageSub === "null"
+                    ? "/img/default-character.png"
+                    : char.characterImageSub,
+              },
+              waitingForOther: waiting,
+            });
+          }
+        });
+      }
+    );
+
+    return () => {
+      unsubA();
+      unsubB();
+    };
+  }, [mainCharacter]);
+
+  //창 닫힘 시 jewelMatchedPairs 정리도 추가
+  useEffect(() => {
+    const handleUnload = async () => {
+      if (!mainCharacter) return;
+
+      // jewelMatchedPairs 문서 삭제
+      const matchRef = collection(db, "jewelMatchedPairs");
+      const q1 = query(
+        matchRef,
+        where("userA.nickname", "==", mainCharacter.CharacterName)
+      );
+      const q2 = query(
+        matchRef,
+        where("userB.nickname", "==", mainCharacter.CharacterName)
+      );
+      const snap1 = await getDocs(q1);
+      const snap2 = await getDocs(q2);
+      snap1.forEach((doc) => deleteDoc(doc.ref));
+      snap2.forEach((doc) => deleteDoc(doc.ref));
+
+      // 🔹 jewelMatchingQueue 문서 삭제
+      const queueRef = collection(db, "jewelMatchingQueue");
+      const q = query(
+        queueRef,
+        where("nickname", "==", mainCharacter.CharacterName)
+      );
+      const snap = await getDocs(q);
+      snap.forEach((doc) => deleteDoc(doc.ref));
     };
 
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [isMatching, mainCharacter]);
+  }, [mainCharacter]);
 
   function setProfile(profile: any): void {
     throw new Error("Function not implemented.");
@@ -425,12 +638,29 @@ const JewelFriend = () => {
           </CharacterColumn>
 
           {/* 매칭 버튼 */}
-          <MatchButton
-            onClick={isMatching ? handleCancelMatch : handleMatch}
-            isMatching={isMatching}
-          >
-            {isMatching ? "매칭 취소" : "매칭 찾기"}
-          </MatchButton>
+          {isMatching ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <img
+                src="/img/Loading_icon.gif"
+                alt="로딩 중"
+                style={{ width: "60px", height: "60px", marginBottom: "8px" }}
+              />
+
+              <StyledMatchButton onClick={handleCancelMatch}>
+                매칭 취소
+              </StyledMatchButton>
+            </div>
+          ) : (
+            <StyledMatchButton onClick={handleMatch}>
+              매칭 찾기
+            </StyledMatchButton>
+          )}
           {/* 상대 본캐 자리 (매칭 성공 시 표시) */}
           <CharacterColumn
             onClick={() => {
@@ -515,6 +745,80 @@ const JewelFriend = () => {
         <CharacterDetailModal
           characterName={selectedCharacterName}
           onClose={() => setSelectedCharacterName(null)}
+        />
+      )}
+
+      {pendingMatchedCharacters && (
+        <CharacterDetailModal
+          characterName={pendingMatchedCharacters.main?.CharacterName}
+          isMatchedView={true}
+          waitingForOther={pendingMatchedCharacters.waitingForOther}
+          onAccept={async () => {
+            if (!mainCharacter) return;
+
+            const matchRef = collection(db, "jewelMatchedPairs");
+
+            const q1 = query(
+              matchRef,
+              where("userA.nickname", "==", mainCharacter.CharacterName)
+            );
+            const q2 = query(
+              matchRef,
+              where("userB.nickname", "==", mainCharacter.CharacterName)
+            );
+
+            const snap1 = await getDocs(q1);
+            const snap2 = await getDocs(q2);
+
+            [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
+              const current = doc.data();
+              const isUserA =
+                current.userA.nickname === mainCharacter.CharacterName;
+
+              const updatedStatus = {
+                ...current.status,
+                [isUserA ? "userA" : "userB"]: "accepted",
+              };
+
+              await updateDoc(doc.ref, { status: updatedStatus });
+            });
+          }}
+          onReject={async () => {
+            if (!mainCharacter) return;
+
+            const matchRef = collection(db, "jewelMatchedPairs");
+
+            const q1 = query(
+              matchRef,
+              where("userA.nickname", "==", mainCharacter.CharacterName)
+            );
+            const q2 = query(
+              matchRef,
+              where("userB.nickname", "==", mainCharacter.CharacterName)
+            );
+
+            const snap1 = await getDocs(q1);
+            const snap2 = await getDocs(q2);
+
+            [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
+              const current = doc.data();
+              const isUserA =
+                current.userA.nickname === mainCharacter.CharacterName;
+              if (isUserA && !isMatching) {
+                setIsMatching(true);
+              }
+
+              const updatedStatus = {
+                ...current.status,
+                [isUserA ? "userA" : "userB"]: "rejected",
+              };
+
+              await updateDoc(doc.ref, { status: updatedStatus });
+            });
+
+            setPendingMatchedCharacters(null);
+          }}
+          onClose={() => setPendingMatchedCharacters(null)}
         />
       )}
     </Container>

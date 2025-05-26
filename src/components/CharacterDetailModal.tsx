@@ -5,6 +5,15 @@ import styled from "styled-components";
 import axios from "axios";
 import { color } from "framer-motion";
 
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
+} from "recharts";
+
 //공통 레이아웃
 const Overlay = styled.div`
   position: fixed;
@@ -235,13 +244,71 @@ const EmptyGem = styled.div<{ $type: string }>`
 `;
 
 //각인 레이아웃
-const EngravingList = styled.div`
+const CharacterInfoCard = styled.div`
+  width: 360px;
+  height: 698px;
+  border-radius: 32px;
+  background: white;
+  overflow: hidden;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 `;
 
-const EngravingItem = styled(SkillItem)``;
+const CharacterImageContainer = styled.div`
+  position: relative;
+  flex: 3;
+  background-color: #000;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+  }
+`;
+
+const CharacterOverlayText = styled.div`
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  color: white;
+  font-size: 14px;
+  line-height: 26px;
+`;
+
+const OverlayNickname = styled.div`
+  font-size: 16px;
+  font-weight: bold;
+`;
+
+const OverlayLevel = styled.div`
+  font-size: 24px;
+  font-weight: 600;
+  margin-top: 4px;
+`;
+
+const ChartAndEngravingContainer = styled.div`
+  flex: 4;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  justify-content: center;
+`;
+
+const RadarChartSection = styled.div`
+  display: flex;
+  align-items: center;
+  flex: 1.2;
+`;
 
 //보석 레이아웃
 const JewelGridWrapper = styled.div`
@@ -306,8 +373,49 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-interface Props {
+const ModalButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+const AcceptButton = styled.button`
+  background-color: #2c2c2c;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 10px 18px;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:before {
+    content: "✔ ";
+    color: #00ff00;
+  }
+`;
+
+const RejectButton = styled.button`
+  background-color: #2c2c2c;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 10px 18px;
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:before {
+    content: "✖ ";
+    color: #ff3333;
+  }
+`;
+
+interface CharacterDetailModalProps {
   characterName: string;
+  isMatchedView?: boolean;
+  waitingForOther?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
   onClose: () => void;
 }
 
@@ -345,10 +453,18 @@ const fetchEquippedGems = async (characterName: string): Promise<any[]> => {
   }
 };
 
-const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
+const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
+  characterName,
+  onClose,
+  onAccept,
+  onReject,
+  isMatchedView,
+  waitingForOther,
+}) => {
   const [arkPassive, setArkPassive] = useState<any>(null);
   const [skills, setSkills] = useState<any[]>([]);
   const [engravings, setEngravings] = useState<any[]>([]);
+  const [engravingData, setEngravingData] = useState<any>(null);
   const [jewels, setJewels] = useState<any[]>([]);
   const [hoveredRect, setHoveredRect] = useState<DOMRect | null>(null);
   const [hoveredTooltip, setHoveredTooltip] = useState<React.ReactNode | null>(
@@ -365,6 +481,7 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
         characterName,
         "engravings"
       );
+
       const gemRes = await fetchEquippedGems(characterName);
       const profile = await fetchCharacterData(characterName, "profiles");
       console.log("캐릭터 프로필:", profile);
@@ -376,6 +493,7 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
       }
       setProfile(profile);
       setArkPassive(passive);
+      setEngravingData(engravingRes);
       setEngravings(engravingRes?.Engravings || []);
       setJewels(gemRes || []);
     };
@@ -514,17 +632,16 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
     return (
       <JewelGridWrapper>
         <Column>
-          <ColumnTitle>피해</ColumnTitle>
+          <ColumnTitle>겁화</ColumnTitle>
           {damageJewels.map(renderJewel)}
         </Column>
         <Column>
-          <ColumnTitle>재사용 대기시간</ColumnTitle>
+          <ColumnTitle>작열</ColumnTitle>
           {cooldownJewels.map(renderJewel)}
         </Column>
       </JewelGridWrapper>
     );
   };
-
   const getGradeBackground = (grade: string): string => {
     switch (grade) {
       case "일반":
@@ -621,46 +738,132 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
     const skillNames = new Set(skills.map((s) => s.Name));
 
     return jewels.filter((jewel) => {
-      const grade = jewel.Grade;
       const skillName = extractSkillName(jewel.Tooltip);
       return skillName && !skillNames.has(skillName);
     });
   }, [jewels, skills]);
 
+  const radarData = useMemo(() => {
+    if (!Array.isArray(engravingData?.ArkPassiveEffects)) return [];
+
+    return engravingData.ArkPassiveEffects.map((e: any) => ({
+      subject: e.Name,
+      value: e.Level,
+      grade: e.Grade || "기타",
+    }));
+  }, [engravingData]);
+
+  const renderPolarLabel = (props: any) => {
+    const { payload, x, y, textAnchor } = props;
+    const subject = payload?.value;
+
+    const matched = radarData.find(
+      (d: { subject: any }) => d.subject === subject
+    );
+    const grade = matched?.grade || "기타";
+
+    const color =
+      grade === "유물"
+        ? "#FF7A00"
+        : grade === "전설"
+        ? "#FFB200"
+        : grade === "영웅"
+        ? "#A772FF"
+        : "#888";
+
+    return (
+      <text
+        x={x}
+        y={y}
+        textAnchor={textAnchor}
+        fill={color}
+        fontSize={12}
+        fontWeight="bold"
+      >
+        {subject}
+      </text>
+    );
+  };
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      const passive = await fetchCharacterData(characterName, "arkpassive");
+      console.log("🧬 아크패시브:", passive);
+
+      const skillRes = await fetchCharacterData(characterName, "combat-skills");
+      console.log("🌀 전투 스킬:", skillRes);
+
+      const engravingRes = await fetchCharacterData(
+        characterName,
+        "engravings"
+      );
+      console.log("🔷 각인:", engravingRes);
+
+      const gemRes = await fetchEquippedGems(characterName);
+      console.log("💎 보석:", gemRes);
+
+      // 이후 상태 반영
+      if (Array.isArray(skillRes)) {
+        setSkills(skillRes);
+      } else {
+        setSkills([]);
+      }
+
+      setArkPassive(passive);
+      setEngravings(engravingRes?.Engravings || []);
+      setJewels(gemRes || []);
+    };
+
+    fetchAll();
+  }, [characterName]);
+
   return (
     <Overlay onClick={onClose}>
       <ModalBox onClick={(e) => e.stopPropagation()}>
         <DetailLayout>
-          <InfoCard>
-            <Section>
+          {/*각인*/}
+          <CharacterInfoCard>
+            <CharacterImageContainer>
               {profile?.CharacterImage && (
-                <div style={{ textAlign: "center", marginBottom: "8px" }}>
-                  <img
-                    src={profile.CharacterImage}
-                    alt="캐릭터 이미지"
-                    style={{ width: "80px", borderRadius: "8px" }}
-                  />
-                </div>
+                <img src={profile.CharacterImage} alt="캐릭터 이미지" />
               )}
 
-              <h3>🔷 각인</h3>
-              {engravings.length > 0 ? (
-                <EngravingList>
-                  {engravings.map((e, i) => (
-                    <EngravingItem key={i}>
-                      <img src={e.Icon} alt={e.Name} />
-                      <div>
-                        {e.Name} (Lv.{e.Level})
-                      </div>
-                    </EngravingItem>
-                  ))}
-                </EngravingList>
-              ) : (
-                <p>각인 정보 없음</p>
+              {profile && (
+                <CharacterOverlayText>
+                  Lv. {profile.CharacterLevel} {profile.CharacterClassName} @
+                  {profile.ServerName}
+                  <OverlayNickname>{profile.CharacterName}</OverlayNickname>
+                  <OverlayLevel>{profile.ItemAvgLevel}</OverlayLevel>
+                </CharacterOverlayText>
               )}
-            </Section>
-          </InfoCard>
+            </CharacterImageContainer>
 
+            <ChartAndEngravingContainer>
+              {radarData.length > 0 && (
+                <RadarChartSection>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={renderPolarLabel}
+                      />
+                      <PolarRadiusAxis angle={30} domain={[0, 4]} />
+                      <Radar
+                        name="각인"
+                        dataKey="value"
+                        stroke="#8884d8"
+                        fill="#8884d8"
+                        fillOpacity={0.6}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </RadarChartSection>
+              )}
+            </ChartAndEngravingContainer>
+          </CharacterInfoCard>
+
+          {/*아크패시브*/}
           <ScrollableInfoCard style={{ width: "300px" }}>
             <ScrollContainer>
               <ScrollInner>
@@ -715,7 +918,7 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
             </ScrollContainer>
           </ScrollableInfoCard>
 
-          {/*아크패시브, 각인, 보석*/}
+          {/*보석*/}
           <ScrollableInfoCard style={{ width: "300px" }}>
             <ScrollContainer>
               <ScrollInner>
@@ -915,7 +1118,22 @@ const CharacterDetailModal: React.FC<Props> = ({ characterName, onClose }) => {
             </ScrollContainer>
           </ScrollableInfoCard>
         </DetailLayout>
-        <CloseButton onClick={onClose}>닫기</CloseButton>
+        {isMatchedView ? (
+          <ModalButtonRow>
+            <AcceptButton onClick={onAccept}>수락</AcceptButton>
+            <RejectButton onClick={onReject}>거절</RejectButton>
+          </ModalButtonRow>
+        ) : (
+          <CloseButton onClick={onClose}>닫기</CloseButton>
+        )}
+
+        {isMatchedView && waitingForOther && (
+          <div
+            style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
+          >
+            상대방을 기다리고 있습니다...
+          </div>
+        )}
       </ModalBox>
       {hoveredRect && hoveredTooltip && (
         <TooltipPortal targetRect={hoveredRect}>{hoveredTooltip}</TooltipPortal>
