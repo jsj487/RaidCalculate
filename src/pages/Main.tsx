@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import SearchBar from "../components/SearchBar";
 import { useLayoutContext } from "../components/LayoutProvider";
+import { Helmet } from "react-helmet";
 import "@fontsource/acme";
 
 const MainImage = styled.div`
@@ -37,6 +38,10 @@ function Main() {
 
   return (
     <MainImage>
+      <Helmet>
+        <title>로스트아크 계산기 - ArkLator</title>
+        <meta name="description" content="로스트아크 계산기" />
+      </Helmet>
       <MainContainer>
         <Title>ArkLator</Title>
         <SearchBar

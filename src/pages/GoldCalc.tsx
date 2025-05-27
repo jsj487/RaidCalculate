@@ -5,6 +5,7 @@ import CryptoJS from "crypto-js";
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
 
+import { Helmet } from "react-helmet";
 import { useLayoutContext } from "../components/LayoutProvider"; // Context 가져오기
 import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져오기
 import { RaidValues } from "../components/RaidValues";
@@ -1167,6 +1168,10 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
 
   return (
     <Container>
+      <Helmet>
+        <title>레이드 계산기 - ArkLator</title>
+        <meta name="description" content="로스트아크 주간 레이드 골드 계산기" />
+      </Helmet>
       <TabContainerWrapper>
         <TabContainer>
           {Object.keys(tabData)

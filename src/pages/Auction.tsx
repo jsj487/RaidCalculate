@@ -95,7 +95,7 @@ const Auction = () => {
   return (
     <Container>
       <Helmet>
-        <title>골드 계산기 - ArkLator</title>
+        <title>경매 계산기 - ArkLator</title>
         <meta name="description" content="로스트아크 골드 수익 계산기" />
       </Helmet>
 

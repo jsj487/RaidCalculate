@@ -9,6 +9,7 @@ import {
   SpecialOptions,
 } from "../utils/BaraceletOptions";
 
+import { Helmet } from "react-helmet";
 import { v4 as uuidv4 } from "uuid";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../utils/FireBase";
@@ -387,10 +388,18 @@ const BraceletGachaSimulator = () => {
 
   return (
     <Container>
+      <Helmet>
+        <title>팔찌 가챠 - ArkLator</title>
+        <meta name="description" content="로스트아크 팔찌 시뮬레이터" />
+      </Helmet>
+
       <LogButton onClick={() => setIsModalOpen(true)}>로그 기록 보기</LogButton>
       <Wrapper>
         <BraceletBox>
-          <BraceletImage src="/img/bracelet.png" alt="Bracelet" />
+          <BraceletImage
+            src={`${process.env.PUBLIC_URL}/img/bracelet.png`}
+            alt="Bracelet"
+          />
           <BraceletName>찬란한 영웅의 팔찌</BraceletName>
 
           <Divider />

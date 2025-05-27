@@ -6,6 +6,7 @@ import JoinModal from "../components/JoinModal";
 import Calendar from "../components/Calendar";
 import { RaidValues } from "../components/RaidValues";
 import { EventModal } from "../components/EventModal";
+import { Helmet } from "react-helmet";
 import {
   collection,
   addDoc,

@@ -4,6 +4,7 @@ import axios from "axios";
 import SearchBar from "../components/SearchBar";
 import CharacterDetailModal from "../components/CharacterDetailModal";
 import fetchCharacterData from "../components/CharacterDetailModal";
+import { Helmet } from "react-helmet";
 
 import { db } from "../utils/FireBase"; // 너의 FireBase.tsx에 정의된 Firebase 인스턴스
 import {
@@ -559,6 +560,10 @@ const JewelFriend = () => {
 
   return (
     <Container>
+      <Helmet>
+        <title>보석 깐부 찾기 - ArkLator</title>
+        <meta name="description" content="로스트아크 보석 품앗이 상대 찾기" />
+      </Helmet>
       <Wrapper>
         {/* 상단 검색 */}
         <TopSearchRow>

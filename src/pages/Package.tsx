@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { FaChartLine } from "react-icons/fa";
 import styled from "styled-components";
 import ChartModal from "../components/ChartModal";
+import { Helmet } from "react-helmet";
 
 const Table = styled.table`
   width: 60%;
@@ -596,6 +597,10 @@ function Package() {
 
   return (
     <Container>
+      <Helmet>
+        <title>패키지 계산기 - ArkLator</title>
+        <meta name="description" content="로스트아크 패키지 효율 계산기" />
+      </Helmet>
       <Row>
         <Input
           type="number"
