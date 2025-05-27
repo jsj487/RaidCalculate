@@ -397,7 +397,7 @@ const BraceletGachaSimulator = () => {
       <Wrapper>
         <BraceletBox>
           <BraceletImage
-            src={`${process.env.PUBLIC_URL}/img/bracelet.png`}
+            src={`${process.env.PUBLIC_URL}/img/Bracelet.png`}
             alt="Bracelet"
           />
           <BraceletName>찬란한 영웅의 팔찌</BraceletName>
