@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { Helmet } from "react-helmet";
 
 const Container = styled.div`
   max-width: 600px;
@@ -93,8 +94,12 @@ const Auction = () => {
 
   return (
     <Container>
-      <Title>경매 입찰 계산기</Title>
+      <Helmet>
+        <title>골드 계산기 - ArkLator</title>
+        <meta name="description" content="로스트아크 골드 수익 계산기" />
+      </Helmet>
 
+      <Title>경매 입찰 계산기</Title>
       <InputGroup>
         <Label>경매 아이템 가격 (골드)</Label>
         <Input
