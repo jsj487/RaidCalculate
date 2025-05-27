@@ -384,6 +384,7 @@ const AcceptButton = styled.button`
   background-color: #2c2c2c;
   color: #ffffff;
   font-weight: bold;
+  font-size: 20px;
   padding: 10px 18px;
   border: 1px solid #ffffff;
   border-radius: 4px;
@@ -393,12 +394,17 @@ const AcceptButton = styled.button`
     content: "✔ ";
     color: #00ff00;
   }
+
+  &:hover {
+    background-color: rgb(83, 83, 83);
+  }
 `;
 
 const RejectButton = styled.button`
   background-color: #2c2c2c;
   color: #ffffff;
   font-weight: bold;
+  font-size: 20px;
   padding: 10px 18px;
   border: 1px solid #ffffff;
   border-radius: 4px;
@@ -408,12 +414,35 @@ const RejectButton = styled.button`
     content: "✖ ";
     color: #ff3333;
   }
+
+  &:hover {
+    background-color: rgb(83, 83, 83);
+  }
+`;
+
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+`;
+
+const LoadingSpinner = styled.img`
+  width: 800px;
+  height: 800px;
 `;
 
 interface CharacterDetailModalProps {
   characterName: string;
   isMatchedView?: boolean;
   waitingForOther?: boolean;
+  loading?: boolean;
   onAccept?: () => void;
   onReject?: () => void;
   onClose: () => void;
@@ -458,6 +487,7 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
   onClose,
   onAccept,
   onReject,
+  loading,
   isMatchedView,
   waitingForOther,
 }) => {
@@ -1127,12 +1157,30 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
           <CloseButton onClick={onClose}>닫기</CloseButton>
         )}
 
-        {isMatchedView && waitingForOther && (
-          <div
-            style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
-          >
-            상대방을 기다리고 있습니다...
-          </div>
+        {isMatchedView && waitingForOther && loading && (
+          <LoadingOverlay>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <LoadingSpinner
+                src={`${process.env.PUBLIC_URL}/img/loading.gif`}
+              />
+              <div
+                style={{
+                  marginTop: "20px",
+                  fontSize: "24px",
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                상대방을 기다리는 중입니다...
+              </div>
+            </div>
+          </LoadingOverlay>
         )}
       </ModalBox>
       {hoveredRect && hoveredTooltip && (

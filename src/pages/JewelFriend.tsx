@@ -128,12 +128,15 @@ const StyledMatchButton = styled.button`
 const JewelFriend = () => {
   const [mainSearch, setMainSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
-  const [isMatching, setIsMatching] = useState(false);
+  const [matchingStatus, setMatchingStatus] = useState<
+    "idle" | "queued" | "matched" | "completed"
+  >("idle");
   const [matchedMainCharacter, setMatchedMainCharacter] = useState<any>(null);
   const [matchedSubCharacter, setMatchedSubCharacter] = useState<any>(null);
   const [mainCharacter, setMainCharacter] = useState<any>(null);
   const [subCharacter, setSubCharacter] = useState<any>(null);
   const [mainJewels, setMainJewels] = useState<any[]>([]);
+  const [subJewels, setSubJewels] = useState<any[]>([]);
   const [selectedCharacterName, setSelectedCharacterName] = useState<
     string | null
   >(null);
@@ -142,6 +145,7 @@ const JewelFriend = () => {
     sub: any;
     waitingForOther?: boolean;
   } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchCharacter = async (
     nickname: string,
@@ -184,9 +188,25 @@ const JewelFriend = () => {
     }
   };
 
+  const cleanUpPreviousMatches = async (nickname: string) => {
+    const matchRef = collection(db, "jewelMatchedPairs");
+
+    const q1 = query(matchRef, where("userA.nickname", "==", nickname));
+    const q2 = query(matchRef, where("userB.nickname", "==", nickname));
+
+    const snap1 = await getDocs(q1);
+    const snap2 = await getDocs(q2);
+
+    [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+    });
+  };
+
   //매칭 성공 시 기존 queue에서 삭제 + jewelMatchedPairs 생성
   const handleMatch = async () => {
     if (!mainCharacter || !subCharacter) return;
+
+    await cleanUpPreviousMatches(mainCharacter.CharacterName);
 
     const queueRef = collection(db, "jewelMatchingQueue");
     const matchRef = collection(db, "jewelMatchedPairs");
@@ -227,7 +247,7 @@ const JewelFriend = () => {
       });
     } else {
       await addDoc(queueRef, myData);
-      setIsMatching(true);
+      setMatchingStatus("queued");
     }
   };
 
@@ -263,7 +283,7 @@ const JewelFriend = () => {
 
     setMatchedMainCharacter(null);
     setMatchedSubCharacter(null);
-    setIsMatching(false);
+    setMatchingStatus("idle");
     setPendingMatchedCharacters(null);
   };
 
@@ -313,9 +333,9 @@ const JewelFriend = () => {
 
           if (
             data.userA.nickname === mainCharacter.CharacterName &&
-            !isMatching
+            matchingStatus === "idle"
           ) {
-            setIsMatching(true);
+            setMatchingStatus("queued");
           }
 
           // 5분 지나면 문서 자동 삭제
@@ -345,6 +365,7 @@ const JewelFriend = () => {
                 c.characterImageSub ?? "/img/default-character.png",
             });
             setPendingMatchedCharacters(null);
+            setMatchingStatus("completed");
           }
 
           // 상대가 거절했을 경우
@@ -353,6 +374,7 @@ const JewelFriend = () => {
               alert("상대방이 거절했습니다.");
             }, 100);
             setPendingMatchedCharacters(null);
+            setMatchingStatus("idle");
           }
 
           // 내가 pending 상태이고, 상대가 거절한 게 아닐 때만
@@ -403,10 +425,10 @@ const JewelFriend = () => {
           const now = Date.now();
 
           if (
-            data.userB.nickname === mainCharacter.CharacterName &&
-            !isMatching
+            data.userA.nickname === mainCharacter.CharacterName &&
+            matchingStatus === "idle"
           ) {
-            setIsMatching(true);
+            setMatchingStatus("queued");
           }
 
           // 5분 초과 시 자동 삭제
@@ -436,14 +458,16 @@ const JewelFriend = () => {
                 c.characterImageSub ?? "/img/default-character.png",
             });
             setPendingMatchedCharacters(null);
+            setMatchingStatus("completed");
           }
 
-          // 상대방 거절 시
+          // 상대가 거절했을 경우
           else if (data.status.userA === "rejected") {
             setTimeout(() => {
               alert("상대방이 거절했습니다.");
             }, 100);
             setPendingMatchedCharacters(null);
+            setMatchingStatus("idle");
           }
 
           // 대기 중 상태 (단, 거절되지 않았을 때만)
@@ -525,6 +549,14 @@ const JewelFriend = () => {
     throw new Error("Function not implemented.");
   }
 
+  useEffect(() => {
+    const savedMain = localStorage.getItem("mainSearch");
+    const savedSub = localStorage.getItem("subSearch");
+
+    if (savedMain) setMainSearch(savedMain);
+    if (savedSub) setSubSearch(savedSub);
+  }, []);
+
   return (
     <Container>
       <Wrapper>
@@ -534,14 +566,15 @@ const JewelFriend = () => {
             ismainpage={true}
             search={mainSearch}
             setSearch={setMainSearch}
-            handleSearch={() =>
+            handleSearch={() => {
+              localStorage.setItem("mainSearch", mainSearch);
               fetchCharacter(
                 mainSearch,
                 setMainCharacter,
                 setMainJewels,
                 setProfile
-              )
-            }
+              );
+            }}
             placeholder="본캐 닉네임 입력"
           />
 
@@ -549,7 +582,15 @@ const JewelFriend = () => {
             ismainpage={true}
             search={subSearch}
             setSearch={setSubSearch}
-            handleSearch={() => fetchCharacter(subSearch, setSubCharacter)}
+            handleSearch={() => {
+              localStorage.setItem("subSearch", subSearch);
+              fetchCharacter(
+                subSearch,
+                setSubCharacter,
+                setSubJewels,
+                setProfile
+              );
+            }}
             placeholder="부캐 닉네임 입력"
           />
         </TopSearchRow>
@@ -638,7 +679,37 @@ const JewelFriend = () => {
           </CharacterColumn>
 
           {/* 매칭 버튼 */}
-          {isMatching ? (
+          {matchingStatus === "idle" && (
+            <StyledMatchButton onClick={handleMatch}>
+              매칭 찾기
+            </StyledMatchButton>
+          )}
+
+          {/* 매칭 중 상태 버튼 */}
+          {matchingStatus === "queued" && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <img
+                  src="/img/Loading_icon.gif"
+                  alt="로딩 중"
+                  style={{ width: "60px", height: "60px", marginBottom: "8px" }}
+                />
+
+                <StyledMatchButton onClick={handleCancelMatch}>
+                  매칭 취소
+                </StyledMatchButton>
+              </div>
+            </>
+          )}
+
+          {/*매칭 완료 상태 버튼 */}
+          {matchingStatus === "completed" && (
             <div
               style={{
                 display: "flex",
@@ -646,21 +717,21 @@ const JewelFriend = () => {
                 alignItems: "center",
               }}
             >
-              <img
-                src="/img/Loading_icon.gif"
-                alt="로딩 중"
-                style={{ width: "60px", height: "60px", marginBottom: "8px" }}
-              />
-
+              <div
+                style={{
+                  marginBottom: "10px",
+                  fontSize: "20px",
+                  fontWeight: "700",
+                }}
+              >
+                매칭 완료
+              </div>
               <StyledMatchButton onClick={handleCancelMatch}>
                 매칭 취소
               </StyledMatchButton>
             </div>
-          ) : (
-            <StyledMatchButton onClick={handleMatch}>
-              매칭 찾기
-            </StyledMatchButton>
           )}
+
           {/* 상대 본캐 자리 (매칭 성공 시 표시) */}
           <CharacterColumn
             onClick={() => {
@@ -753,7 +824,10 @@ const JewelFriend = () => {
           characterName={pendingMatchedCharacters.main?.CharacterName}
           isMatchedView={true}
           waitingForOther={pendingMatchedCharacters.waitingForOther}
+          loading={loading}
           onAccept={async () => {
+            setLoading(true);
+
             if (!mainCharacter) return;
 
             const matchRef = collection(db, "jewelMatchedPairs");
@@ -804,9 +878,6 @@ const JewelFriend = () => {
               const current = doc.data();
               const isUserA =
                 current.userA.nickname === mainCharacter.CharacterName;
-              if (isUserA && !isMatching) {
-                setIsMatching(true);
-              }
 
               const updatedStatus = {
                 ...current.status,
@@ -817,6 +888,7 @@ const JewelFriend = () => {
             });
 
             setPendingMatchedCharacters(null);
+            setMatchingStatus("idle");
           }}
           onClose={() => setPendingMatchedCharacters(null)}
         />
