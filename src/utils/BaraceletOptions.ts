@@ -886,5 +886,3 @@ export const AllOptions = [
     ],
   },
 ];
-
-export const SpecialOptions = [];
