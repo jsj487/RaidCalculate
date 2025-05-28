@@ -234,7 +234,7 @@ const JewelFriend = () => {
 
     if (queueData && queueData.length > 0) {
       const matchedData = queueData[0];
-
+      console.log("매칭 대상 있음?", queueData);
       // 대기열에서 제거
       await supabase
         .from("jewel_matching_queue")

@@ -2,12 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
 import { logBraceletResult } from "../utils/BraceletLogger";
-import { generateFinalOptions } from "../utils/GachaGenerator";
-import {
-  BaseEffects,
-  CombatStats,
-  SpecialOptions,
-} from "../utils/BaraceletOptions";
+import { generateBraceletOptions } from "../utils/GachaGenerator";
+import { AllOptions } from "../utils/BaraceletOptions";
 
 import { Helmet } from "react-helmet";
 import { v4 as uuidv4 } from "uuid";
@@ -234,15 +230,22 @@ const BraceletGachaSimulator = () => {
     }
 
     // 2. 나머지 칸은 새로 뽑기
+    let safetyCount = 0;
+    const CATEGORIES = ["기본 효과", "전투 특성", "특수 효과"];
+
     while (newGenerated.length < 3) {
-      const raw = generateFinalOptions()[0]; // 하나씩 뽑기
+      const [raw] = generateBraceletOptions(CATEGORIES); // 항상 1개만 생성됨
       const values = raw.value ? raw.value.split(" ") : [];
       const parts = parseTemplate(raw.name, values, raw.grade ?? "하옵");
+
       const template = parts
         .map((p) => (typeof p === "string" ? p : "VALUE"))
         .join("");
 
-      if (lockedTemplates.has(template)) continue;
+      if (lockedTemplates.has(template)) {
+        safetyCount++;
+        continue;
+      }
 
       newGenerated.push({
         parts,
@@ -393,29 +396,23 @@ const BraceletGachaSimulator = () => {
   const STAT_ORDER = ["치명", "특화", "신속", "제압", "인내", "숙련"];
 
   const probabilityMap: Record<string, number> = {};
-
-  // 기본 효과
   const baseProbabilityMap: Record<string, number> = {};
-  BaseEffects.forEach((eff) => {
-    eff.values.forEach((val) => {
-      const key = `${eff.type} ${val.range}`;
-      baseProbabilityMap[key] = val.probability;
-    });
-  });
 
-  // 전투 특성
-  CombatStats.forEach((stat) => {
-    stat.values.forEach((val) => {
-      const key = `${stat.type} ${val.range}`;
-      probabilityMap[key] = val.probability;
-    });
-  });
+  // AllOptions 기반 확률 Map 구성
+  AllOptions.forEach((opt) => {
+    opt.values.forEach((val) => {
+      // 기본 효과와 전투 특성은 type + range 조합으로 key 생성
+      if (opt.category === "기본 효과" || opt.category === "전투 특성") {
+        const key = `${opt.type} ${val.range}`;
+        baseProbabilityMap[key] = val.probability;
+        probabilityMap[key] = val.probability;
+      }
 
-  // 특수 효과
-  SpecialOptions.forEach((opt) => {
-    opt.tiers.forEach((tier) => {
-      const key = `${opt.template} ${tier.value.join(" ")}`;
-      probabilityMap[key] = tier.probability;
+      // 특수 효과는 template + range (또는 grade 추가 가능)
+      if (opt.category === "특수 효과") {
+        const key = `${opt.template} ${val.range}`;
+        probabilityMap[key] = val.probability;
+      }
     });
   });
 

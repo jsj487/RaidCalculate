@@ -1,100 +1,100 @@
-import { BaseEffects, CombatStats, SpecialOptions } from "./BaraceletOptions";
+import { AllOptions } from "./BaraceletOptions";
 
-type FinalOption = {
-  category: "기본 효과" | "전투 특성" | "특수 효과";
+type BraceletOptionResult = {
+  category: string;
   name: string;
   value: string;
   grade?: string;
 };
 
-// 확률 기반 선택 함수 (타입 보존)
-function pickByProbability<T extends { probability: number }>(items: T[]): T {
+// 공통 확률 선택 함수
+const pickByProbability = <T extends { probability: number }>(
+  items: T[]
+): T => {
   const total = items.reduce((sum, item) => sum + item.probability, 0);
-  const r = Math.random() * total;
-  let acc = 0;
+  const rand = Math.random() * total;
+  let cumulative = 0;
   for (const item of items) {
-    acc += item.probability;
-    if (r <= acc) return item;
+    cumulative += item.probability;
+    if (rand < cumulative) return item;
   }
-  return items[0];
-}
+  return items[items.length - 1];
+};
 
-export function generateFinalOptions(): FinalOption[] {
-  const categories: {
-    type: FinalOption["category"];
-    probability: number;
-    max: number;
-  }[] = [
-    { type: "기본 효과", probability: 35, max: 2 },
-    { type: "전투 특성", probability: 35, max: 2 },
-    { type: "특수 효과", probability: 30, max: 5 },
-  ];
+const categoryPool = [
+  { category: "기본 효과", probability: 35.0 },
+  { category: "전투 특성", probability: 35.0 },
+  { category: "특수 효과", probability: 30.0 },
+];
 
-  const selectedTypes: FinalOption["category"][] = [];
-  const counts: Record<FinalOption["category"], number> = {
-    "기본 효과": 0,
-    "전투 특성": 0,
-    "특수 효과": 0,
-  };
-
-  while (selectedTypes.length < 3) {
-    const pool = categories.filter((c) => counts[c.type] < c.max);
-
-    // 남은 pool의 확률 재계산
-    const total = pool.reduce((acc, cur) => acc + cur.probability, 0);
-    const normalizedPool = pool.map((c) => ({
-      ...c,
-      probability: (c.probability / total) * 100,
-    }));
-
-    const picked = pickByProbability(normalizedPool);
-    counts[picked.type]++;
-    selectedTypes.push(picked.type);
-  }
-
-  const result: FinalOption[] = [];
+export const generateBraceletOptions = (
+  selectedTypes: string[]
+): BraceletOptionResult[] => {
+  const result: BraceletOptionResult[] = [];
   const usedCombatStatTypes = new Set<string>();
 
-  for (const category of selectedTypes) {
-    if (category === "기본 효과") {
-      const stat = pickByProbability(BaseEffects);
+  for (let i = 0; i < selectedTypes.length; i++) {
+    // 1단계: 카테고리 선택
+    const filteredCategoryPool = categoryPool.filter((c) =>
+      selectedTypes.includes(c.category)
+    );
+    const selectedCategory = pickByProbability(filteredCategoryPool);
+
+    // 2단계: 해당 카테고리 내 옵션 필터링
+    const categoryOptions = AllOptions.filter(
+      (opt) => opt.category === selectedCategory.category
+    );
+
+    if (
+      selectedCategory.category === "기본 효과" ||
+      selectedCategory.category === "전투 특성"
+    ) {
+      const typeAOptions = categoryOptions.filter(
+        (opt): opt is typeof opt & { probability: number } =>
+          typeof opt.probability === "number"
+      );
+
+      const stat = pickByProbability(typeAOptions);
       const range = pickByProbability(stat.values);
+
+      if (selectedCategory.category === "전투 특성") {
+        if (usedCombatStatTypes.has(stat.type)) continue;
+        usedCombatStatTypes.add(stat.type);
+      }
+
       result.push({
-        category,
-        name: stat.type,
+        category: selectedCategory.category,
+        name: stat.template,
         value: range.range,
       });
-    } else if (category === "전투 특성") {
-      let stat;
-      let tryCount = 0;
+    }
 
-      do {
-        stat = pickByProbability(CombatStats);
-        tryCount++;
-      } while (usedCombatStatTypes.has(stat.type) && tryCount < 10);
+    if (selectedCategory.category === "특수 효과") {
+      // 특수 효과는 외부 probability가 없으므로 pickByProbability를 위해 임시로 설정
+      const specialOptions = categoryOptions
+        .filter(
+          (
+            opt
+          ): opt is typeof opt & {
+            values: { range: string[]; grade: string; probability: number }[];
+          } =>
+            Array.isArray(opt.values) &&
+            typeof opt.values[0]?.probability === "number" &&
+            Array.isArray(opt.values[0]?.range)
+        )
+        .map((opt) => ({ ...opt, probability: 1 })); // ⭐️ 핵심 개선: probability 강제 추가
 
-      if (usedCombatStatTypes.has(stat.type)) continue; // 실패 시 무시
-      usedCombatStatTypes.add(stat.type);
-
-      const range = pickByProbability(stat.values);
+      const option = pickByProbability(specialOptions);
+      const tier = pickByProbability(option.values);
 
       result.push({
-        category,
-        name: stat.type,
-        value: range.range,
-      });
-    } else if (category === "특수 효과") {
-      const option =
-        SpecialOptions[Math.floor(Math.random() * SpecialOptions.length)];
-      const tier = pickByProbability(option.tiers);
-      result.push({
-        category,
+        category: selectedCategory.category,
         name: option.template,
-        value: tier.value.join(" "),
+        value: tier.range.join(" "),
         grade: tier.grade,
       });
     }
   }
 
   return result;
-}
+};
