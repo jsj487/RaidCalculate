@@ -20,6 +20,64 @@ type RaidValuesType = {
 };
 
 export const RaidValues: RaidValuesType = {
+  "강습 레이드": {
+    "강습: 타르칼": {
+      하드: {
+        minItemLevel: 1720,
+        phases: [
+          {
+            clearGold: 18000,
+            bonusCost: 6000,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 900 },
+              { name: "운명의 수호석", quantity: 1800 },
+              { name: "운명의 파편", quantity: 6000 },
+              { name: "순환 돌파석", quantity: 15 },
+              { name: "수호의 메달", quantity: 25 },
+              { name: "비호의 메달", quantity: 200 },
+              { name: "운명의 돌", quantity: 9 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 2400 },
+              { name: "운명의 수호석", quantity: 4800 },
+              { name: "운명의 파편", quantity: 20000 },
+              { name: "운명의 돌파석", quantity: 76 },
+              { name: "순환 돌파석", quantity: 10 },
+              { name: "수호의 메달", quantity: 25 },
+              { name: "비호의 메달", quantity: 200 },
+            ],
+          },
+        ],
+      },
+      노말: {
+        minItemLevel: 1680,
+        phases: [
+          {
+            clearGold: 10000,
+            bonusCost: 4000,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 600 },
+              { name: "운명의 수호석", quantity: 1200 },
+              { name: "운명의 파편", quantity: 4000 },
+              { name: "순환 돌파석", quantity: 11 },
+              { name: "수호의 메달", quantity: 10 },
+              { name: "비호의 메달", quantity: 100 },
+              { name: "운명의 돌", quantity: 6 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 1200 },
+              { name: "운명의 수호석", quantity: 2400 },
+              { name: "운명의 파편", quantity: 11000 },
+              { name: "운명의 돌파석", quantity: 42 },
+              { name: "순환 돌파석", quantity: 7 },
+              { name: "수호의 메달", quantity: 10 },
+              { name: "비호의 메달", quantity: 100 },
+            ],
+          },
+        ],
+      },
+    },
+  },
   // 카제로스 레이드
   "카제로스 레이드": {
     "3막: 모르둠": {
