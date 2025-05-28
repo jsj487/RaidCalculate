@@ -10,7 +10,7 @@ import Layout from "../components/Layout";
 import { LayoutProvider } from "../components/LayoutProvider";
 import Main from "./Main";
 import GoldCalc from "./GoldCalc";
-import Schedule from "./Schedule";
+// import Schedule from "./Schedule";
 import Package from "./Package";
 import Auction from "./Auction";
 import Bracelet from "./Bracelet";

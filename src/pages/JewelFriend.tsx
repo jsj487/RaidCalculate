@@ -6,7 +6,7 @@ import CharacterDetailModal from "../components/CharacterDetailModal";
 import fetchCharacterData from "../components/CharacterDetailModal";
 import { Helmet } from "react-helmet";
 
-import { db } from "../utils/FireBase"; // 너의 FireBase.tsx에 정의된 Firebase 인스턴스
+import { supabase } from "../utils/SupabaseClient";
 import {
   collection,
   addDoc,
@@ -189,65 +189,72 @@ const JewelFriend = () => {
     }
   };
 
-  const cleanUpPreviousMatches = async (nickname: string) => {
-    const matchRef = collection(db, "jewelMatchedPairs");
+  // const cleanUpPreviousMatches = async (nickname: string) => {
+  //   const matchRef = collection(db, "jewelMatchedPairs");
 
-    const q1 = query(matchRef, where("userA.nickname", "==", nickname));
-    const q2 = query(matchRef, where("userB.nickname", "==", nickname));
+  //   const q1 = query(matchRef, where("userA.nickname", "==", nickname));
+  //   const q2 = query(matchRef, where("userB.nickname", "==", nickname));
 
-    const snap1 = await getDocs(q1);
-    const snap2 = await getDocs(q2);
+  //   const snap1 = await getDocs(q1);
+  //   const snap2 = await getDocs(q2);
 
-    [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
-      await deleteDoc(doc.ref);
-    });
-  };
+  //   [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
+  //     await deleteDoc(doc.ref);
+  //   });
+  // };
 
   //매칭 성공 시 기존 queue에서 삭제 + jewelMatchedPairs 생성
   const handleMatch = async () => {
     if (!mainCharacter || !subCharacter) return;
 
-    await cleanUpPreviousMatches(mainCharacter.CharacterName);
-
-    const queueRef = collection(db, "jewelMatchingQueue");
-    const matchRef = collection(db, "jewelMatchedPairs");
-
+    // 현재 내 정보 구성
     const myData = {
       nickname: mainCharacter.CharacterName,
       subnickname: subCharacter.CharacterName,
-      mainClass: mainCharacter.CharacterClassName,
-      subClass: subCharacter.CharacterClassName,
+      main_class: mainCharacter.CharacterClassName,
+      sub_class: subCharacter.CharacterClassName,
       server: mainCharacter.ServerName,
-      characterImageMain: mainCharacter.CharacterImage,
-      characterImageSub: subCharacter.CharacterImage,
-      timestamp: serverTimestamp(),
+      character_image_main: mainCharacter.CharacterImage,
+      character_image_sub: subCharacter.CharacterImage,
     };
 
-    const q = query(
-      queueRef,
-      where("server", "==", myData.server),
-      where("mainClass", "==", myData.subClass),
-      where("subClass", "==", myData.mainClass)
-    );
+    // Supabase: 반대 쌍 찾기 (내 본캐 = 상대 부캐, 내 부캐 = 상대 본캐)
+    const { data: queueData, error: queueError } = await supabase
+      .from("jewel_matching_queue")
+      .select("*")
+      .eq("server", myData.server)
+      .eq("main_class", myData.sub_class)
+      .eq("sub_class", myData.main_class)
+      .limit(1);
 
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-      const matchedDoc = snapshot.docs[0];
-      const matchedData = matchedDoc.data();
+    if (queueError) {
+      console.error("매칭 쿼리 실패", queueError);
+      return;
+    }
 
-      await deleteDoc(matchedDoc.ref);
+    if (queueData && queueData.length > 0) {
+      const matchedData = queueData[0];
 
-      await addDoc(matchRef, {
-        userA: myData,
-        userB: matchedData,
+      // 대기열에서 제거
+      await supabase
+        .from("jewel_matching_queue")
+        .delete()
+        .eq("id", matchedData.id);
+
+      // 매칭된 쌍 생성
+      await supabase.from("jewel_matched_pairs").insert({
+        user_a: myData,
+        user_b: matchedData,
         status: {
           userA: "pending",
           userB: "pending",
         },
-        createdAt: serverTimestamp(),
       });
+
+      setMatchingStatus("matched");
     } else {
-      await addDoc(queueRef, myData);
+      // 매칭 실패 → 대기열 등록
+      await supabase.from("jewel_matching_queue").insert(myData);
       setMatchingStatus("queued");
     }
   };
@@ -255,33 +262,31 @@ const JewelFriend = () => {
   const handleCancelMatch = async () => {
     if (!mainCharacter) return;
 
-    // queue 제거
-    const queueRef = collection(db, "jewelMatchingQueue");
-    const q = query(
-      queueRef,
-      where("nickname", "==", mainCharacter.CharacterName)
-    );
-    const snapshot = await getDocs(q);
-    snapshot.forEach(async (doc) => {
-      await deleteDoc(doc.ref);
-    });
+    const myNickname = mainCharacter.CharacterName;
 
-    // jewelMatchedPairs 제거도 함께!
-    const matchRef = collection(db, "jewelMatchedPairs");
-    const q1 = query(
-      matchRef,
-      where("userA.nickname", "==", mainCharacter.CharacterName)
-    );
-    const q2 = query(
-      matchRef,
-      where("userB.nickname", "==", mainCharacter.CharacterName)
-    );
-    const snap1 = await getDocs(q1);
-    const snap2 = await getDocs(q2);
+    // 1. 대기열(jewel_matching_queue)에서 제거
+    const { data: queueData, error: queueError } = await supabase
+      .from("jewel_matching_queue")
+      .delete()
+      .eq("nickname", myNickname);
 
-    snap1.forEach((doc) => deleteDoc(doc.ref));
-    snap2.forEach((doc) => deleteDoc(doc.ref));
+    if (queueError) {
+      console.error("❌ 대기열 삭제 실패:", queueError.message);
+    }
 
+    // 2. 매칭된 항목(jewel_matched_pairs)에서 userA 또는 userB로 포함된 row 제거
+    const { error: pairDeleteError } = await supabase
+      .from("jewel_matched_pairs")
+      .delete()
+      .or(
+        `user_a->>nickname.eq.${myNickname},user_b->>nickname.eq.${myNickname}`
+      );
+
+    if (pairDeleteError) {
+      console.error("❌ 매칭 쌍 삭제 실패:", pairDeleteError.message);
+    }
+
+    // 3. 상태 초기화
     setMatchedMainCharacter(null);
     setMatchedSubCharacter(null);
     setMatchingStatus("idle");
@@ -318,168 +323,87 @@ const JewelFriend = () => {
   useEffect(() => {
     if (!mainCharacter) return;
 
-    const matchRef = collection(db, "jewelMatchedPairs");
+    const myNickname = mainCharacter.CharacterName;
 
-    const unsubA = onSnapshot(
-      query(
-        matchRef,
-        where("userA.nickname", "==", mainCharacter.CharacterName)
-      ),
-      (snap) => {
-        snap.forEach((doc) => {
-          const data = doc.data();
-          const char = data.userB;
-          const createdAt = data.createdAt?.toDate().getTime();
+    const channel = supabase
+      .channel("jewel-matching-watch")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "jewel_matched_pairs",
+        },
+        async (payload) => {
+          const data = payload.new;
+          const status = data.status;
+          const userA = data.user_a;
+          const userB = data.user_b;
+          const createdAt = new Date(data.created_at).getTime();
           const now = Date.now();
 
-          if (
-            data.userA.nickname === mainCharacter.CharacterName &&
-            matchingStatus === "idle"
-          ) {
-            setMatchingStatus("queued");
+          const isUserA = userA.nickname === myNickname;
+          const isUserB = userB.nickname === myNickname;
+          if (!isUserA && !isUserB) return;
+
+          const char = isUserA ? userB : userA;
+
+          // 5분 초과 → 자동 삭제
+          if (createdAt && now - createdAt > 5 * 60 * 1000) {
+            await supabase
+              .from("jewel_matched_pairs")
+              .delete()
+              .eq("id", data.id);
+            return;
           }
 
-          // 5분 지나면 문서 자동 삭제
-          if (createdAt && now - createdAt > 5 * 60 * 1000) {
-            deleteDoc(doc.ref);
-            return;
+          // 초기 상태 → queued로 전환
+          if (matchingStatus === "idle") {
+            setMatchingStatus("queued");
           }
 
           // 쌍방 수락
-          if (
-            data.status.userA === "accepted" &&
-            data.status.userB === "accepted"
-          ) {
-            const c = data.userB;
+          if (status.userA === "accepted" && status.userB === "accepted") {
             setMatchedMainCharacter({
-              CharacterName: c.nickname,
-              CharacterClassName: c.mainClass,
-              ServerName: c.server,
+              CharacterName: char.nickname,
+              CharacterClassName: char.mainClass,
+              ServerName: char.server,
               CharacterImage:
-                c.characterImageMain ?? "/img/default-character.png",
+                char.characterImageMain ?? "/img/default-character.png",
             });
             setMatchedSubCharacter({
-              CharacterName: c.subnickname,
-              CharacterClassName: c.subClass,
-              ServerName: c.server,
+              CharacterName: char.subnickname,
+              CharacterClassName: char.subClass,
+              ServerName: char.server,
               CharacterImage:
-                c.characterImageSub ?? "/img/default-character.png",
+                char.characterImageSub ?? "/img/default-character.png",
             });
             setPendingMatchedCharacters(null);
             setMatchingStatus("completed");
-          }
-
-          // 상대가 거절했을 경우
-          else if (data.status.userB === "rejected") {
-            setTimeout(() => {
-              alert("상대방이 거절했습니다.");
-            }, 100);
-            setPendingMatchedCharacters(null);
-            setMatchingStatus("idle");
-          }
-
-          // 내가 pending 상태이고, 상대가 거절한 게 아닐 때만
-          else if (
-            data.status.userA === "pending" &&
-            data.status.userB !== "rejected"
-          ) {
-            const waiting =
-              data.status.userB !== "accepted" &&
-              data.status.userB !== "rejected";
-
-            setPendingMatchedCharacters({
-              main: {
-                CharacterName: char.nickname,
-                CharacterClassName: char.mainClass,
-                ServerName: char.server,
-                CharacterImage:
-                  !char.characterImageMain || char.characterImageMain === "null"
-                    ? "/img/default-character.png"
-                    : char.characterImageMain,
-              },
-              sub: {
-                CharacterName: char.subnickname,
-                CharacterClassName: char.subClass,
-                ServerName: char.server,
-                CharacterImage:
-                  !char.characterImageSub || char.characterImageSub === "null"
-                    ? "/img/default-character.png"
-                    : char.characterImageSub,
-              },
-              waitingForOther: waiting,
-            });
-          }
-        });
-      }
-    );
-
-    const unsubB = onSnapshot(
-      query(
-        matchRef,
-        where("userB.nickname", "==", mainCharacter.CharacterName)
-      ),
-      (snap) => {
-        snap.forEach((doc) => {
-          const data = doc.data();
-          const char = data.userA;
-          const createdAt = data.createdAt?.toDate().getTime();
-          const now = Date.now();
-
-          if (
-            data.userA.nickname === mainCharacter.CharacterName &&
-            matchingStatus === "idle"
-          ) {
-            setMatchingStatus("queued");
-          }
-
-          // 5분 초과 시 자동 삭제
-          if (createdAt && now - createdAt > 5 * 60 * 1000) {
-            deleteDoc(doc.ref);
             return;
           }
 
-          // 쌍방 수락 완료
-          if (
-            data.status.userB === "accepted" &&
-            data.status.userA === "accepted"
-          ) {
-            const c = data.userA;
-            setMatchedMainCharacter({
-              CharacterName: c.nickname,
-              CharacterClassName: c.mainClass,
-              ServerName: c.server,
-              CharacterImage:
-                c.characterImageMain ?? "/img/default-character.png",
-            });
-            setMatchedSubCharacter({
-              CharacterName: c.subnickname,
-              CharacterClassName: c.subClass,
-              ServerName: c.server,
-              CharacterImage:
-                c.characterImageSub ?? "/img/default-character.png",
-            });
-            setPendingMatchedCharacters(null);
-            setMatchingStatus("completed");
-          }
+          // 상대방이 거절함
+          const rejectedByOther =
+            (isUserA && status.userB === "rejected") ||
+            (isUserB && status.userA === "rejected");
 
-          // 상대가 거절했을 경우
-          else if (data.status.userA === "rejected") {
+          if (rejectedByOther) {
             setTimeout(() => {
               alert("상대방이 거절했습니다.");
             }, 100);
             setPendingMatchedCharacters(null);
             setMatchingStatus("idle");
+            return;
           }
 
-          // 대기 중 상태 (단, 거절되지 않았을 때만)
-          else if (
-            data.status.userB === "pending" &&
-            data.status.userA !== "rejected"
-          ) {
-            const waiting =
-              data.status.userA !== "accepted" &&
-              data.status.userA !== "rejected";
+          // 내가 pending이고, 상대가 거절도 수락도 안 했을 때
+          const myStatus = isUserA ? status.userA : status.userB;
+          const otherStatus = isUserA ? status.userB : status.userA;
+          const waiting =
+            otherStatus !== "accepted" && otherStatus !== "rejected";
 
+          if (myStatus === "pending" && !rejectedByOther) {
             setPendingMatchedCharacters({
               main: {
                 CharacterName: char.nickname,
@@ -502,13 +426,12 @@ const JewelFriend = () => {
               waitingForOther: waiting,
             });
           }
-        });
-      }
-    );
+        }
+      )
+      .subscribe();
 
     return () => {
-      unsubA();
-      unsubB();
+      supabase.removeChannel(channel);
     };
   }, [mainCharacter]);
 
@@ -516,30 +439,32 @@ const JewelFriend = () => {
   useEffect(() => {
     const handleUnload = async () => {
       if (!mainCharacter) return;
+      const nickname = mainCharacter.CharacterName;
 
-      // jewelMatchedPairs 문서 삭제
-      const matchRef = collection(db, "jewelMatchedPairs");
-      const q1 = query(
-        matchRef,
-        where("userA.nickname", "==", mainCharacter.CharacterName)
-      );
-      const q2 = query(
-        matchRef,
-        where("userB.nickname", "==", mainCharacter.CharacterName)
-      );
-      const snap1 = await getDocs(q1);
-      const snap2 = await getDocs(q2);
-      snap1.forEach((doc) => deleteDoc(doc.ref));
-      snap2.forEach((doc) => deleteDoc(doc.ref));
+      // 1. 매칭된 쌍 중 내가 들어간 것 제거 (userA 또는 userB)
+      const { error: pairDeleteError } = await supabase
+        .from("jewel_matched_pairs")
+        .delete()
+        .or(
+          `user_a->>nickname.eq.${nickname},user_b->>nickname.eq.${nickname}`
+        );
 
-      // 🔹 jewelMatchingQueue 문서 삭제
-      const queueRef = collection(db, "jewelMatchingQueue");
-      const q = query(
-        queueRef,
-        where("nickname", "==", mainCharacter.CharacterName)
-      );
-      const snap = await getDocs(q);
-      snap.forEach((doc) => deleteDoc(doc.ref));
+      if (pairDeleteError) {
+        console.error("jewel_matched_pairs 삭제 실패", pairDeleteError.message);
+      }
+
+      // 2. 대기열 제거
+      const { error: queueDeleteError } = await supabase
+        .from("jewel_matching_queue")
+        .delete()
+        .eq("nickname", nickname);
+
+      if (queueDeleteError) {
+        console.error(
+          "jewel_matching_queue 삭제 실패",
+          queueDeleteError.message
+        );
+      }
     };
 
     window.addEventListener("beforeunload", handleUnload);
@@ -835,63 +760,75 @@ const JewelFriend = () => {
 
             if (!mainCharacter) return;
 
-            const matchRef = collection(db, "jewelMatchedPairs");
+            const myNickname = mainCharacter.CharacterName;
 
-            const q1 = query(
-              matchRef,
-              where("userA.nickname", "==", mainCharacter.CharacterName)
-            );
-            const q2 = query(
-              matchRef,
-              where("userB.nickname", "==", mainCharacter.CharacterName)
-            );
+            // 1. 매칭된 문서 중 내가 포함된 것 조회
+            const { data, error } = await supabase
+              .from("jewel_matched_pairs")
+              .select("*")
+              .or(
+                `user_a->>nickname.eq.${myNickname},user_b->>nickname.eq.${myNickname}`
+              );
 
-            const snap1 = await getDocs(q1);
-            const snap2 = await getDocs(q2);
+            if (error) {
+              console.error("❌ 매칭 조회 실패", error.message);
+              setLoading(false);
+              return;
+            }
 
-            [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
-              const current = doc.data();
-              const isUserA =
-                current.userA.nickname === mainCharacter.CharacterName;
+            // 2. 각 row에 대해 상태 갱신
+            if (data) {
+              for (const row of data) {
+                const isUserA = row.user_a.nickname === myNickname;
+                const updatedStatus = {
+                  ...row.status,
+                  [isUserA ? "userA" : "userB"]: "accepted",
+                };
 
-              const updatedStatus = {
-                ...current.status,
-                [isUserA ? "userA" : "userB"]: "accepted",
-              };
+                await supabase
+                  .from("jewel_matched_pairs")
+                  .update({ status: updatedStatus })
+                  .eq("id", row.id);
+              }
+            }
 
-              await updateDoc(doc.ref, { status: updatedStatus });
-            });
+            setLoading(false);
           }}
           onReject={async () => {
             if (!mainCharacter) return;
 
-            const matchRef = collection(db, "jewelMatchedPairs");
+            const myNickname = mainCharacter.CharacterName;
 
-            const q1 = query(
-              matchRef,
-              where("userA.nickname", "==", mainCharacter.CharacterName)
-            );
-            const q2 = query(
-              matchRef,
-              where("userB.nickname", "==", mainCharacter.CharacterName)
-            );
+            // 1. 내가 포함된 매칭 쌍 조회
+            const { data, error } = await supabase
+              .from("jewel_matched_pairs")
+              .select("*")
+              .or(
+                `user_a->>nickname.eq.${myNickname},user_b->>nickname.eq.${myNickname}`
+              );
 
-            const snap1 = await getDocs(q1);
-            const snap2 = await getDocs(q2);
+            if (error) {
+              console.error("매칭 조회 실패", error.message);
+              return;
+            }
 
-            [...snap1.docs, ...snap2.docs].forEach(async (doc) => {
-              const current = doc.data();
-              const isUserA =
-                current.userA.nickname === mainCharacter.CharacterName;
+            // 2. 상태를 'rejected'로 갱신
+            if (data) {
+              for (const row of data) {
+                const isUserA = row.user_a.nickname === myNickname;
+                const updatedStatus = {
+                  ...row.status,
+                  [isUserA ? "userA" : "userB"]: "rejected",
+                };
 
-              const updatedStatus = {
-                ...current.status,
-                [isUserA ? "userA" : "userB"]: "rejected",
-              };
+                await supabase
+                  .from("jewel_matched_pairs")
+                  .update({ status: updatedStatus })
+                  .eq("id", row.id);
+              }
+            }
 
-              await updateDoc(doc.ref, { status: updatedStatus });
-            });
-
+            // 3. UI 상태 초기화
             setPendingMatchedCharacters(null);
             setMatchingStatus("idle");
           }}

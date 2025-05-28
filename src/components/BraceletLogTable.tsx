@@ -1,46 +1,84 @@
-import React, { useEffect, useState } from "react";
-import { db } from "../utils/FireBase";
-import { collection, onSnapshot } from "firebase/firestore";
+// BraceletLogTable.tsx
 
-type BraceletLog = {
-  timestamp: string;
-  options: {
+import React, { useEffect, useState } from "react";
+import { supabase } from "../utils/SupabaseClient";
+
+type CompressedLog = {
+  created_at: string;
+  draw_result: {
+    category: string;
     template: string;
-    values: string[];
+    value: string;
     grade: string;
   }[];
 };
 
 const BraceletLogTable = () => {
-  const [logs, setLogs] = useState<BraceletLog[]>([]);
+  const [logs, setLogs] = useState<CompressedLog[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "braceletLogs"),
-      (snapshot) => {
-        const fetched: BraceletLog[] = snapshot.docs.map(
-          (doc) => doc.data() as BraceletLog
-        );
-        setLogs(fetched);
-      }
-    );
+    const fetchLogs = async () => {
+      const { data, error } = await supabase
+        .from("bracelet_logs_compressed")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
+      if (!error && data) {
+        setLogs(data);
+      }
+    };
+
+    fetchLogs();
+
+    const channel = supabase
+      .channel("bracelet-logs")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "bracelet_logs_compressed",
+        },
+        (payload) => {
+          const newLog = payload.new as CompressedLog;
+          setLogs((prev) => [newLog, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      const { data, error } = await supabase
+        .from("bracelet_logs_compressed")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("🔥 Supabase error:", error.message);
+      }
+
+      console.log("✅ Supabase logs data:", data);
+      setLogs(data || []);
+    };
+
+    fetchLogs();
   }, []);
 
   return (
     <div>
-      <h2>팔찌 옵션 등장 로그</h2>
+      <h2>팔찌 옵션 뽑기 로그</h2>
       <ul>
         {logs.map((log, idx) => (
           <li key={idx}>
-            {log.options.map((opt, i) => (
+            <p>{new Date(log.created_at).toLocaleString()}</p>
+            {log.draw_result.map((opt, i) => (
               <div key={i}>
-                {opt.template.replace(
-                  /VALUE\d*/g,
-                  (_, j) => opt.values[j] || ""
-                )}{" "}
-                ({opt.grade})
+                {opt.template.replace(/VALUE\d*/g, opt.value)} ({opt.grade})
               </div>
             ))}
             <hr />

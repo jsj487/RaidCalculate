@@ -12,7 +12,7 @@ import {
 import { Helmet } from "react-helmet";
 import { v4 as uuidv4 } from "uuid";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../utils/FireBase";
+import { supabase } from "../utils/SupabaseClient";
 
 const Container = styled.div`
   max-width: 600px;
@@ -159,16 +159,6 @@ type SpecialStatsMap = {
   };
 };
 
-function buildPartsFromOption(opt: {
-  category: "기본 효과" | "전투 특성" | "특수 효과";
-  name: string;
-  value: string;
-  grade?: string;
-}): (string | { value: string; grade: string })[] {
-  const values = opt.value ? opt.value.split(" ") : [];
-  return parseTemplate(opt.name, values, opt.grade ?? "하옵");
-}
-
 function parseTemplate(template: string, values: string[], grade: string) {
   const parts: (string | { value: string; grade: string })[] = [];
 
@@ -210,14 +200,15 @@ function parseTemplate(template: string, values: string[], grade: string) {
 const BraceletGachaSimulator = () => {
   const [generated, setGenerated] = useState<GeneratedOption[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [baseStats, setBaseStats] = useState<CategoryStats>({});
-  const [combatStats, setCombatStats] = useState<CombatStatsMap>({});
-  const [specialStats, setSpecialStats] = useState<SpecialStatsMap>({});
   const [expanded, setExpanded] = useState({
     기본효과: true,
     전투특성: true,
     특수효과: true,
   });
+  const [baseStats, setBaseStats] = useState<CategoryStats>({});
+  const [combatStats, setCombatStats] = useState<CombatStatsMap>({});
+  const [specialStats, setSpecialStats] = useState<SpecialStatsMap>({});
+
   const [categoryCounts, setCategoryCounts] = useState<{
     기본효과: number;
     전투특성: number;
@@ -267,78 +258,136 @@ const BraceletGachaSimulator = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "bracelet_logs"),
-      (snapshot) => {
-        const base: CategoryStats = {};
-        const combat: CombatStatsMap = {};
-        const special: SpecialStatsMap = {};
+    const fetchInitialCompressedLogs = async () => {
+      const { data, error } = await supabase
+        .from("bracelet_logs_compressed")
+        .select("draw_result")
+        .order("created_at", { ascending: false });
 
-        // 카테고리별 총 등장 횟수 카운터
-        let baseCount = 0;
-        let combatCount = 0;
-        let specialCount = 0;
+      if (error) {
+        console.error("통계 로딩 에러:", error);
+        return;
+      }
 
-        snapshot.forEach((doc) => {
-          const data = doc.data().options;
+      const base: CategoryStats = {};
+      const combat: CombatStatsMap = {};
+      const special: SpecialStatsMap = {};
+      let baseCount = 0;
+      let combatCount = 0;
+      let specialCount = 0;
 
-          if (data) {
-            if (Array.isArray(data["기본 효과"])) {
-              baseCount += data["기본 효과"].length; // 총합 추가
-              data["기본 효과"].forEach((opt) => {
-                const type = opt.template.replace("VALUE", "").trim();
-                const range = opt.value.trim();
+      data?.forEach((log) => {
+        log.draw_result.forEach((opt: any) => {
+          const { category, template, value, grade } = opt;
 
-                if (!base[type]) base[type] = {};
-                if (!base[type][range]) base[type][range] = 0;
-                base[type][range]++;
-              });
+          if (category === "기본 효과") {
+            baseCount++;
+            if (!base[template]) base[template] = {};
+            if (!base[template][value]) base[template][value] = 0;
+            base[template][value]++;
+          }
+
+          if (category === "전투 특성") {
+            combatCount++;
+            if (!combat[template]) combat[template] = {};
+            if (!combat[template][value]) combat[template][value] = 0;
+            combat[template][value]++;
+          }
+
+          if (category === "특수 효과") {
+            specialCount++;
+            if (!special[template]) {
+              special[template] = { 하옵: 0, 중옵: 0, 상옵: 0, total: 0 };
             }
-
-            if (Array.isArray(data["전투 특성"])) {
-              combatCount += data["전투 특성"].length; // 총합 추가
-              data["전투 특성"].forEach((opt) => {
-                const type = opt.template.replace("VALUE", "").trim();
-                const range = opt.value.trim();
-
-                if (!combat[type]) combat[type] = {};
-                if (!combat[type][range]) combat[type][range] = 0;
-                combat[type][range]++;
-              });
-            }
-
-            if (Array.isArray(data["특수 효과"])) {
-              specialCount += data["특수 효과"].length; // 총합 추가
-              data["특수 효과"].forEach((opt) => {
-                const template = opt.template;
-                const grade = opt.grade as "하옵" | "중옵" | "상옵";
-
-                if (!special[template]) {
-                  special[template] = { 하옵: 0, 중옵: 0, 상옵: 0, total: 0 };
-                }
-
-                special[template][grade]++;
-                special[template].total++;
-              });
-            }
+            special[template][grade as "하옵" | "중옵" | "상옵"]++;
+            special[template].total++;
           }
         });
+      });
 
-        // 상태 업데이트
-        setBaseStats(base);
-        setCombatStats(combat);
-        setSpecialStats(special);
+      setBaseStats(base);
+      setCombatStats(combat);
+      setSpecialStats(special);
+      setCategoryCounts({
+        기본효과: baseCount,
+        전투특성: combatCount,
+        특수효과: specialCount,
+      });
+    };
 
-        // 카테고리 비율용 상태도 업데이트
-        setCategoryCounts({
-          기본효과: baseCount,
-          전투특성: combatCount,
-          특수효과: specialCount,
-        });
-      }
-    );
+    fetchInitialCompressedLogs();
+  }, []);
 
-    return () => unsubscribe();
+  useEffect(() => {
+    const channel = supabase
+      .channel("bracelet-logs")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "bracelet_logs",
+        },
+        (payload) => {
+          const { category, template, grade, value } = payload.new;
+
+          const mappedKey =
+            category === "기본 효과"
+              ? "기본효과"
+              : category === "전투 특성"
+              ? "전투특성"
+              : "특수효과";
+
+          setCategoryCounts((prev) => ({
+            ...prev,
+            [mappedKey]: prev[mappedKey] + 1,
+          }));
+
+          if (category === "기본 효과") {
+            const type = template.replace("VALUE", "").trim();
+            const range = value.trim();
+
+            setBaseStats((prev) => {
+              const next = { ...prev };
+              if (!next[type]) next[type] = {};
+              if (!next[type][range]) next[type][range] = 0;
+              next[type][range]++;
+              return next;
+            });
+          }
+
+          if (category === "전투 특성") {
+            const type = template.replace("VALUE", "").trim();
+            const range = value.trim();
+
+            setCombatStats((prev) => {
+              const next = { ...prev };
+              if (!next[type]) next[type] = {};
+              if (!next[type][range]) next[type][range] = 0;
+              next[type][range]++;
+              return next;
+            });
+          }
+
+          if (category === "특수 효과") {
+            setSpecialStats((prev) => {
+              const next = { ...prev };
+              const typedGrade = grade as "하옵" | "중옵" | "상옵";
+              if (!next[template]) {
+                next[template] = { 하옵: 0, 중옵: 0, 상옵: 0, total: 0 };
+              }
+              next[template][typedGrade]++;
+              next[template].total++;
+              return next;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const STAT_ORDER = ["치명", "특화", "신속", "제압", "인내", "숙련"];
