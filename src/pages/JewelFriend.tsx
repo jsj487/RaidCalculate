@@ -207,41 +207,56 @@ const JewelFriend = () => {
   const handleMatch = async () => {
     if (!mainCharacter || !subCharacter) return;
 
+    // 문자열 정규화 유틸 함수
+    const normalize = (str: string) => str.trim();
+
     // 현재 내 정보 구성
     const myData = {
       nickname: mainCharacter.CharacterName,
       subnickname: subCharacter.CharacterName,
-      main_class: mainCharacter.CharacterClassName,
-      sub_class: subCharacter.CharacterClassName,
-      server: mainCharacter.ServerName,
+      main_class: normalize(mainCharacter.CharacterClassName),
+      sub_class: normalize(subCharacter.CharacterClassName),
+      server: normalize(mainCharacter.ServerName),
       character_image_main: mainCharacter.CharacterImage,
       character_image_sub: subCharacter.CharacterImage,
     };
+
+    console.log("내 매칭 기준 (쿼리용):", {
+      server: myData.server,
+      main_class: myData.sub_class,
+      sub_class: myData.main_class,
+    });
 
     // Supabase: 반대 쌍 찾기 (내 본캐 = 상대 부캐, 내 부캐 = 상대 본캐)
     const { data: queueData, error: queueError } = await supabase
       .from("jewel_matching_queue")
       .select("*")
-      .eq("server", myData.server)
-      .eq("main_class", myData.sub_class)
-      .eq("sub_class", myData.main_class)
-      .limit(1);
+      .eq("server", myData.server); // 일단 서버만 필터링
 
     if (queueError) {
-      console.error("매칭 쿼리 실패", queueError);
+      console.error("❌ 매칭 쿼리 실패", queueError);
       return;
     }
 
-    if (queueData && queueData.length > 0) {
-      const matchedData = queueData[0];
-      console.log("매칭 대상 있음?", queueData);
-      // 대기열에서 제거
+    console.log("📋 전체 큐 목록:", queueData);
+
+    const manuallyMatched = queueData?.find(
+      (item) =>
+        item.main_class === myData.sub_class &&
+        item.sub_class === myData.main_class
+    );
+
+    console.log("🔍 수동 비교 결과:", manuallyMatched);
+
+    if (manuallyMatched) {
+      const matchedData = manuallyMatched;
+      console.log("✅ 수동 매칭 성공:", matchedData);
+
       await supabase
         .from("jewel_matching_queue")
         .delete()
         .eq("id", matchedData.id);
 
-      // 매칭된 쌍 생성
       await supabase.from("jewel_matched_pairs").insert({
         user_a: myData,
         user_b: matchedData,
@@ -253,7 +268,7 @@ const JewelFriend = () => {
 
       setMatchingStatus("matched");
     } else {
-      // 매칭 실패 → 대기열 등록
+      console.log("수동 비교도 매칭 실패 → 대기열 등록");
       await supabase.from("jewel_matching_queue").insert(myData);
       setMatchingStatus("queued");
     }

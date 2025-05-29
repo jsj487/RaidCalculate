@@ -70,7 +70,7 @@ export const generateBraceletOptions = (
     }
 
     if (selectedCategory.category === "특수 효과") {
-      // 특수 효과는 외부 probability가 없으므로 pickByProbability를 위해 임시로 설정
+      // ✅ values의 확률 총합을 기반으로 확률 보정
       const specialOptions = categoryOptions
         .filter(
           (
@@ -82,7 +82,13 @@ export const generateBraceletOptions = (
             typeof opt.values[0]?.probability === "number" &&
             Array.isArray(opt.values[0]?.range)
         )
-        .map((opt) => ({ ...opt, probability: 1 })); // ⭐️ 핵심 개선: probability 강제 추가
+        .map((opt) => {
+          const totalProb = opt.values.reduce(
+            (acc, v) => acc + v.probability,
+            0
+          );
+          return { ...opt, probability: totalProb };
+        });
 
       const option = pickByProbability(specialOptions);
       const tier = pickByProbability(option.values);
