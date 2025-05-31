@@ -3,8 +3,9 @@ import TooltipBox from "./TooltipBox";
 import TooltipPortal from "./TooltipPortal";
 import styled from "styled-components";
 import axios from "axios";
-import { color } from "framer-motion";
+import type { MatchedPairState } from "../utils/Matching";
 
+import { color } from "framer-motion";
 import {
   RadarChart,
   PolarGrid,
@@ -438,16 +439,6 @@ const LoadingSpinner = styled.img`
   height: 800px;
 `;
 
-interface CharacterDetailModalProps {
-  characterName: string;
-  isMatchedView?: boolean;
-  waitingForOther?: boolean;
-  loading?: boolean;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onClose: () => void;
-}
-
 const BASE_URL =
   process.env.NODE_ENV === "production"
     ? "https://raidcalculate.onrender.com/api"
@@ -482,7 +473,19 @@ const fetchEquippedGems = async (characterName: string): Promise<any[]> => {
   }
 };
 
+interface CharacterDetailModalProps {
+  characterName?: string;
+  matchedPair: MatchedPairState | null;
+  isMatchedView?: boolean;
+  waitingForOther?: boolean;
+  loading?: boolean;
+  onAccept?: () => void;
+  onReject?: () => void;
+  onClose: () => void;
+}
+
 const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
+  matchedPair,
   characterName,
   onClose,
   onAccept,
@@ -504,6 +507,8 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!characterName) return;
+
     const fetchAll = async () => {
       const passive = await fetchCharacterData(characterName, "arkpassive");
       const skillRes = await fetchCharacterData(characterName, "combat-skills");
@@ -816,6 +821,7 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
   };
 
   useEffect(() => {
+    if (!characterName) return;
     const fetchAll = async () => {
       const passive = await fetchCharacterData(characterName, "arkpassive");
       console.log("🧬 아크패시브:", passive);
@@ -846,6 +852,15 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
 
     fetchAll();
   }, [characterName]);
+
+  // 💡 모달에서 matchedPair prop으로 전달받았다고 가정
+  const opponent = matchedPair?.opponent ?? null;
+  const myStatus = matchedPair?.status.myStatus ?? "pending";
+  const otherStatus = matchedPair?.status.otherStatus ?? "pending";
+
+  const isWaiting = myStatus === "accepted" && otherStatus === "pending";
+  const isMatched = myStatus === "accepted" && otherStatus === "accepted";
+  const isRejected = myStatus === "pending" && otherStatus === "rejected";
 
   return (
     <Overlay onClick={onClose}>
@@ -1157,31 +1172,33 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
           <CloseButton onClick={onClose}>닫기</CloseButton>
         )}
 
-        {isMatchedView && waitingForOther && loading && (
-          <LoadingOverlay>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <LoadingSpinner
-                src={`${process.env.PUBLIC_URL}/img/loading.gif`}
-              />
+        {isMatchedView &&
+          matchedPair?.status.myStatus === "accepted" &&
+          matchedPair?.status.otherStatus === "pending" && (
+            <LoadingOverlay>
               <div
                 style={{
-                  marginTop: "20px",
-                  fontSize: "24px",
-                  color: "white",
-                  fontWeight: "bold",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                 }}
               >
-                상대방을 기다리는 중입니다...
+                <LoadingSpinner
+                  src={`${process.env.PUBLIC_URL}/img/loading.gif`}
+                />
+                <div
+                  style={{
+                    marginTop: "20px",
+                    fontSize: "24px",
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  상대방을 기다리는 중입니다...
+                </div>
               </div>
-            </div>
-          </LoadingOverlay>
-        )}
+            </LoadingOverlay>
+          )}
       </ModalBox>
       {hoveredRect && hoveredTooltip && (
         <TooltipPortal targetRect={hoveredRect}>{hoveredTooltip}</TooltipPortal>

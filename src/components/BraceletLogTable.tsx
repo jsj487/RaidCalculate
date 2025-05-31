@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../utils/SupabaseClient";
 
-type CompressedLog = {
+export type CompressedLog = {
   created_at: string;
   draw_result: {
     category: string;
@@ -16,18 +16,20 @@ type CompressedLog = {
 const BraceletLogTable = () => {
   const [logs, setLogs] = useState<CompressedLog[]>([]);
 
+  const fetchLogs = async () => {
+    const { data, error } = await supabase
+      .from("bracelet_logs_compressed")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setLogs(data);
+    } else {
+      console.error("❌ 로그 불러오기 실패:", error?.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchLogs = async () => {
-      const { data, error } = await supabase
-        .from("bracelet_logs_compressed")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setLogs(data);
-      }
-    };
-
     fetchLogs();
 
     const channel = supabase
@@ -39,9 +41,13 @@ const BraceletLogTable = () => {
           schema: "public",
           table: "bracelet_logs_compressed",
         },
-        (payload) => {
-          const newLog = payload.new as CompressedLog;
-          setLogs((prev) => [newLog, ...prev]);
+        async (payload) => {
+          console.log("📥 실시간 이벤트:", payload);
+          if (!payload.new) {
+            await fetchLogs(); // fallback
+          } else {
+            setLogs((prev) => [payload.new as CompressedLog, ...prev]);
+          }
         }
       )
       .subscribe();
@@ -50,28 +56,10 @@ const BraceletLogTable = () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  useEffect(() => {
-    const fetchLogs = async () => {
-      const { data, error } = await supabase
-        .from("bracelet_logs_compressed")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("🔥 Supabase error:", error.message);
-      }
-
-      console.log("✅ Supabase logs data:", data);
-      setLogs(data || []);
-    };
-
-    fetchLogs();
-  }, []);
-
   return (
     <div>
       <h2>팔찌 옵션 뽑기 로그</h2>
+
       <ul>
         {logs.map((log, idx) => (
           <li key={idx}>

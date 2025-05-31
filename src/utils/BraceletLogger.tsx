@@ -14,7 +14,10 @@ export const logBraceletResult = async (options: GeneratedOption[]) => {
     AllOptions.map((o) => [normalizeTemplate(o.template), o.category])
   );
 
-  const draw_result = options
+  // ✅ 잠금된 옵션은 로그에서 제외
+  const unlockedOptions = options.filter((opt) => !opt.locked);
+
+  const draw_result = unlockedOptions
     .map((opt) => {
       const values = opt.parts.filter((p) => typeof p !== "string") as {
         value: string;
@@ -56,6 +59,7 @@ export const logBraceletResult = async (options: GeneratedOption[]) => {
     grade?: string;
   }[];
 
+  // ✅ 잠기지 않은 옵션만 기록
   await supabase.from("bracelet_logs_compressed").insert({ draw_result });
 
   const expandedLogs = draw_result.map((r) => ({
