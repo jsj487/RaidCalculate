@@ -13,11 +13,11 @@ const SearchContainer = styled.div.withConfig({
 const SearchInput = styled.input.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",
 })<{ ismainpage: boolean }>`
-  width: 600px;
+  width: ${(props) => props.width || "600px"};
   padding: ${(props) =>
-    props.ismainpage ? "20px 30px" : "0.5rem 2.5rem 0.5rem 0.75rem"};
+    props.ismainpage ? "10px 20px 10px 20px" : "0.5rem 2.5rem 0.5rem 0.75rem"};
   border: 1px solid #ccc;
-  border-radius: ${(props) => (props.ismainpage ? "20px" : "4px")};
+  border-radius: ${(props) => (props.ismainpage ? "10px" : "4px")};
   font-size: ${(props) => (props.ismainpage ? "20px" : "16px")};
   font-weight: 700;
   @media (max-width: 768px) {
@@ -29,7 +29,7 @@ const SearchButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",
 })<{ ismainpage: boolean }>`
   position: absolute;
-  right: ${(props) => (props.ismainpage ? "30px" : "10px")};
+  right: ${(props) => (props.ismainpage ? "15px" : "10px")};
   background: none;
   border: none;
   cursor: pointer;
@@ -51,6 +51,7 @@ interface SearchBarProps {
   setSearch: (value: string) => void;
   handleSearch: () => void;
   placeholder?: string;
+  width?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -59,6 +60,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   setSearch,
   handleSearch,
   placeholder,
+  width,
 }) => {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
@@ -69,6 +71,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <SearchInput
         ismainpage={ismainpage}
         type="text"
+        width={width}
         placeholder={placeholder || "캐릭터명을 입력하세요"}
         value={search}
         onChange={(e) => setSearch(e.target.value)}

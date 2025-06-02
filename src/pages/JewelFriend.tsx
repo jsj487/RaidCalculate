@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
+
+import { FaUserPlus } from "react-icons/fa6";
+import { FaTrashAlt } from "react-icons/fa";
+
 import SearchBar from "../components/SearchBar";
 import CharacterDetailModal from "../components/CharacterDetailModal";
 import fetchCharacterData from "../components/CharacterDetailModal";
@@ -38,15 +42,84 @@ const Wrapper = styled.div`
   align-items: center;
 
   /* 추가적으로 콘텐츠 높이에 따라 적당히 여백 줄 수도 있음 */
-  padding-top: 60px;
+  padding-top: 80px;
   padding-bottom: 60px;
 `;
 
-const TopSearchRow = styled.div`
+const SearchWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px; // CharacterColumn과 동일하게 맞춤
+  gap: 10px;
+`;
+
+const CharacterInputRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+
+  & > div:not(:last-child) {
+    margin-right: 80px;
+  }
+`;
+
+const AddColumn = styled.div`
+  width: 200px;
+  height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #888;
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  &:hover {
+    border-color: #aaa;
+    background-color: #2a2a2a;
+  }
+
+  svg {
+    width: 48px;
+    height: 48px;
+    fill: #ccc;
+  }
+`;
+
+const PlusIcon = styled(FaUserPlus)`
+  font-size: 48px;
+  color: #aaa;
+
+  &:hover {
+    color: #777;
+  }
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   display: flex;
   justify-content: center;
-  gap: 60px;
-  margin-bottom: 40px;
+  align-items: center;
+  color: white;
+  cursor: pointer;
+  z-index: 1;
+
+  &:hover {
+    background-color: #ff4d4d;
+    border-color: #ffa0a0;
+    color: white;
+  }
 `;
 
 const MatchLayout = styled.div`
@@ -56,10 +129,23 @@ const MatchLayout = styled.div`
   gap: 60px;
 `;
 
+// const CharacterColumn = styled.div`
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+//   width: 200px;
+//   height: 340px;
+//   background-color: #e2e2e2;
+//   border-radius: 12px;
+//   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+//   padding: 16px;
+//   gap: 16px;
+// `;
+
 const CharacterColumn = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 200px;
   height: 340px;
   background-color: #e2e2e2;
@@ -113,6 +199,8 @@ const CharacterImagePlaceholder = styled.div`
 `;
 
 const StyledMatchButton = styled.button`
+  display: flex;
+  align-items: center;
   background-color: #2c2c2c;
   color: white;
   font-size: 16px;
@@ -127,20 +215,53 @@ const StyledMatchButton = styled.button`
   }
 `;
 
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 40px;
+`;
+
+const ScrollableBox = styled.div`
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px; /* 내용 잘림 방지용 */
+
+  /* 스크롤바 커스터마이징 (Chrome, Edge, Safari) */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #222;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+    border: 2px solid #222; /* 트랙과 자연스럽게 연결 */
+  }
+
+  /* Firefox용 스크롤바 */
+  scrollbar-width: thin;
+  scrollbar-color: #666 #222;
+`;
+
 const JewelFriend = () => {
   const [mainSearch, setMainSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
   const [matchedPair, setMatchedPair] = useState<MatchedPairState | null>(null);
   const [myUserInfo, setMyUserInfo] = useState<MatchingUser | null>(null);
   const [matchingStatus, setMatchingStatus] = useState<
-    "idle" | "queued" | "matched" | "waiting" | "completed"
+    "idle" | "queued" | "waiting" | "completed"
   >("idle");
   const [matchedMainCharacter, setMatchedMainCharacter] = useState<any>(null);
   const [matchedSubCharacter, setMatchedSubCharacter] = useState<any>(null);
   const [mainCharacter, setMainCharacter] = useState<any>(null);
-  const [subCharacter, setSubCharacter] = useState<any>(null);
+  const [subCharacterList, setSubCharacterList] = useState<any[]>([]);
   const [mainJewels, setMainJewels] = useState<any[]>([]);
   const [subJewels, setSubJewels] = useState<any[]>([]);
+  const [subSearchList, setSubSearchList] = useState<string[]>([""]);
   const [selectedCharacterName, setSelectedCharacterName] = useState<
     string | null
   >(null);
@@ -150,6 +271,12 @@ const JewelFriend = () => {
     waitingForOther?: boolean;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
+  const [queueList, setQueueList] = useState<Record<string, any[]>>({});
+  const [queueData, setQueueData] = useState<MatchingUser[]>([]);
+
+  const [myMatchedCharacter, setMyMatchedCharacter] =
+    useState<CharacterData | null>(null); // 내 부캐 중 매
 
   const deletedMatchIdRef = useRef<string | null>(null);
   const myUserInfoRef = useRef<MatchingUser | null>(null);
@@ -197,31 +324,33 @@ const JewelFriend = () => {
 
   //매칭 성공 시 기존 queue에서 삭제 + jewelMatchedPairs 생성
   const handleMatch = async () => {
-    if (!mainCharacter || !subCharacter) return;
-
-    const normalize = (str: string) => str.trim();
+    if (!mainCharacter || subCharacterList.length === 0) return;
 
     const myData = {
       nickname: mainCharacter.CharacterName,
-      subnickname: subCharacter.CharacterName,
-      main_class: normalize(mainCharacter.CharacterClassName),
-      sub_class: normalize(subCharacter.CharacterClassName),
-      server: normalize(mainCharacter.ServerName),
+      subnickname: subCharacterList.map((c) => c.CharacterName).join(","), // 보여줄용
+      main_class: mainCharacter.CharacterClassName,
+      sub_classes: subCharacterList.map((c) => c.CharacterClassName), // 실제 매칭용
+      server: mainCharacter.ServerName,
       character_image_main: mainCharacter.CharacterImage,
-      character_image_sub: subCharacter.CharacterImage,
+      character_image_sub: subCharacterList[0]?.CharacterImage, // 대표 이미지만
     };
 
     // ✅ 먼저 내 정보 상태 세팅 (insert 전에 반드시 실행)
     setMyUserInfo(myData);
     myUserInfoRef.current = myData; // ✅ useRef도 즉시 업데이트
 
+    const subClassConditions = myData.sub_classes
+      .map((cls) => `main_class.eq.${cls}`)
+      .join(",");
+
     // ✅ 엇갈린 조건으로 대기열 조회
     const { data: queueData, error: queueError } = await supabase
       .from("jewel_matching_queue")
       .select("*")
       .eq("server", myData.server)
-      .eq("main_class", myData.sub_class)
-      .eq("sub_class", myData.main_class)
+      .or(subClassConditions)
+      .filter("sub_classes", "cs", JSON.stringify([myData.main_class]))
       .limit(1);
 
     if (queueError) {
@@ -641,13 +770,50 @@ const JewelFriend = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  //로컬에 닉네임 저장
   useEffect(() => {
     const savedMain = localStorage.getItem("mainSearch");
-    const savedSub = localStorage.getItem("subSearch");
-
     if (savedMain) setMainSearch(savedMain);
-    if (savedSub) setSubSearch(savedSub);
+
+    const savedSubs: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const saved = localStorage.getItem(`subSearch${i}`);
+      if (saved) savedSubs.push(saved);
+    }
+    if (savedSubs.length) setSubSearchList(savedSubs);
   }, []);
+
+  //매칭 성공 시점에서 내 캐릭터 중 어떤 캐릭터가 매칭 대상인지 식별
+  useEffect(() => {
+    if (matchedMainCharacter && subCharacterList.length > 0) {
+      const matched = subCharacterList.find(
+        (char) =>
+          char.CharacterClassName === matchedMainCharacter.CharacterClassName
+      );
+      setMyMatchedCharacter(matched || null);
+    }
+  }, [matchedMainCharacter, subCharacterList]);
+
+  const fetchMatchingQueue = async () => {
+    const { data, error } = await supabase
+      .from("jewel_matching_queue")
+      .select("*");
+
+    if (error) {
+      console.error("대기열 조회 실패:", error.message);
+      return;
+    }
+
+    // 서버별로 그룹화
+    const grouped = data.reduce((acc: Record<string, any[]>, curr) => {
+      const server = curr.server || "기타";
+      if (!acc[server]) acc[server] = [];
+      acc[server].push(curr);
+      return acc;
+    }, {});
+
+    setQueueList(grouped);
+  };
 
   const shouldShowModal =
     matchedPair &&
@@ -660,263 +826,417 @@ const JewelFriend = () => {
     matchedPair?.status.myStatus === "accepted" &&
     matchedPair?.status.otherStatus === "pending";
 
+  useEffect(() => {
+    const fetchQueue = async () => {
+      const { data, error } = await supabase
+        .from("jewel_matching_queue")
+        .select("*");
+
+      if (!error && data) {
+        setQueueData(data as MatchingUser[]);
+      }
+    };
+
+    fetchQueue();
+  }, []);
+
   return (
     <Container>
       <Helmet>
         <title>보석 깐부 찾기 - ArkLator</title>
         <meta name="description" content="로스트아크 보석 품앗이 상대 찾기" />
       </Helmet>
+
       <Wrapper>
-        {/* 상단 검색 */}
-        <TopSearchRow>
-          <SearchBar
-            ismainpage={true}
-            search={mainSearch}
-            setSearch={setMainSearch}
-            handleSearch={() => {
-              localStorage.setItem("mainSearch", mainSearch);
-              fetchCharacter(
-                mainSearch,
-                setMainCharacter,
-                setMainJewels,
-                setProfile
-              );
-            }}
-            placeholder="본캐 닉네임 입력"
-          />
+        {matchingStatus === "completed" &&
+        matchedMainCharacter &&
+        matchedSubCharacter ? (
+          <MatchLayout>
+            {/* 캐릭터 정보 + 매칭 버튼 */}
+            <CharacterColumn
+              onClick={() => {
+                if (mainCharacter) {
+                  setSelectedCharacterName(mainCharacter.CharacterName);
+                }
+              }}
+              style={{
+                cursor: mainCharacter ? "pointer" : "default",
+                opacity: mainCharacter ? 1 : 0.5,
+              }}
+            >
+              {mainCharacter ? (
+                <>
+                  <CharacterImage
+                    src={
+                      mainCharacter.CharacterImage !== "null"
+                        ? mainCharacter.CharacterImage
+                        : "/img/default-character.png"
+                    }
+                  />
+                  <InfoBox>
+                    <div className="nickname">
+                      {mainCharacter.CharacterName}
+                    </div>
+                    <div className="server">
+                      서버: {mainCharacter.ServerName}
+                    </div>
+                    <div className="job">
+                      직업: {mainCharacter.CharacterClassName}
+                    </div>
+                  </InfoBox>
+                </>
+              ) : (
+                <>
+                  <CharacterImagePlaceholder />
+                  <InfoBox>
+                    <div className="nickname">-</div>
+                    <div className="server">서버: -</div>
+                    <div className="job">직업: -</div>
+                  </InfoBox>
+                </>
+              )}
+            </CharacterColumn>
 
-          <SearchBar
-            ismainpage={true}
-            search={subSearch}
-            setSearch={setSubSearch}
-            handleSearch={() => {
-              localStorage.setItem("subSearch", subSearch);
-              fetchCharacter(
-                subSearch,
-                setSubCharacter,
-                setSubJewels,
-                setProfile
-              );
-            }}
-            placeholder="부캐 닉네임 입력"
-          />
-        </TopSearchRow>
-        {/* 캐릭터 정보 + 매칭 버튼 */}
-        <MatchLayout>
-          {/* 본캐 */}
-          <CharacterColumn
-            onClick={() => {
-              if (mainCharacter) {
-                setSelectedCharacterName(mainCharacter.CharacterName);
-              }
-            }}
-            style={{
-              cursor: mainCharacter ? "pointer" : "default",
-              opacity: mainCharacter ? 1 : 0.5,
-            }}
-          >
-            {mainCharacter ? (
-              <>
-                <CharacterImage
-                  src={
-                    mainCharacter.CharacterImage !== "null"
-                      ? mainCharacter.CharacterImage
-                      : "/img/default-character.png"
+            {/* 부캐 */}
+            {subCharacterList.length > 0 ? (
+              subCharacterList.map((subChar, idx) => (
+                <CharacterColumn
+                  key={subChar.CharacterName}
+                  onClick={() =>
+                    setSelectedCharacterName(subChar.CharacterName)
                   }
-                />
-                <InfoBox>
-                  <div className="nickname">{mainCharacter.CharacterName}</div>
-                  <div className="server">서버: {mainCharacter.ServerName}</div>
-                  <div className="job">
-                    직업: {mainCharacter.CharacterClassName}
-                  </div>
-                </InfoBox>
-              </>
+                  style={{
+                    cursor: "pointer",
+                    opacity: 1,
+                  }}
+                >
+                  <CharacterImage
+                    src={
+                      subChar.CharacterImage !== "null"
+                        ? subChar.CharacterImage
+                        : "/img/default-character.png"
+                    }
+                  />
+                  <InfoBox>
+                    <div className="nickname">{subChar.CharacterName}</div>
+                    <div className="server">서버: {subChar.ServerName}</div>
+                    <div className="job">
+                      직업: {subChar.CharacterClassName}
+                    </div>
+                  </InfoBox>
+                </CharacterColumn>
+              ))
             ) : (
-              <>
+              <CharacterColumn style={{ opacity: 0.5 }}>
                 <CharacterImagePlaceholder />
                 <InfoBox>
                   <div className="nickname">-</div>
                   <div className="server">서버: -</div>
                   <div className="job">직업: -</div>
                 </InfoBox>
-              </>
+              </CharacterColumn>
             )}
-          </CharacterColumn>
 
-          {/* 부캐 */}
-          <CharacterColumn
-            onClick={() => {
-              if (subCharacter) {
-                setSelectedCharacterName(subCharacter.CharacterName);
-              }
-            }}
-            style={{
-              cursor: subCharacter ? "pointer" : "default",
-              opacity: subCharacter ? 1 : 0.5,
-            }}
-          >
-            {subCharacter ? (
-              <>
-                <CharacterImage
-                  src={
-                    subCharacter.CharacterImage !== "null"
-                      ? subCharacter.CharacterImage
-                      : "/img/default-character.png"
-                  }
+            {/* 상대 본캐 자리 (매칭 성공 시 표시) */}
+            <CharacterColumn
+              onClick={() => {
+                if (matchedMainCharacter) {
+                  setSelectedCharacterName(matchedMainCharacter.CharacterName);
+                }
+              }}
+              style={{
+                cursor: matchedMainCharacter ? "pointer" : "default",
+                opacity: matchedMainCharacter ? 1 : 0.5,
+              }}
+            >
+              {matchedMainCharacter ? (
+                <>
+                  <CharacterImage src={matchedMainCharacter.CharacterImage} />
+                  <InfoBox>
+                    <div className="nickname">
+                      {matchedMainCharacter.CharacterName}
+                    </div>
+                    <div className="server">
+                      서버: {matchedMainCharacter.ServerName}
+                    </div>
+                    <div className="job">
+                      직업: {matchedMainCharacter.CharacterClassName}
+                    </div>
+                  </InfoBox>
+                </>
+              ) : (
+                <>
+                  <CharacterImagePlaceholder />
+                  <InfoBox>
+                    <div className="nickname">-</div>
+                    <div className="server">서버: -</div>
+                    <div className="job">직업: -</div>
+                  </InfoBox>
+                </>
+              )}
+            </CharacterColumn>
+
+            {/* 상대 부캐 자리 */}
+            <CharacterColumn
+              onClick={() => {
+                if (matchedSubCharacter) {
+                  setSelectedCharacterName(matchedSubCharacter.CharacterName);
+                }
+              }}
+              style={{
+                cursor: matchedSubCharacter ? "pointer" : "default",
+                opacity: matchedSubCharacter ? 1 : 0.5,
+              }}
+            >
+              {matchedSubCharacter ? (
+                <>
+                  <CharacterImage src={matchedSubCharacter.CharacterImage} />
+                  <InfoBox>
+                    <div className="nickname">
+                      {matchedSubCharacter.CharacterName}
+                    </div>
+                    <div className="server">
+                      서버: {matchedSubCharacter.ServerName}
+                    </div>
+                    <div className="job">
+                      직업: {matchedSubCharacter.CharacterClassName}
+                    </div>
+                  </InfoBox>
+                </>
+              ) : (
+                <>
+                  <CharacterImagePlaceholder />
+                  <InfoBox>
+                    <div className="nickname">-</div>
+                    <div className="server">서버: -</div>
+                    <div className="job">직업: -</div>
+                  </InfoBox>
+                </>
+              )}
+            </CharacterColumn>
+          </MatchLayout>
+        ) : (
+          // ✅ 매칭 전 화면
+          <>
+            <CharacterInputRow>
+              {/* 본캐 */}
+              <SearchWrapper>
+                <SearchBar
+                  ismainpage
+                  search={mainSearch}
+                  setSearch={setMainSearch}
+                  handleSearch={() => {
+                    if (!mainSearch.trim()) return;
+                    fetchCharacter(
+                      mainSearch,
+                      setMainCharacter,
+                      setMainJewels,
+                      setProfile
+                    );
+                  }}
+                  width="192px"
+                  placeholder="본캐 닉네임 입력"
                 />
-                <InfoBox>
-                  <div className="nickname">{subCharacter.CharacterName}</div>
-                  <div className="server">서버: {subCharacter.ServerName}</div>
-                  <div className="job">
-                    직업: {subCharacter.CharacterClassName}
-                  </div>
-                </InfoBox>
-              </>
-            ) : (
-              <>
-                <CharacterImagePlaceholder />
-                <InfoBox>
-                  <div className="nickname">-</div>
-                  <div className="server">서버: -</div>
-                  <div className="job">직업: -</div>
-                </InfoBox>
-              </>
-            )}
-          </CharacterColumn>
+                <CharacterColumn
+                  onClick={() => {
+                    if (mainCharacter) {
+                      setSelectedCharacterName(mainCharacter.CharacterName);
+                    }
+                  }}
+                  style={{
+                    cursor: mainCharacter ? "pointer" : "default",
+                    opacity: mainCharacter ? 1 : 0.5,
+                  }}
+                >
+                  {mainCharacter ? (
+                    <>
+                      <CharacterImage
+                        src={
+                          mainCharacter.CharacterImage !== "null"
+                            ? mainCharacter.CharacterImage
+                            : "/img/default-character.png"
+                        }
+                      />
+                      <InfoBox>
+                        <div className="nickname">
+                          {mainCharacter.CharacterName}
+                        </div>
+                        <div className="server">
+                          서버: {mainCharacter.ServerName}
+                        </div>
+                        <div className="job">
+                          직업: {mainCharacter.CharacterClassName}
+                        </div>
+                      </InfoBox>
+                    </>
+                  ) : (
+                    <>
+                      <CharacterImagePlaceholder />
+                      <InfoBox>
+                        <div className="nickname">-</div>
+                        <div className="server">서버: -</div>
+                        <div className="job">직업: -</div>
+                      </InfoBox>
+                    </>
+                  )}
+                </CharacterColumn>
+              </SearchWrapper>
 
-          {/* 매칭 버튼 */}
-          {matchingStatus === "idle" && (
+              {/* 부캐들 */}
+              {subSearchList.map((search, index) => (
+                <SearchWrapper key={index}>
+                  <SearchBar
+                    ismainpage
+                    search={search}
+                    setSearch={(value) => {
+                      const updated = [...subSearchList];
+                      updated[index] = value;
+                      setSubSearchList(updated);
+                    }}
+                    handleSearch={() => {
+                      if (!search.trim()) return;
+                      fetchCharacter(
+                        search,
+                        (char) => {
+                          setSubCharacterList((prev) => {
+                            const updated = [...prev];
+                            updated[index] = char;
+                            return updated;
+                          });
+                        },
+                        setSubJewels,
+                        setProfile
+                      );
+                    }}
+                    width="192px"
+                    placeholder={`부캐 닉네임 ${index + 1} 입력`}
+                  />
+
+                  <CharacterColumn
+                    onClick={() => {
+                      if (subCharacterList[index]) {
+                        setSelectedCharacterName(
+                          subCharacterList[index].CharacterName
+                        );
+                      }
+                    }}
+                    style={{
+                      cursor: subCharacterList[index] ? "pointer" : "default",
+                      opacity: subCharacterList[index] ? 1 : 0.5,
+                    }}
+                  >
+                    {/* 삭제 버튼 */}
+                    {subSearchList.length > 1 && (
+                      <RemoveButton
+                        onClick={() => {
+                          const updatedSearch = [...subSearchList];
+                          const updatedChars = [...subCharacterList];
+                          updatedSearch.splice(index, 1);
+                          updatedChars.splice(index, 1);
+                          setSubSearchList(updatedSearch);
+                          setSubCharacterList(updatedChars);
+                        }}
+                      >
+                        <FaTrashAlt size={14} />
+                      </RemoveButton>
+                    )}
+                    {subCharacterList[index] ? (
+                      <>
+                        <CharacterImage
+                          src={
+                            subCharacterList[index].CharacterImage !== "null"
+                              ? subCharacterList[index].CharacterImage
+                              : "/img/default-character.png"
+                          }
+                        />
+                        <InfoBox>
+                          <div className="nickname">
+                            {subCharacterList[index].CharacterName}
+                          </div>
+                          <div className="server">
+                            서버: {subCharacterList[index].ServerName}
+                          </div>
+                          <div className="job">
+                            직업: {subCharacterList[index].CharacterClassName}
+                          </div>
+                        </InfoBox>
+                      </>
+                    ) : (
+                      <>
+                        <CharacterImagePlaceholder />
+                        <InfoBox>
+                          <div className="nickname">-</div>
+                          <div className="server">서버: -</div>
+                          <div className="job">직업: -</div>
+                        </InfoBox>
+                      </>
+                    )}
+                  </CharacterColumn>
+                </SearchWrapper>
+              ))}
+
+              {/* 부캐 추가 카드 */}
+              {subSearchList.length < 5 && (
+                <AddColumn
+                  onClick={() => setSubSearchList((prev) => [...prev, ""])}
+                >
+                  <PlusIcon />
+                </AddColumn>
+              )}
+            </CharacterInputRow>
+          </>
+        )}
+
+        <ButtonGroup>
+          {/*매칭 완료 상태 버튼 */}
+          {matchingStatus === "completed" ? (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: "white",
+                  marginRight: "16px",
+                }}
+              >
+                매칭 완료
+              </div>
+
+              <StyledMatchButton onClick={handleCancelMatch}>
+                매칭 취소
+              </StyledMatchButton>
+            </>
+          ) : matchingStatus === "queued" ? (
+            <StyledMatchButton onClick={handleCancelMatch}>
+              <img
+                src="/img/Loading_icon.gif"
+                alt="로딩 중"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  marginRight: "8px",
+                  verticalAlign: "middle",
+                }}
+              />
+              매칭 취소
+            </StyledMatchButton>
+          ) : (
             <StyledMatchButton onClick={handleMatch}>
               매칭 찾기
             </StyledMatchButton>
           )}
 
-          {/* 매칭 중 상태 버튼 */}
-          {matchingStatus === "queued" && (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <img
-                  src="/img/Loading_icon.gif"
-                  alt="로딩 중"
-                  style={{ width: "60px", height: "60px", marginBottom: "8px" }}
-                />
-
-                <StyledMatchButton onClick={handleCancelMatch}>
-                  매칭 취소
-                </StyledMatchButton>
-              </div>
-            </>
-          )}
-
-          {/*매칭 완료 상태 버튼 */}
-          {matchingStatus === "completed" && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  marginBottom: "10px",
-                  fontSize: "20px",
-                  fontWeight: "700",
-                }}
-              >
-                매칭 완료
-              </div>
-              <StyledMatchButton onClick={handleCancelMatch}>
-                매칭 취소
-              </StyledMatchButton>
-            </div>
-          )}
-
-          {/* 상대 본캐 자리 (매칭 성공 시 표시) */}
-          <CharacterColumn
-            onClick={() => {
-              if (matchedMainCharacter) {
-                setSelectedCharacterName(matchedMainCharacter.CharacterName);
-              }
-            }}
-            style={{
-              cursor: matchedMainCharacter ? "pointer" : "default",
-              opacity: matchedMainCharacter ? 1 : 0.5,
+          <StyledMatchButton
+            onClick={async () => {
+              await fetchMatchingQueue();
+              setIsQueueModalOpen(true);
             }}
           >
-            {matchedMainCharacter ? (
-              <>
-                <CharacterImage src={matchedMainCharacter.CharacterImage} />
-                <InfoBox>
-                  <div className="nickname">
-                    {matchedMainCharacter.CharacterName}
-                  </div>
-                  <div className="server">
-                    서버: {matchedMainCharacter.ServerName}
-                  </div>
-                  <div className="job">
-                    직업: {matchedMainCharacter.CharacterClassName}
-                  </div>
-                </InfoBox>
-              </>
-            ) : (
-              <>
-                <CharacterImagePlaceholder />
-                <InfoBox>
-                  <div className="nickname">-</div>
-                  <div className="server">서버: -</div>
-                  <div className="job">직업: -</div>
-                </InfoBox>
-              </>
-            )}
-          </CharacterColumn>
-
-          {/* 상대 부캐 자리 */}
-          <CharacterColumn
-            onClick={() => {
-              if (matchedSubCharacter) {
-                setSelectedCharacterName(matchedSubCharacter.CharacterName);
-              }
-            }}
-            style={{
-              cursor: matchedSubCharacter ? "pointer" : "default",
-              opacity: matchedSubCharacter ? 1 : 0.5,
-            }}
-          >
-            {matchedSubCharacter ? (
-              <>
-                <CharacterImage src={matchedSubCharacter.CharacterImage} />
-                <InfoBox>
-                  <div className="nickname">
-                    {matchedSubCharacter.CharacterName}
-                  </div>
-                  <div className="server">
-                    서버: {matchedSubCharacter.ServerName}
-                  </div>
-                  <div className="job">
-                    직업: {matchedSubCharacter.CharacterClassName}
-                  </div>
-                </InfoBox>
-              </>
-            ) : (
-              <>
-                <CharacterImagePlaceholder />
-                <InfoBox>
-                  <div className="nickname">-</div>
-                  <div className="server">서버: -</div>
-                  <div className="job">직업: -</div>
-                </InfoBox>
-              </>
-            )}
-          </CharacterColumn>
-        </MatchLayout>
+            현재 매칭 대기열 보기
+          </StyledMatchButton>
+        </ButtonGroup>
       </Wrapper>
 
       {selectedCharacterName && (
@@ -938,6 +1258,126 @@ const JewelFriend = () => {
           onReject={handleReject}
           onClose={() => setMatchedPair(null)}
         />
+      )}
+
+      {isQueueModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setIsQueueModalOpen(false)} // 모달 닫기용 핸들러
+        >
+          <div
+            style={{
+              backgroundColor: "#222",
+              padding: "20px",
+              borderRadius: "10px",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              width: "700px",
+            }}
+            onClick={(e) => e.stopPropagation()} // 내부 클릭시 모달 닫히지 않도록
+          >
+            <h2 style={{ color: "white", marginBottom: "20px" }}>
+              현재 매칭 대기열 (서버별)
+            </h2>
+
+            {Object.keys(queueList).length === 0 ? (
+              <p style={{ color: "#ccc" }}>대기 중인 유저가 없습니다.</p>
+            ) : (
+              Object.entries(queueList).map(([server, users]) => (
+                <div key={server} style={{ marginBottom: "32px" }}>
+                  <h3 style={{ marginBottom: "12px", color: "#ffcc00" }}>
+                    {server}
+                  </h3>
+                  <ScrollableBox>
+                    <table
+                      style={{
+                        width: "100%",
+                        tableLayout: "fixed",
+                        borderCollapse: "collapse",
+                        fontSize: "14px",
+                        color: "white",
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          <th
+                            style={{
+                              width: "30%",
+                              padding: "8px",
+                              textAlign: "left",
+                              borderBottom: "1px solid #555",
+                            }}
+                          >
+                            닉네임
+                          </th>
+                          <th
+                            style={{
+                              width: "25%",
+                              padding: "8px",
+                              textAlign: "center",
+                              borderBottom: "1px solid #555",
+                            }}
+                          >
+                            본캐
+                          </th>
+                          <th
+                            style={{
+                              width: "45%",
+                              padding: "8px",
+                              textAlign: "center",
+                              borderBottom: "1px solid #555",
+                            }}
+                          >
+                            부캐들
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((user, i) => (
+                          <tr key={i}>
+                            <td
+                              style={{
+                                padding: "8px",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {user.nickname}
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "center" }}>
+                              {user.main_class}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px",
+                                textAlign: "center",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {Array.isArray(user.sub_classes)
+                                ? user.sub_classes.join(", ")
+                                : user.sub_classes}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </ScrollableBox>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
     </Container>
   );

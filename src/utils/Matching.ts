@@ -3,7 +3,7 @@ export type MatchingUser = {
   nickname: string;
   subnickname: string;
   main_class: string;
-  sub_class: string;
+  sub_classes: string[];
   server: string;
   character_image_main?: string;
   character_image_sub?: string;
