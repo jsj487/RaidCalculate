@@ -519,7 +519,6 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
 
       const gemRes = await fetchEquippedGems(characterName);
       const profile = await fetchCharacterData(characterName, "profiles");
-      console.log("캐릭터 프로필:", profile);
 
       if (Array.isArray(skillRes)) {
         setSkills(skillRes);
@@ -824,19 +823,15 @@ const CharacterDetailModal: React.FC<CharacterDetailModalProps> = ({
     if (!characterName) return;
     const fetchAll = async () => {
       const passive = await fetchCharacterData(characterName, "arkpassive");
-      console.log("🧬 아크패시브:", passive);
 
       const skillRes = await fetchCharacterData(characterName, "combat-skills");
-      console.log("🌀 전투 스킬:", skillRes);
 
       const engravingRes = await fetchCharacterData(
         characterName,
         "engravings"
       );
-      console.log("🔷 각인:", engravingRes);
 
       const gemRes = await fetchEquippedGems(characterName);
-      console.log("💎 보석:", gemRes);
 
       // 이후 상태 반영
       if (Array.isArray(skillRes)) {

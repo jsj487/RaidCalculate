@@ -1,12 +1,15 @@
-// types/Matching.ts
+export type SubCharacter = {
+  class: string;
+  name: string;
+  image: string;
+};
+
 export type MatchingUser = {
   nickname: string;
-  subnickname: string;
   main_class: string;
-  sub_classes: string[];
   server: string;
-  character_image_main?: string;
-  character_image_sub?: string;
+  character_image_main: string;
+  sub_characters: SubCharacter[];
 };
 
 export type MatchedPairState = {

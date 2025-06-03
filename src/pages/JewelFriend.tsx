@@ -247,6 +247,21 @@ const ScrollableBox = styled.div`
   scrollbar-color: #666 #222;
 `;
 
+type PendingMatchedCharacters = {
+  main: {
+    CharacterName: string;
+    CharacterClassName: string;
+    ServerName: string;
+    CharacterImage: string;
+  };
+  sub: {
+    CharacterName: string;
+    CharacterClassName: string;
+    ServerName: string;
+    CharacterImage: string;
+  };
+};
+
 const JewelFriend = () => {
   const [mainSearch, setMainSearch] = useState("");
   const [subSearch, setSubSearch] = useState("");
@@ -265,19 +280,16 @@ const JewelFriend = () => {
   const [selectedCharacterName, setSelectedCharacterName] = useState<
     string | null
   >(null);
-  const [pendingMatchedCharacters, setPendingMatchedCharacters] = useState<{
-    main: any;
-    sub: any;
-    waitingForOther?: boolean;
-  } | null>(null);
+
+  const [pendingMatchedCharacters, setPendingMatchedCharacters] =
+    useState<PendingMatchedCharacters | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [queueList, setQueueList] = useState<Record<string, any[]>>({});
   const [queueData, setQueueData] = useState<MatchingUser[]>([]);
-
   const [myMatchedCharacter, setMyMatchedCharacter] =
     useState<CharacterData | null>(null); // 내 부캐 중 매
-
   const deletedMatchIdRef = useRef<string | null>(null);
   const myUserInfoRef = useRef<MatchingUser | null>(null);
 
@@ -287,8 +299,6 @@ const JewelFriend = () => {
     setJewels?: (jewels: any[]) => void,
     setProfile?: (profile: any) => void
   ) => {
-    console.log("🔍 캐릭터 검색 요청:", nickname);
-
     try {
       const res = await axios.get(`${BASE_URL}/characters/siblings`, {
         params: { name: nickname },
@@ -328,29 +338,44 @@ const JewelFriend = () => {
 
     const myData = {
       nickname: mainCharacter.CharacterName,
-      subnickname: subCharacterList.map((c) => c.CharacterName).join(","), // 보여줄용
       main_class: mainCharacter.CharacterClassName,
-      sub_classes: subCharacterList.map((c) => c.CharacterClassName), // 실제 매칭용
       server: mainCharacter.ServerName,
       character_image_main: mainCharacter.CharacterImage,
-      character_image_sub: subCharacterList[0]?.CharacterImage, // 대표 이미지만
+      sub_characters: subCharacterList.map((c) => ({
+        class: c.CharacterClassName,
+        name: c.CharacterName,
+        image: c.CharacterImage,
+      })),
     };
 
     // ✅ 먼저 내 정보 상태 세팅 (insert 전에 반드시 실행)
-    setMyUserInfo(myData);
+    setMyUserInfo({
+      nickname: myData.nickname,
+      main_class: myData.main_class,
+      server: myData.server,
+      character_image_main: myData.character_image_main,
+      sub_characters: myData.sub_characters,
+    });
+
     myUserInfoRef.current = myData; // ✅ useRef도 즉시 업데이트
 
-    const subClassConditions = myData.sub_classes
-      .map((cls) => `main_class.eq.${cls}`)
+    // ✅ 엇갈린 조건으로 대기열 조회
+    const subClassConditions = myData.sub_characters
+      .map((c: any) => `main_class.eq.${c.class}`)
       .join(",");
 
-    // ✅ 엇갈린 조건으로 대기열 조회
+    const myMainAsJson = JSON.stringify([{ class: myData.main_class }]);
+
     const { data: queueData, error: queueError } = await supabase
       .from("jewel_matching_queue")
       .select("*")
       .eq("server", myData.server)
-      .or(subClassConditions)
-      .filter("sub_classes", "cs", JSON.stringify([myData.main_class]))
+      .or(
+        [
+          subClassConditions, // 상대의 main_class가 내 부캐 중 하나
+          `sub_characters.cs.${myMainAsJson}`, // 상대의 부캐 목록에 내 main_class 포함
+        ].join(",")
+      )
       .limit(1);
 
     if (queueError) {
@@ -361,16 +386,52 @@ const JewelFriend = () => {
     if (queueData && queueData.length > 0) {
       // ✅ 매칭 성공
       const matchedData = queueData[0];
-      console.log("✅ 매칭 성공:", matchedData);
+
+      const matchedClass = matchedData.main_class;
+
+      const matchedSubChar = myData.sub_characters.find(
+        (c) => c.class === matchedClass
+      );
 
       await supabase
         .from("jewel_matching_queue")
         .delete()
         .eq("id", matchedData.id);
 
+      const myMatchedSubChar = myData.sub_characters.find(
+        (c) => c.class === matchedData.main_class
+      );
+
+      console.log("🔍 내 매칭된 부캐 class:", myMatchedSubChar?.class);
+
+      const myMatchedCharData = subCharacterList.find(
+        (c) => c.CharacterClassName === myMatchedSubChar?.class
+      );
+
+      console.log("🔍 내 부캐 중 실제 일치 캐릭터:", myMatchedCharData);
+
+      if (myMatchedCharData) {
+        setSubCharacterList([myMatchedCharData]);
+        setSubSearchList([myMatchedCharData.CharacterName]);
+      }
+
+      const theirMatchedSubChar = matchedData.sub_characters.find(
+        (c: any) => c.class === myData.main_class
+      );
+
       await supabase.from("jewel_matched_pairs").insert({
-        user_a: myData,
-        user_b: matchedData,
+        user_a: {
+          ...myData,
+          sub_class: myMatchedSubChar?.class,
+          subnickname: myMatchedSubChar?.name,
+          character_image_sub: myMatchedSubChar?.image,
+        },
+        user_b: {
+          ...matchedData,
+          sub_class: theirMatchedSubChar?.class,
+          subnickname: theirMatchedSubChar?.name,
+          character_image_sub: theirMatchedSubChar?.image,
+        },
         status: {
           userA: "pending",
           userB: "pending",
@@ -395,18 +456,15 @@ const JewelFriend = () => {
       });
       setMatchingStatus("waiting");
     } else {
-      console.log("ℹ️ 매칭 실패 → 대기열 등록");
-
-      // ✅ 같은 캐릭터가 이미 큐에 있으면 삭제
-      await supabase
+      const { error: insertError } = await supabase
         .from("jewel_matching_queue")
-        .delete()
-        .or(
-          `nickname.eq.${myData.nickname},subnickname.eq.${myData.nickname},nickname.eq.${myData.subnickname},subnickname.eq.${myData.subnickname}`
-        );
+        .insert(myData);
 
-      await supabase.from("jewel_matching_queue").insert(myData);
-      setMatchingStatus("queued");
+      if (insertError) {
+        console.error("❌ 대기열 등록 실패:", insertError);
+      } else {
+        setMatchingStatus("queued");
+      }
     }
   };
 
@@ -445,8 +503,6 @@ const JewelFriend = () => {
   };
 
   const fetchEquippedGems = async (nickname: string): Promise<any[]> => {
-    console.log("🔍 보석 API 요청 대상 닉네임:", nickname); // ✅ 여기
-
     if (!nickname) {
       console.warn("❌ 닉네임이 유효하지 않습니다:", nickname);
       return [];
@@ -456,8 +512,6 @@ const JewelFriend = () => {
       const res = await axios.get(`${BASE_URL}/characters/gems`, {
         params: { name: nickname }, // 서버에 전달될 name 쿼리
       });
-
-      console.log("💎 보석 API 응답:", res.data); // ✅ 응답 확인
 
       if (Array.isArray(res.data.Gems)) {
         return res.data.Gems;
@@ -481,29 +535,16 @@ const JewelFriend = () => {
     const key = matchedPair.selfRole;
     const matchId = matchedPair.matchId;
 
-    console.log("📤 수락 요청 시작", {
-      match_id: matchId,
-      key,
-      value: "accepted",
-    });
-
     const { data, error } = await supabase.rpc("update_match_status", {
       match_id: matchedPair.matchId,
       key,
       value: "accepted",
     });
 
-    console.log("📥 수락 결과", { data, error });
-
-    console.log("matchId 원본:", matchedPair.matchId);
-    console.log("typeof matchId:", typeof matchedPair.matchId);
-
     const result = await supabase
       .from("jewel_matched_pairs")
       .select("*")
       .eq("id", matchedPair.matchId);
-
-    console.log("🧾 상태 확인:", result.data?.[0]?.status);
 
     if (error) {
       console.error("❌ RPC 실패:", error.message);
@@ -551,21 +592,10 @@ const JewelFriend = () => {
   };
 
   const handlePairChange = (payload: any) => {
-    console.log("📡 [handlePairChange] 호출됨");
-    console.log("📡 payload.new:", payload.new);
-    console.log("📡 deletedMatchIdRef.current:", deletedMatchIdRef.current);
-
     const newPair = payload.new;
-    if (!newPair?.user_a || !newPair?.user_b || !newPair?.status) {
-      console.warn("❌ payload에 필요한 필드가 없음", payload);
-      return;
-    }
+    if (!newPair?.user_a || !newPair?.user_b || !newPair?.status) return;
 
-    // ✅ 삭제된 row라면 더 이상 반응하지 않도록 return
-    if (deletedMatchIdRef.current && deletedMatchIdRef.current === newPair.id) {
-      console.warn("🚫 이미 삭제된 row에 대한 update → 무시됨");
-      return;
-    }
+    if (deletedMatchIdRef.current === newPair.id) return;
 
     const a =
       typeof newPair.user_a === "string"
@@ -580,32 +610,20 @@ const JewelFriend = () => {
         ? JSON.parse(newPair.status)
         : newPair.status;
 
-    console.log("🧍 내 정보:", myUserInfoRef.current);
-    console.log("👤 A:", a.nickname, a.subnickname, a.server);
-    console.log("👤 B:", b.nickname, b.subnickname, b.server);
+    const me = myUserInfoRef.current;
+    if (!me) return;
 
-    if (!myUserInfoRef.current) {
-      console.warn("⚠️ myUserInfoRef가 없음 (초기화 누락 가능)");
-      return;
-    }
-
+    // ✅ subnickname 없이, nickname + server + main_class만으로 매칭 판별
     const isUserA =
-      a.nickname === myUserInfoRef.current.nickname &&
-      a.subnickname === myUserInfoRef.current.subnickname &&
-      a.server === myUserInfoRef.current.server;
-
+      a.nickname === me.nickname &&
+      a.server === me.server &&
+      a.main_class === me.main_class;
     const isUserB =
-      b.nickname === myUserInfoRef.current.nickname &&
-      b.subnickname === myUserInfoRef.current.subnickname &&
-      b.server === myUserInfoRef.current.server;
+      b.nickname === me.nickname &&
+      b.server === me.server &&
+      b.main_class === me.main_class;
 
-    console.log("🔎 isUserA:", isUserA);
-    console.log("🔎 isUserB:", isUserB);
-
-    if (!isUserA && !isUserB) {
-      console.warn("🚫 내가 포함된 매칭이 아님 → 무시");
-      return;
-    }
+    if (!isUserA && !isUserB) return;
 
     const selfRole = isUserA ? "userA" : "userB";
     const opponent = isUserA ? b : a;
@@ -615,8 +633,6 @@ const JewelFriend = () => {
       otherStatus: selfRole === "userA" ? rawStatus.userB : rawStatus.userA,
     };
 
-    console.log("📊 상태:", status);
-
     if (status.otherStatus === "rejected") {
       alert("상대방이 거절하였습니다.");
       setMatchedPair(null);
@@ -625,38 +641,38 @@ const JewelFriend = () => {
     }
 
     if (rawStatus.userA === "accepted" && rawStatus.userB === "accepted") {
-      console.log("🎉 양측 수락 완료 → 모달 닫고 캐릭터 보여줌");
+      const subChar = opponent.sub_characters?.find(
+        (c: any) => c.class === opponent.sub_class
+      ) ?? {
+        name: opponent.subnickname,
+        class: opponent.sub_class,
+        image: opponent.character_image_sub,
+      };
 
-      const main = {
+      setMatchedMainCharacter({
         CharacterName: opponent.nickname,
-        CharacterClassName: opponent.class,
+        CharacterClassName: opponent.main_class,
         ServerName: opponent.server,
         CharacterImage:
           opponent.character_image_main ?? "/img/default-character.png",
-      };
-      const sub = {
-        CharacterName: opponent.subnickname,
-        CharacterClassName: opponent.sub_class,
-        ServerName: opponent.server,
-        CharacterImage:
-          opponent.character_image_sub ?? "/img/default-character.png",
-      };
+      });
 
-      setMatchedMainCharacter(main);
-      setMatchedSubCharacter(sub);
+      setMatchedSubCharacter({
+        CharacterName: subChar?.name ?? "",
+        CharacterClassName: subChar?.class ?? opponent.sub_class,
+        ServerName: opponent.server,
+        CharacterImage: subChar?.image ?? "/img/default-character.png",
+      });
+
       setMatchedPair(null);
       setMatchingStatus("completed");
-      return; // ✅ 아래 코드 실행 방지
+      return;
     }
 
-    console.log("🤝 매칭 상대:", opponent.nickname, opponent.subnickname);
     setMatchedPair({
       selfRole,
       opponent,
-      status: {
-        myStatus: selfRole === "userA" ? rawStatus.userA : rawStatus.userB,
-        otherStatus: selfRole === "userA" ? rawStatus.userB : rawStatus.userA,
-      },
+      status,
       matchId: newPair.id,
     });
   };
@@ -679,17 +695,15 @@ const JewelFriend = () => {
 
     const isUserA =
       a.nickname === me.nickname &&
-      a.subnickname === me.subnickname &&
-      a.server === me.server;
-
+      a.server === me.server &&
+      a.main_class === me.main_class;
     const isUserB =
       b.nickname === me.nickname &&
-      b.subnickname === me.subnickname &&
-      b.server === me.server;
+      b.server === me.server &&
+      b.main_class === me.main_class;
 
     if (!isUserA && !isUserB) return;
 
-    // ❗ 이미 사라진 매칭이면 더 이상 반응 안 하도록 방어
     deletedMatchIdRef.current = oldPair.id || null;
 
     setMatchedPair(null);
@@ -725,7 +739,6 @@ const JewelFriend = () => {
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "jewel_matched_pairs" },
         (payload) => {
-          console.log("❌ DELETE 감지됨", payload);
           handlePairDeleted(payload);
         }
       )
@@ -742,8 +755,6 @@ const JewelFriend = () => {
 
       if (!savedMain) return;
 
-      console.log("🧹 페이지 이탈: 매칭 관련 정리 중...");
-
       // 1. queue에서 내 닉네임 삭제
       await supabase
         .from("jewel_matching_queue")
@@ -757,8 +768,6 @@ const JewelFriend = () => {
         .or(
           `user_a->>nickname.eq.${savedMain},user_b->>nickname.eq.${savedMain},user_a->>subnickname.eq.${savedMain},user_b->>subnickname.eq.${savedMain}`
         );
-
-      console.log("매칭 관련 정리 완료");
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -782,17 +791,6 @@ const JewelFriend = () => {
     }
     if (savedSubs.length) setSubSearchList(savedSubs);
   }, []);
-
-  //매칭 성공 시점에서 내 캐릭터 중 어떤 캐릭터가 매칭 대상인지 식별
-  useEffect(() => {
-    if (matchedMainCharacter && subCharacterList.length > 0) {
-      const matched = subCharacterList.find(
-        (char) =>
-          char.CharacterClassName === matchedMainCharacter.CharacterClassName
-      );
-      setMyMatchedCharacter(matched || null);
-    }
-  }, [matchedMainCharacter, subCharacterList]);
 
   const fetchMatchingQueue = async () => {
     const { data, error } = await supabase
@@ -899,7 +897,7 @@ const JewelFriend = () => {
 
             {/* 부캐 */}
             {subCharacterList.length > 0 ? (
-              subCharacterList.map((subChar, idx) => (
+              subCharacterList.map((subChar) => (
                 <CharacterColumn
                   key={subChar.CharacterName}
                   onClick={() =>
@@ -1364,9 +1362,11 @@ const JewelFriend = () => {
                                 wordBreak: "break-word",
                               }}
                             >
-                              {Array.isArray(user.sub_classes)
-                                ? user.sub_classes.join(", ")
-                                : user.sub_classes}
+                              {Array.isArray(user.sub_characters)
+                                ? user.sub_characters
+                                    .map((c: any) => c.class)
+                                    .join(", ")
+                                : ""}
                             </td>
                           </tr>
                         ))}
