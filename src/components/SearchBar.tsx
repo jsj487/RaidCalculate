@@ -29,7 +29,7 @@ const SearchButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",
 })<{ ismainpage: boolean }>`
   position: absolute;
-  right: ${(props) => (props.ismainpage ? "15px" : "10px")};
+  right: ${(props) => (props.ismainpage ? "15px" : "-50px")};
   background: none;
   border: none;
   cursor: pointer;

@@ -8,23 +8,34 @@ import { useLayoutContext } from "./LayoutProvider";
 const Header = styled.header`
   background-color: #2d2d2d;
   color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 25px 50px;
+  padding: 16px 24px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const HeaderContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 
   @media (max-width: 768px) {
-    flex-direction: column; /* 작은 화면에서 레이아웃 변경 */
+    flex-direction: column;
     gap: 10px;
   }
 `;
 
-const HeaderCenter = styled.div`
-  display: flex;
-  justify-content: center;
-  flex: 1; /* 가운데 정렬 */
-  position: relative;
+const StyledSearchWrapper = styled.div`
+  margin-left: 24px;
+  width: 200px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    width: 100%;
+    margin-top: 10px;
+  }
 `;
 
 const LogoLink = styled(Link)`
@@ -42,17 +53,21 @@ const LogoLink = styled(Link)`
 
 const Nav = styled.nav`
   display: flex;
-  gap: 40px;
+  gap: 10px;
 `;
 
 const NavLink = styled(Link)<{ $isActive: boolean }>`
-  color: ${(props) => (props.$isActive ? "white" : "rgba(255, 255, 255, 0.5)")};
+  color: white;
   text-decoration: none;
-  font-size: 16px;
-  font-weight: 700;
-  transition: color 0.2s;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: ${(props) => (props.$isActive ? "#444" : "transparent")};
+  transition: background-color 0.2s, color 0.2s;
 
   &:hover {
+    background-color: #555;
     color: white;
   }
 `;
@@ -75,37 +90,47 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
     >
       <Header>
-        <LogoLink to="/">ArkLator</LogoLink>
-        <HeaderCenter>
+        <HeaderContent>
+          <LogoLink to="/">ArkLator</LogoLink>
+
+          <Nav>
+            <NavLink
+              to="/GoldCalc"
+              $isActive={location.pathname === "/GoldCalc"}
+            >
+              주간 레이드 계산기
+            </NavLink>
+            <NavLink
+              to="/JewelFriend"
+              $isActive={location.pathname === "/JewelFriend"}
+            >
+              보석 깐부 찾기
+            </NavLink>
+            <NavLink to="/Package" $isActive={location.pathname === "/Package"}>
+              패키지 계산기
+            </NavLink>
+            <NavLink to="/Auction" $isActive={location.pathname === "/Auction"}>
+              경매 계산기
+            </NavLink>
+            <NavLink
+              to="/Bracelet"
+              $isActive={location.pathname === "/Bracelet"}
+            >
+              팔찌 시뮬레이터
+            </NavLink>
+          </Nav>
+
           {location.pathname !== "/" && ( // "/" 경로에서는 Header를 숨김
-            <SearchBar
-              ismainpage={false} // 메인 페이지 아님
-              search={search}
-              setSearch={setSearch}
-              handleSearch={handleSearch}
-            />
+            <StyledSearchWrapper>
+              <SearchBar
+                ismainpage={false} // 메인 페이지 아님
+                search={search}
+                setSearch={setSearch}
+                handleSearch={handleSearch}
+              />
+            </StyledSearchWrapper>
           )}
-        </HeaderCenter>
-        <Nav>
-          <NavLink to="/GoldCalc" $isActive={location.pathname === "/GoldCalc"}>
-            주간 레이드 계산기
-          </NavLink>
-          <NavLink
-            to="/JewelFriend"
-            $isActive={location.pathname === "/JewelFriend"}
-          >
-            보석 깐부 찾기
-          </NavLink>
-          <NavLink to="/Package" $isActive={location.pathname === "/Package"}>
-            패키지 계산기
-          </NavLink>
-          <NavLink to="/Auction" $isActive={location.pathname === "/Auction"}>
-            경매 계산기
-          </NavLink>
-          <NavLink to="/Bracelet" $isActive={location.pathname === "/Bracelet"}>
-            팔찌 시뮬레이터
-          </NavLink>
-        </Nav>
+        </HeaderContent>
       </Header>
 
       <main style={{ flex: 1 }}>{children}</main>
