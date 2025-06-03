@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { FaSearch } from "react-icons/fa";
 import { useLayoutContext } from "../components/LayoutProvider";
 
 const SearchContainer = styled.div.withConfig({
@@ -12,36 +13,44 @@ const SearchContainer = styled.div.withConfig({
 
 const SearchInput = styled.input.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",
-})<{ ismainpage: boolean }>`
+})<{ ismainpage: boolean; width?: string }>`
   width: ${(props) => props.width || "600px"};
-  padding: ${(props) =>
-    props.ismainpage ? "10px 20px 10px 20px" : "0.5rem 2.5rem 0.5rem 0.75rem"};
-  border: 1px solid #ccc;
-  border-radius: ${(props) => (props.ismainpage ? "10px" : "4px")};
-  font-size: ${(props) => (props.ismainpage ? "20px" : "16px")};
-  font-weight: 700;
+  padding: 10px 16px 10px 36px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 10px;
+  font-size: 16px;
+  color: #ddd;
+
+  &::placeholder {
+    color: #888;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #555;
+  }
+
   @media (max-width: 768px) {
     width: 200px;
   }
 `;
 
-const SearchButton = styled.button.withConfig({
+const SearchButton = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",
 })<{ ismainpage: boolean }>`
   position: absolute;
-  right: ${(props) => (props.ismainpage ? "15px" : "-50px")};
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 24px;
-  height: 24px;
-  background-image: url(${process.env.PUBLIC_URL}/img/search.png);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 
-  &:hover {
-    filter: brightness(1.2);
+  svg {
+    font-size: 16px;
+    color: #aaa;
   }
 `;
 
@@ -77,10 +86,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         onChange={(e) => setSearch(e.target.value)}
         onKeyDown={handleKeyPress}
       />
-      <SearchButton
-        ismainpage={ismainpage}
-        onClick={handleSearch}
-      ></SearchButton>
+      <SearchButton ismainpage={ismainpage} onClick={handleSearch}>
+        <FaSearch />
+      </SearchButton>
     </SearchContainer>
   );
 };

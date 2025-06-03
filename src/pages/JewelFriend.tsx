@@ -50,8 +50,20 @@ const SearchWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 200px; // CharacterColumn과 동일하게 맞춤
+  width: 220px;
   gap: 10px;
+
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 16px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    background-color: #3a3a3a;
+    border-color: #555;
+  }
 `;
 
 const CharacterInputRow = styled.div`
@@ -61,7 +73,7 @@ const CharacterInputRow = styled.div`
   align-items: center;
 
   & > div:not(:last-child) {
-    margin-right: 80px;
+    margin-right: 10px;
   }
 `;
 
@@ -129,30 +141,24 @@ const MatchLayout = styled.div`
   gap: 60px;
 `;
 
-// const CharacterColumn = styled.div`
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   width: 200px;
-//   height: 340px;
-//   background-color: #e2e2e2;
-//   border-radius: 12px;
-//   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-//   padding: 16px;
-//   gap: 16px;
-// `;
-
 const CharacterColumn = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
   width: 200px;
   height: 340px;
-  background-color: #e2e2e2;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 16px;
   padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   gap: 16px;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: #555;
+    background-color: #3a3a3a;
+  }
 `;
 
 const CharacterImage = styled.img`
@@ -198,28 +204,34 @@ const CharacterImagePlaceholder = styled.div`
   border-radius: 8px;
 `;
 
-const StyledMatchButton = styled.button`
-  display: flex;
-  align-items: center;
-  background-color: #2c2c2c;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  padding: 12px 30px;
-  border: 1px solid #ffffff;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: rgb(83, 83, 83);
-  }
-`;
-
-const ButtonGroup = styled.div`
+const ButtonTabGroup = styled.div`
+  margin-top: 20px;
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-top: 40px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+`;
+
+const TabButton = styled.button<{ $active?: boolean }>`
+  padding: 8px 18px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  background-color: ${(props) => (props.$active ? "#3a3a3a" : "transparent")};
+  color: ${(props) => (props.$active ? "#ddd" : "#aaa")};
+  border: 1px solid ${(props) => (props.$active ? "#555" : "#444")};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #3a3a3a;
+    color: #ddd;
+    border-color: #555;
+  }
 `;
 
 const ScrollableBox = styled.div`
@@ -1185,29 +1197,14 @@ const JewelFriend = () => {
           </>
         )}
 
-        <ButtonGroup>
-          {/*매칭 완료 상태 버튼 */}
+        <ButtonTabGroup>
           {matchingStatus === "completed" ? (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  color: "white",
-                  marginRight: "16px",
-                }}
-              >
-                매칭 완료
-              </div>
-
-              <StyledMatchButton onClick={handleCancelMatch}>
-                매칭 취소
-              </StyledMatchButton>
+              <TabButton disabled>매칭 완료</TabButton>
+              <TabButton onClick={handleCancelMatch}>매칭 취소</TabButton>
             </>
           ) : matchingStatus === "queued" ? (
-            <StyledMatchButton onClick={handleCancelMatch}>
+            <TabButton onClick={handleCancelMatch}>
               <img
                 src="/img/Loading_icon.gif"
                 alt="로딩 중"
@@ -1219,22 +1216,21 @@ const JewelFriend = () => {
                 }}
               />
               매칭 취소
-            </StyledMatchButton>
+            </TabButton>
           ) : (
-            <StyledMatchButton onClick={handleMatch}>
+            <TabButton $active onClick={handleMatch}>
               매칭 찾기
-            </StyledMatchButton>
+            </TabButton>
           )}
-
-          <StyledMatchButton
+          <TabButton
             onClick={async () => {
               await fetchMatchingQueue();
               setIsQueueModalOpen(true);
             }}
           >
             현재 매칭 대기열 보기
-          </StyledMatchButton>
-        </ButtonGroup>
+          </TabButton>
+        </ButtonTabGroup>
       </Wrapper>
 
       {selectedCharacterName && (
