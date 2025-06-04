@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { RaidValues } from "./RaidValues";
+import { RaidValues } from "../utils/RaidValues";
 import { getMaterialImagePath } from "../utils/NameMap";
 
 const ModalButton = styled.button`

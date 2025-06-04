@@ -8,7 +8,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { Helmet } from "react-helmet";
 import { useLayoutContext } from "../components/LayoutProvider"; // Context 가져오기
 import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져오기
-import { RaidValues } from "../components/RaidValues";
+import { RaidValues } from "../utils/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
 import { getMaterialImagePath, ClassImage } from "../utils/NameMap";
