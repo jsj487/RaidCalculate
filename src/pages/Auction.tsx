@@ -2,64 +2,84 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { Helmet } from "react-helmet";
 
+const PageWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 120px); // 헤더/푸터 여백 고려 시
+  padding: 40px 20px;
+  background-color: #1e1e1e;
+`;
+
 const Container = styled.div`
   max-width: 600px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  color: white;
+  color: #ddd;
+  width: 100%;
+  background-color: #1a1a1a;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 `;
 
 const Title = styled.h2`
   text-align: center;
-  margin-bottom: 30px;
-`;
-
-// 공통 스타일
-const BaseInputStyle = `
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  background-color: white;
-  color: black;
+  margin-bottom: 32px;
+  font-size: 24px;
+  font-weight: bold;
 `;
 
 const InputGroup = styled.div`
-  margin-bottom: 20px;
-  width: 100%;
+  margin-bottom: 24px;
 `;
 
 const Label = styled.label`
-  font-weight: bold;
   display: block;
+  font-weight: 600;
   margin-bottom: 8px;
+  color: #ccc;
+`;
+
+const BaseInput = `
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background-color: #2a2a2a;
+  color: #ddd;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: #666;
+    outline: none;
+  }
 `;
 
 const Input = styled.input`
-  ${BaseInputStyle}
+  ${BaseInput}
 `;
 
 const Select = styled.select`
-  ${BaseInputStyle}
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 20px;
+  ${BaseInput}
 `;
 
 const ResultBox = styled.div`
-  margin-top: 30px;
-  padding: 20px;
-  background-color: #333;
-  border-radius: 8px;
+  margin-top: 40px;
+  background-color: #2a2a2a;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 `;
 
 const ResultLine = styled.p`
-  font-size: 18px;
-  margin: 10px 0;
+  font-size: 17px;
+  margin-bottom: 16px;
+
+  span {
+    color: #888;
+    font-size: 14px;
+    margin-left: 12px;
+  }
 `;
 
 const Auction = () => {
@@ -93,50 +113,52 @@ const Auction = () => {
   const perShareSale = getPerPersonShare(saleBid, memberCount); // 판매 시 기준 분배금
 
   return (
-    <Container>
-      <Helmet>
-        <title>경매 계산기 - ArkLator</title>
-        <meta name="description" content="로스트아크 골드 수익 계산기" />
-      </Helmet>
+    <PageWrapper>
+      <Container>
+        <Helmet>
+          <title>경매 계산기 - ArkLator</title>
+          <meta name="description" content="로스트아크 골드 수익 계산기" />
+        </Helmet>
 
-      <Title>경매 입찰 계산기</Title>
-      <InputGroup>
-        <Label>경매 아이템 가격 (골드)</Label>
-        <Input
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
-      </InputGroup>
+        <Title>경매 입찰 계산기</Title>
+        <InputGroup>
+          <Label>경매 아이템 가격 (골드)</Label>
+          <Input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </InputGroup>
 
-      <InputGroup>
-        <Label>레이드 인원 수</Label>
-        <Select
-          value={memberCount}
-          onChange={(e) => setMemberCount(Number(e.target.value))}
-        >
-          <option value={4}>4인</option>
-          <option value={8}>8인</option>
-          <option value={16}>16인</option>
-        </Select>
-      </InputGroup>
+        <InputGroup>
+          <Label>레이드 인원 수</Label>
+          <Select
+            value={memberCount}
+            onChange={(e) => setMemberCount(Number(e.target.value))}
+          >
+            <option value={4}>4인</option>
+            <option value={8}>8인</option>
+            <option value={16}>16인</option>
+          </Select>
+        </InputGroup>
 
-      <ResultBox>
-        <ResultLine>
-          사용 시 입찰가: {getUseBid().toLocaleString()} G
-          <span style={{ color: "#888", fontSize: "14px" }}>
-            (1인당 분배금: {perShareUse.toLocaleString()} G)
-          </span>
-        </ResultLine>
-        <ResultLine>
-          판매 시 입찰가:{" "}
-          {getSaleBid(Number(price), memberCount).toLocaleString()} G
-          <span style={{ color: "#888", fontSize: "14px" }}>
-            (1인당 분배금: {perShareSale.toLocaleString()} G)
-          </span>
-        </ResultLine>
-      </ResultBox>
-    </Container>
+        <ResultBox>
+          <ResultLine>
+            사용 시 입찰가: {getUseBid().toLocaleString()} G
+            <span style={{ color: "#888", fontSize: "14px" }}>
+              (1인당 분배금: {perShareUse.toLocaleString()} G)
+            </span>
+          </ResultLine>
+          <ResultLine>
+            판매 시 입찰가:{" "}
+            {getSaleBid(Number(price), memberCount).toLocaleString()} G
+            <span style={{ color: "#888", fontSize: "14px" }}>
+              (1인당 분배금: {perShareSale.toLocaleString()} G)
+            </span>
+          </ResultLine>
+        </ResultBox>
+      </Container>
+    </PageWrapper>
   );
 };
 
