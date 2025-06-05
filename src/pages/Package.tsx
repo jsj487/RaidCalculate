@@ -5,11 +5,95 @@ import styled from "styled-components";
 import ChartModal from "../components/ChartModal";
 import { Helmet } from "react-helmet";
 
+const SectionCard = styled.div`
+  display: flex;
+  flex-direction: column; // 필요 시 추가
+  align-items: center;
+  background-color: #2a2a2a;
+  border-radius: 12px;
+  padding: 20px 30px;
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+`;
+
+const OuterContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 60px 16px;
+  background-color: #1e1e1e;
+`;
+
+const InnerCard = styled.div`
+  width: 100%;
+  max-width: 780px;
+  background-color: #2a2a2a;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+`;
+
+const HorizontalGroup = styled.div`
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+`;
+
+const Row2ColWrapper = styled.div`
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+`;
+
+const Select = styled.select`
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: none;
+
+  option {
+    background-color: #1e1e1e;
+    color: white;
+  }
+`;
+
+const FlexRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+`;
+
+const ResultCard = styled(SectionCard)`
+  background-color: #1e1e1e;
+  text-align: center;
+  padding: 32px;
+`;
+
+const TableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+`;
+
 const Table = styled.table`
-  width: 60%;
-  color: white;
+  min-width: 700px;
+  width: 100%;
   border-collapse: collapse;
-  border: 1px solid #444;
+  color: white;
 `;
 
 const Th = styled.th<{ isLast?: boolean }>`
@@ -57,12 +141,6 @@ const ActionButton = styled.button`
   margin-top: 10px;
 `;
 
-const Row = styled.div`
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-`;
-
 const Input = styled.input`
   padding: 10px;
   font-size: 16px;
@@ -72,7 +150,6 @@ const Input = styled.input`
 `;
 
 const Result = styled.div`
-  margin-top: 30px;
   font-size: 20px;
   font-weight: bold;
   white-space: pre-line;
@@ -508,60 +585,61 @@ function Package() {
     );
 
     let resultText = "";
+    let 기준골드 = 0;
+    let 금액가치 = "";
+    let 비교값 = "";
 
-    //패키지 가격 기준 계산
+    // 1. 기준 골드 계산
     if (packagePrice && priceType) {
       if (priceType === "cash") {
-        // 현금 기준 → 골드 환산
         const goldFromCash = (packagePrice / goldRate) * 100;
-        resultText += `현금 ₩${packagePrice.toLocaleString()} → 약 ${Math.floor(
+        기준골드 = goldFromCash;
+        금액가치 = `현금 ₩${packagePrice.toLocaleString()} → 약 ${Math.floor(
           goldFromCash
-        ).toLocaleString()} 골드 가치\n\n`;
+        ).toLocaleString()} 골드 가치`;
       } else if (priceType === "crystal") {
-        // 크리스탈 기준 → 골드 환산 (수수료 반영)
         const goldFromCrystal = (packagePrice * crystalRate) / 95;
-        resultText += `크리스탈 ${packagePrice}개 → 약 ${Math.floor(
+        기준골드 = goldFromCrystal;
+        금액가치 = `크리스탈 ${packagePrice}개 → 약 ${Math.floor(
           goldFromCrystal
-        ).toLocaleString()} 골드 가치\n\n`;
+        ).toLocaleString()} 골드 가치`;
       }
     }
 
-    //현재 재료 총합 기준 골드 가치 계산
-    if (totalGold > 0 && (priceType === "cash" || priceType === "crystal")) {
+    // 2. 재료 총합 계산
+    if (totalGold > 0 && 기준골드 > 0) {
       const goldCostInKRW = goldRate ? (totalGold * goldRate) / 100 : 0;
       const crystalAmount = crystalRate ? totalGold / (crystalRate / 95) : 0;
 
-      resultText += `패키지 구성 값:\n`;
-      resultText += `총 ${totalGold.toLocaleString()} 골드\n`;
-
+      let 비교기준 = "";
       if (priceType === "cash") {
-        resultText += `→ 골드 기준 현금가: 약 ${Math.floor(
+        비교기준 = `→ 골드 기준 현금가: 약 ${Math.floor(
           goldCostInKRW
-        ).toLocaleString()}원\n`;
+        ).toLocaleString()}원`;
+      } else if (priceType === "crystal") {
+        비교기준 = `→ 크리스탈 기준: 약 ${Math.ceil(crystalAmount)} 개`;
       }
 
-      if (priceType === "crystal") {
-        resultText += `→ 크리스탈 기준: 약 ${Math.ceil(crystalAmount)} 개\n`;
-      }
-
-      // 기준 골드 가치와 비교하여 효율 계산
-      const 기준골드 =
-        priceType === "cash"
-          ? (packagePrice / goldRate) * 100
-          : (packagePrice * crystalRate) / 95;
-
+      // 3. 차이 계산
       const 차이율 = ((totalGold - 기준골드) / 기준골드) * 100;
       const rounded = Math.round(차이율);
-
       let percentColor = "gray";
       if (rounded > 1) percentColor = "red";
       else if (rounded < -1) percentColor = "skyblue";
 
-      resultText += `→ ${rounded >= 0 ? "이득" : "손해"}: `;
+      const 효율 = `${rounded >= 0 ? "이득" : "손해"}:  `;
 
-      resultText += `%c${rounded}%`;
+      // 4. 최종 텍스트 조립
+      resultText = `
+${금액가치}
 
-      // setResult 는 styled가 안 되니 따로 색상 분기
+패키지 구성 값:
+총 ${totalGold.toLocaleString()} 골드
+${비교기준}
+${효율}
+`.trim();
+
+      // 5. 결과 저장
       setResult({
         text: resultText,
         diff: rounded,
@@ -601,135 +679,168 @@ function Package() {
         <title>패키지 계산기 - ArkLator</title>
         <meta name="description" content="로스트아크 패키지 효율 계산기" />
       </Helmet>
-      <Row>
-        <Input
-          type="number"
-          placeholder="패키지 가격"
-          value={packagePrice || ""}
-          onChange={(e) => setPackagePrice(Number(e.target.value))}
-        />
-        <select
-          value={priceType}
-          onChange={(e) => setPriceType(e.target.value as "cash" | "crystal")}
-          style={{ padding: "10px", fontSize: "16px", borderRadius: "5px" }}
-        >
-          <option value="cash">현금 (₩)</option>
-          <option value="crystal">크리스탈 (개)</option>
-        </select>
-      </Row>
-
-      <Row>
-        <Input
-          placeholder="골드 비율 (예: 25)"
-          type="number"
-          value={goldRate || ""}
-          onChange={(e) => setGoldRate(Number(e.target.value))}
-        />
-        {priceType === "crystal" && (
-          <Input
-            placeholder="크리스탈 비율 (예: 6000)"
-            type="number"
-            value={crystalRate || ""}
-            onChange={(e) => setCrystalRate(Number(e.target.value))}
-          />
-        )}
-      </Row>
-
-      <Table>
-        <thead>
-          <tr>
-            {["이름", "수량", "전일 평균", "최근 거래", "최저가", "시세"].map(
-              (label, i, arr) => (
-                <Th key={label} isLast={i === arr.length - 1}>
-                  {label}
-                </Th>
-              )
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {materials.map((m, index) => (
-            <TableRow key={index}>
-              <Td
-                style={{
-                  borderRight: "1px solid #444",
-                  padding: "8px",
-                  cursor: "pointer",
-                  backgroundColor: "#1e1e1e",
-                }}
-                onClick={() => {
-                  setShowModal(true);
-                  setEditIndex(index);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#2a2a2a";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1e1e1e";
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "12px" }}
-                >
-                  <img
-                    src={m.icon}
-                    alt={m.name}
-                    style={{ width: 48, height: 48, objectFit: "contain" }}
-                  />
-                  <div>
-                    <div style={{ fontWeight: "bold" }}>{m.name}</div>
-                    {m.bundle > 1 && (
-                      <div style={{ fontSize: "12px", color: "#aaa" }}>
-                        [{m.bundle}개 단위 판매]
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Td>
-              <Td center>
-                <input
-                  type="number"
-                  value={m.quantity === 0 ? "" : m.quantity}
+      <OuterContainer>
+        <InnerCard>
+          <HorizontalGroup>
+            <Row2ColWrapper>
+              <InputGroup>
+                <Select
+                  value={priceType}
                   onChange={(e) =>
-                    handleMaterialChange(index, "quantity", e.target.value)
+                    setPriceType(e.target.value as "cash" | "crystal")
                   }
-                  style={{ width: "50px" }}
-                />
-              </Td>
-              <Td center>{m.avg ?? "-"}</Td>
-              <Td center>{m.recent ?? "-"}</Td>
-              <Td center>{m.min ?? "-"}</Td>
-              <Td center noRight>
-                <button
-                  onClick={() => {
-                    setSelectedChartIndex(index);
-                  }}
-                  style={{
-                    backgroundColor: "#2a2a2a",
-                    border: "none",
-                    borderRadius: "50%",
-                    padding: "8px",
-                    cursor: "pointer",
-                  }}
-                  title="시세 보기"
                 >
-                  <FaChartLine size={18} color="#fff" />
-                </button>
-              </Td>
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+                  <option value="cash">현금 (₩)</option>
+                  <option value="crystal">크리스탈 (개)</option>
+                </Select>
 
-      <AddButton onClick={() => setShowModal(true)}>+</AddButton>
-      <ActionButton onClick={calculatePackageGoldValue}>효율 계산</ActionButton>
+                <Input
+                  placeholder="골드 비율 (예: 25)"
+                  type="number"
+                  value={goldRate || ""}
+                  onChange={(e) => setGoldRate(Number(e.target.value))}
+                />
+              </InputGroup>
 
-      {result && (
-        <Result>
-          {result.text.split("%c")[0]}
-          <span style={{ color: result.color }}>{result.diff}%</span>
-        </Result>
-      )}
+              <InputGroup>
+                <Input
+                  type="number"
+                  placeholder="패키지 가격"
+                  value={packagePrice || ""}
+                  onChange={(e) => setPackagePrice(Number(e.target.value))}
+                />
+                {priceType === "crystal" && (
+                  <Input
+                    placeholder="크리스탈 비율 (예: 6000)"
+                    type="number"
+                    value={crystalRate || ""}
+                    onChange={(e) => setCrystalRate(Number(e.target.value))}
+                  />
+                )}
+              </InputGroup>
+            </Row2ColWrapper>
+          </HorizontalGroup>
+
+          <TableWrapper>
+            <Table>
+              <thead>
+                <tr>
+                  {[
+                    "이름",
+                    "수량",
+                    "전일 평균",
+                    "최근 거래",
+                    "최저가",
+                    "시세",
+                  ].map((label, i, arr) => (
+                    <Th key={label} isLast={i === arr.length - 1}>
+                      {label}
+                    </Th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {materials.map((m, index) => (
+                  <TableRow key={index}>
+                    <Td
+                      style={{
+                        borderRight: "1px solid #444",
+                        padding: "8px",
+                        cursor: "pointer",
+                        backgroundColor: "#1e1e1e",
+                      }}
+                      onClick={() => {
+                        setShowModal(true);
+                        setEditIndex(index);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#2a2a2a";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "#1e1e1e";
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
+                        <img
+                          src={m.icon}
+                          alt={m.name}
+                          style={{
+                            width: 48,
+                            height: 48,
+                            objectFit: "contain",
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>{m.name}</div>
+                          {m.bundle > 1 && (
+                            <div style={{ fontSize: "12px", color: "#aaa" }}>
+                              [{m.bundle}개 단위 판매]
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Td>
+                    <Td center>
+                      <input
+                        type="number"
+                        value={m.quantity === 0 ? "" : m.quantity}
+                        onChange={(e) =>
+                          handleMaterialChange(
+                            index,
+                            "quantity",
+                            e.target.value
+                          )
+                        }
+                        style={{ width: "50px" }}
+                      />
+                    </Td>
+                    <Td center>{m.avg ?? "-"}</Td>
+                    <Td center>{m.recent ?? "-"}</Td>
+                    <Td center>{m.min ?? "-"}</Td>
+                    <Td center noRight>
+                      <button
+                        onClick={() => {
+                          setSelectedChartIndex(index);
+                        }}
+                        style={{
+                          backgroundColor: "#2a2a2a",
+                          border: "none",
+                          borderRadius: "50%",
+                          padding: "8px",
+                          cursor: "pointer",
+                        }}
+                        title="시세 보기"
+                      >
+                        <FaChartLine size={18} color="#fff" />
+                      </button>
+                    </Td>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrapper>
+          <AddButton onClick={() => setShowModal(true)}>+</AddButton>
+          <ActionButton onClick={calculatePackageGoldValue}>
+            효율 계산
+          </ActionButton>
+          <FlexRow>
+            {result && (
+              <ResultCard>
+                <Result>
+                  {result.text.split("%c")[0]}
+                  <span style={{ color: result.color }}> {result.diff}%</span>
+                </Result>
+              </ResultCard>
+            )}
+          </FlexRow>
+        </InnerCard>
+      </OuterContainer>
 
       {showModal && (
         <ModalOverlay onClick={() => setShowModal(false)}>
