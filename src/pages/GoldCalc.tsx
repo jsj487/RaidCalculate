@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import styled, { keyframes, css } from "styled-components";
+
+import styled, { keyframes } from "styled-components";
+import { CardBase } from "../components/common/CardBase";
+import { GoldInput } from "../components/common/GoldInput";
+import { PlusIcon } from "../components/common/PlusIcon";
+import { CommonButton } from "../components/common/CommonButton";
+
 import CryptoJS from "crypto-js";
 
 import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
@@ -12,6 +18,19 @@ import { RaidValues } from "../utils/RaidValues";
 import RaidTable from "../components/RaidTable";
 import Modal from "../components/Modal";
 import { getMaterialImagePath, ClassImage } from "../utils/NameMap";
+import {
+  GoldSection,
+  MaterialCharacterImage,
+  MaterialCharacterInfo,
+  MaterialItem,
+  MaterialLeft,
+  MaterialRight,
+  MaterialSection,
+  SectionTitle,
+  MaterialList,
+  InfoText,
+  TextWrapper,
+} from "../components/MaterialCardLayout";
 
 const slideIn = keyframes`
   from {
@@ -204,58 +223,25 @@ const CharacterRow = styled.div`
   }
 `;
 
-const CharacterCard = styled.div`
-  flex: 1;
-  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
-  max-width: 250px; /* 🔹 최대 크기 제한 */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-  @media (max-width: 768px) {
-    width: 150px;
-    padding: 8px;
-  }
-`;
-
 const CharacterImage = styled.img`
   width: 100%;
-  height: 270px;
+  height: 240px;
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
+  background-color: #000;
 
   @media (max-width: 768px) {
-    height: 200px;
+    height: 180px;
   }
-`;
-
-const CardStyle = css`
-  width: 500px;
-  text-align: center;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-
-  @media (max-width: 768px) {
-    width: 150px;
-    padding: 8px;
-  }
-`;
-
-const MaterialCard = styled.div`
-  ${CardStyle}
 `;
 
 const CharacterName = styled.h3`
-  font-size: 16px;
-  margin-top: 10px;
+  font-size: 17px;
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.textSub};
+  margin: 8px 0 4px;
+  text-align: center;
 `;
 
 const CharacterBox = styled.div`
@@ -287,83 +273,35 @@ const ImageBox = styled.div`
 const GoldAdjustmentBox = styled.div`
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 10px;
+  justify-content: space-between;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.divider};
+  border-radius: ${({ theme }) => theme.borderRadius};
+  padding: 8px 12px;
   margin-top: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  gap: 10px; /* 레이블과 입력 필드 간 간격 */
+  gap: 10px;
 `;
 
 const GoldLabel = styled.label`
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.textSub};
+  min-width: 70px;
 `;
 
-const AddCharacterButtonGoldView = styled.div`
-  flex: 1; /* 부모 요소와 동일한 높이 설정 */
-  border: 2px dashed #ccc;
-  background-color: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  border-radius: 8px;
+const MaterialGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); // PC 2열
+  gap: 24px;
+  column-gap: 80px;
 
-  &:hover {
-    border-color: #aaa;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const AddCharacterButtonNormalView = styled.div`
-  width: 100%;
-  height: 100%;
-  border: 2px dashed #ccc;
-  background-color: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  border-radius: 8px;
-
-  &:hover {
-    border-color: #aaa;
-  }
-`;
-
-const AddCharacterContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
-  max-width: 250px; /* 🔹 최대 크기 제한 */
-  flex-grow: 0; /* 🔹 크기 조정 방지 */
-  flex-shrink: 0; /* 🔹 크기 축소 방지 */
-`;
-
-const AddCharacterButtonNormalViewStyled = styled(AddCharacterButtonNormalView)`
-  min-width: 180px; /* 🔹 최소 너비 설정 (너무 줄어들지 않도록) */
-  max-width: 250px; /* 🔹 최대 크기 제한 */
-  height: 320px; /* CharacterCard와 동일한 높이 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 2px dashed #ddd;
-  background-color: transparent;
-  margin: 0 auto;
-  flex-shrink: 0; /* 🔹 크기 축소 방지 */
-`;
-
-const PlusIcon = styled(FaUserPlus)`
-  font-size: 48px;
-  color: #aaa;
-
-  &:hover {
-    color: #777;
-  }
+const MaterialRowWrapper = styled.div`
+  padding: 20px;
 `;
 
 const CharacterListModalWrapper = styled.div`
@@ -418,16 +356,6 @@ const Checkbox = styled.input.attrs({ type: "checkbox" })`
 const BoxContent = styled.div`
   font-size: 14px;
   color: #333;
-`;
-
-const GoldInput = styled.input`
-  width: 100px;
-  padding: 5px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  text-align: right;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const TotalGoldBox = styled.div`
@@ -1314,7 +1242,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                   },
                   index: React.Key | null | undefined
                 ) => (
-                  <CharacterCard key={index}>
+                  <CardBase key={index} variant="character">
                     <CharacterImage
                       src={
                         char?.CharacterImage && char?.CharacterImage !== "null"
@@ -1330,14 +1258,14 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     <CharacterName>
                       {char?.CharacterName || "No Name"}
                     </CharacterName>
-                    <p>
+                    <InfoText>
                       <strong>아이템 레벨:</strong>{" "}
                       {char?.ItemAvgLevel || "N/A"}
-                    </p>
-                    <p>
+                    </InfoText>
+                    <InfoText>
                       <strong>전투 레벨:</strong>{" "}
                       {char?.CharacterLevel || "N/A"}
-                    </p>
+                    </InfoText>
 
                     <GoldAdjustmentBox>
                       <GoldLabel htmlFor={`extraGold-${char.CharacterName}`}>
@@ -1404,50 +1332,28 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                       </BoxContent>
                       {/* Other UI elements */}
                     </CharacterBox>
-                  </CharacterCard>
+                  </CardBase>
                 )
               )}
-              <AddCharacterButtonGoldView onClick={toggleCharacterListModal}>
+              <CardBase
+                key="add"
+                variant="add"
+                onClick={toggleCharacterListModal}
+                style={{ height: "320px" }}
+              >
                 <PlusIcon />
-              </AddCharacterButtonGoldView>
+              </CardBase>
             </CharacterRow>
           )}
 
           {!(tabData[currentTabId]?.isGoldView ?? true) && (
-            <CharacterRow>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)", // 한 행에 3개의 열
-                  gap: "20px", // 각 카드 간의 간격
-                  padding: "20px", // 전체 레이아웃의 내부 여백
-                }}
-              >
+            <MaterialRowWrapper>
+              <MaterialGrid>
                 {displayedCharacters.map((char, index) => (
-                  <MaterialCard
-                    key={index}
-                    style={{
-                      display: "flex",
-                      gap: "20px",
-                      padding: "20px",
-                      border: "1px solid #ddd",
-                      borderRadius: "10px",
-                      backgroundColor: "#fff",
-                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
+                  <CardBase key={index} variant="material">
                     {/* Left Section: Image and Character Name */}
-                    <div
-                      style={{
-                        flex: "1",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        textAlign: "center",
-                      }}
-                    >
-                      <CharacterImage
+                    <MaterialLeft>
+                      <MaterialCharacterImage
                         src={
                           char?.CharacterImage || "/img/default-character.png"
                         }
@@ -1455,50 +1361,21 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                         onClick={() =>
                           handleImageClick(char?.CharacterImage || "")
                         }
-                        style={{
-                          width: "240px",
-                          height: "240px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          marginBottom: "10px",
-                        }}
                       />
-                      <CharacterName
-                        style={{ fontSize: "18px", fontWeight: "bold" }}
-                      >
-                        {char?.CharacterName || "No Name"}
-                        <p>
-                          <strong>아이템 레벨:</strong>{" "}
-                          {char?.ItemAvgLevel || "N/A"}
-                        </p>
-                      </CharacterName>
-                    </div>
+                      <MaterialCharacterInfo>
+                        <CharacterName>{char.CharacterName}</CharacterName>
+                        <InfoText>아이템 레벨: {char.ItemAvgLevel}</InfoText>
+                      </MaterialCharacterInfo>
+                    </MaterialLeft>
 
                     {/* Right Section: Raid Materials and Gold Adjustments */}
-                    <div
-                      style={{
-                        flex: "2",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                      }}
-                    >
+                    <MaterialRight>
                       {/* Materials Section */}
-                      <div>
-                        <h4 style={{ marginBottom: "10px" }}>획득 재화:</h4>
-                        <ul
-                          style={{
-                            margin: "0",
-                            padding: "20px",
-                            listStyle: "none",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "15px",
-                            backgroundColor: "#f7f7f7",
-                            borderRadius: "10px",
-                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                          }}
-                        >
+                      <MaterialSection>
+                        <SectionTitle style={{ marginBottom: "10px" }}>
+                          획득 재화:
+                        </SectionTitle>
+                        <MaterialList>
                           {(() => {
                             // Combine clearMaterials and bonusMaterials
                             const materials = [
@@ -1532,19 +1409,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                                 material.name
                               ); // Fetch image path
                               return (
-                                <li
-                                  key={i}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "10px",
-                                    padding: "10px",
-                                    border: "1px solid #eee",
-                                    borderRadius: "8px",
-                                    backgroundColor: "#f9f9f9",
-                                    flex: "1 1 calc(50% - 10px)",
-                                  }}
-                                >
+                                <MaterialItem key={i}>
                                   {/* Material Image */}
                                   {imagePath && (
                                     <img
@@ -1559,33 +1424,21 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                                     />
                                   )}
                                   {/* Material Name and Quantity */}
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      flexDirection: "column",
-                                    }}
-                                  >
-                                    <strong style={{ fontSize: "14px" }}>
-                                      {material.name}
-                                    </strong>
-                                    <span
-                                      style={{
-                                        fontSize: "12px",
-                                        color: "#555",
-                                      }}
-                                    >
+                                  <TextWrapper>
+                                    <strong>{material.name}</strong>
+                                    <span>
                                       수량: {material.quantity.toLocaleString()}
                                     </span>
-                                  </div>
-                                </li>
+                                  </TextWrapper>
+                                </MaterialItem>
                               );
                             });
                           })()}
-                        </ul>
-                      </div>
+                        </MaterialList>
+                      </MaterialSection>
 
                       {/* Gold Adjustments */}
-                      <div style={{ marginTop: "20px" }}>
+                      <GoldSection style={{ marginTop: "20px" }}>
                         <GoldAdjustmentBox>
                           <GoldLabel
                             htmlFor={`extraGold-${char.CharacterName}`}
@@ -1656,9 +1509,9 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                             </strong>
                           </BoxContent>
                         </CharacterBox>
-                      </div>
-                    </div>
-                  </MaterialCard>
+                      </GoldSection>
+                    </MaterialRight>
+                  </CardBase>
                 ))}
                 <div
                   style={{
@@ -1667,16 +1520,16 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     alignItems: "center",
                   }}
                 >
-                  <AddCharacterContainer>
-                    <AddCharacterButtonNormalViewStyled
-                      onClick={toggleCharacterListModal}
-                    >
-                      <PlusIcon />
-                    </AddCharacterButtonNormalViewStyled>
-                  </AddCharacterContainer>
+                  <CardBase
+                    variant="add"
+                    onClick={toggleCharacterListModal}
+                    style={{ height: "320px" }}
+                  >
+                    <PlusIcon />
+                  </CardBase>
                 </div>
-              </div>
-            </CharacterRow>
+              </MaterialGrid>
+            </MaterialRowWrapper>
           )}
 
           <TotalGoldBox>

@@ -15,6 +15,8 @@ import Package from "./Package";
 import Auction from "./Auction";
 import Bracelet from "./Bracelet";
 import JewelFriend from "./JewelFriend";
+import { ThemeProvider } from "styled-components";
+import { theme } from "../styles/theme";
 import { createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
@@ -30,7 +32,7 @@ function App() {
   const basename = process.env.PUBLIC_URL || ""; // 동적으로 basename 설정
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <GlobalStyle /> {/* 전역 스타일 추가 */}
       <Router basename={basename}>
         <GoldCalcProvider>
@@ -48,7 +50,7 @@ function App() {
           </LayoutProvider>
         </GoldCalcProvider>
       </Router>
-    </>
+    </ThemeProvider>
   );
 }
 
