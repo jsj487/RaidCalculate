@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import SearchBar from "../components/SearchBar";
-import { useLayoutContext } from "../components/LayoutProvider";
+import SearchBar from "../components/common/SearchBar";
+import { useLayoutContext } from "../components/common/LayoutProvider";
 import { releaseNotes, ReleaseNote } from "../utils/ReleaseNotes";
 
 import { Helmet } from "react-helmet";

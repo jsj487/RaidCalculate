@@ -3,7 +3,7 @@ import TooltipBox from "./TooltipBox";
 import TooltipPortal from "./TooltipPortal";
 import styled from "styled-components";
 import axios from "axios";
-import type { MatchedPairState } from "../utils/Matching";
+import type { MatchedPairState } from "../../utils/Matching";
 
 import { color } from "framer-motion";
 import {

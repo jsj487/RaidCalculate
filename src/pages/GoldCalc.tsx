@@ -12,11 +12,11 @@ import { FaUserPlus } from "react-icons/fa6"; // 아이콘 추가
 import { IoIosArrowDown } from "react-icons/io";
 
 import { Helmet } from "react-helmet";
-import { useLayoutContext } from "../components/LayoutProvider"; // Context 가져오기
-import TabModal from "../components/TabModal"; // TabModal 컴포넌트 가져오기
+import { useLayoutContext } from "../components/common/LayoutProvider"; // Context 가져오기
+import TabModal from "../components/goldcalcpage/TabModal"; // TabModal 컴포넌트 가져오기
 import { RaidValues } from "../utils/RaidValues";
-import RaidTable from "../components/RaidTable";
-import Modal from "../components/Modal";
+import RaidTable from "../components/goldcalcpage/RaidTable";
+import Modal from "../components/goldcalcpage/Modal";
 import { getMaterialImagePath, ClassImage } from "../utils/NameMap";
 import {
   GoldSection,
@@ -30,8 +30,8 @@ import {
   MaterialList,
   InfoText,
   TextWrapper,
-} from "../components/MaterialCardLayout";
-import { AddCharacterButton } from "../components/AddCharacterCard";
+} from "../components/goldcalcpage/MaterialCardLayout";
+import { AddCharacterButton } from "../components/goldcalcpage/AddCharacterCard";
 
 const slideIn = keyframes`
   from {

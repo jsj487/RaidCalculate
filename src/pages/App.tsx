@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { GoldCalcProvider } from "../components/GoldCalcContext";
+import { GoldCalcProvider } from "../components/goldcalcpage/GoldCalcContext";
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
 } from "react-router-dom";
-import Layout from "../components/Layout";
-import { LayoutProvider } from "../components/LayoutProvider";
+import Layout from "../components/common/Layout";
+import { LayoutProvider } from "../components/common/LayoutProvider";
+
 import Main from "./Main";
 import GoldCalc from "./GoldCalc";
 // import Schedule from "./Schedule";
@@ -15,6 +16,8 @@ import Package from "./Package";
 import Auction from "./Auction";
 import Bracelet from "./Bracelet";
 import JewelFriend from "./JewelFriend";
+import CraftCalc from "./CraftCalc";
+
 import { ThemeProvider } from "styled-components";
 import { theme } from "../styles/theme";
 import { createGlobalStyle } from "styled-components";
@@ -45,6 +48,7 @@ function App() {
                 <Route path="/Package" element={<Package />} />
                 <Route path="/Auction" element={<Auction />} />
                 <Route path="/Bracelet" element={<Bracelet />} />
+                <Route path="/CraftCalc" element={<CraftCalc />} />
               </Routes>
             </Layout>
           </LayoutProvider>

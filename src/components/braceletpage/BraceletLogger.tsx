@@ -1,5 +1,5 @@
-import { supabase } from "./SupabaseClient";
-import { AllOptions } from "./BaraceletOptions";
+import { supabase } from "../../utils/SupabaseClient";
+import { AllOptions } from "../../utils/BaraceletOptions";
 
 type GeneratedOption = {
   parts: (string | { value: string; grade: string })[];

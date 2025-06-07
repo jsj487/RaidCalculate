@@ -5,9 +5,9 @@ import axios from "axios";
 import { FaUserPlus } from "react-icons/fa6";
 import { FaTrashAlt } from "react-icons/fa";
 
-import SearchBar from "../components/SearchBar";
-import CharacterDetailModal from "../components/CharacterDetailModal";
-import fetchCharacterData from "../components/CharacterDetailModal";
+import SearchBar from "../components/common/SearchBar";
+import CharacterDetailModal from "../components/jewelfriendpage/CharacterDetailModal";
+import fetchCharacterData from "../components/jewelfriendpage/CharacterDetailModal";
 import type { MatchedPairState, MatchingUser } from "../utils/Matching";
 
 import { Helmet } from "react-helmet";

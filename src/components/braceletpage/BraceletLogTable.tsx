@@ -1,7 +1,7 @@
 // BraceletLogTable.tsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "../utils/SupabaseClient";
+import { supabase } from "../../utils/SupabaseClient";
 
 export type CompressedLog = {
   created_at: string;

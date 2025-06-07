@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
-import { logBraceletResult } from "../utils/BraceletLogger";
+import { logBraceletResult } from "../components/braceletpage/BraceletLogger";
 import { generateBraceletOptions } from "../utils/GachaGenerator";
 import { AllOptions } from "../utils/BaraceletOptions";
-import { CompressedLog } from "../components/BraceletLogTable";
+import { CompressedLog } from "../components/braceletpage/BraceletLogTable";
 
 import { Helmet } from "react-helmet";
 import { v4 as uuidv4 } from "uuid";

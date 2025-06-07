@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useLayoutContext } from "../components/LayoutProvider";
-import SearchBar from "./SearchBar";
+import { useLayoutContext } from "../common/LayoutProvider";
+import SearchBar from "../common/SearchBar";
 import axios from "axios";
 
 const ModalOverlay = styled.div`

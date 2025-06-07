@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { FaChartLine } from "react-icons/fa";
 import styled from "styled-components";
-import ChartModal from "../components/ChartModal";
+import ChartModal from "../components/packagepage/ChartModal";
 import { Helmet } from "react-helmet";
 
 const SectionCard = styled.div`

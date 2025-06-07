@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { FaSearch } from "react-icons/fa";
-import { useLayoutContext } from "../components/LayoutProvider";
+import { useLayoutContext } from "./LayoutProvider";
 
 const SearchContainer = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== "ismainpage",

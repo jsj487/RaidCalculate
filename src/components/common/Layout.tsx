@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import "@fontsource/acme";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "./SearchBar";
 import { useLayoutContext } from "./LayoutProvider";
 
 const Header = styled.header`
@@ -106,6 +106,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             >
               보석 깐부 찾기
             </NavLink>
+            {/* <NavLink
+              to="/CraftCalc"
+              $isActive={location.pathname === "/CraftCalc"}
+            >
+              제작 계산기
+            </NavLink> */}
             <NavLink to="/Package" $isActive={location.pathname === "/Package"}>
               패키지 계산기
             </NavLink>

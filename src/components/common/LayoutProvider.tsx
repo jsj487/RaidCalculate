@@ -1,5 +1,5 @@
 import React, { useState, createContext, useContext, useEffect } from "react";
-import { useGoldCalcContext } from "./GoldCalcContext";
+import { useGoldCalcContext } from "../goldcalcpage/GoldCalcContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";

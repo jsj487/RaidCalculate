@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import RaidGoldModal from "./RaidGoldModal";
-import { RaidValues } from "../utils/RaidValues";
+import { RaidValues } from "../../utils/RaidValues";
 import React, { useState, useEffect } from "react";
 
 const TableContainer = styled.div`
