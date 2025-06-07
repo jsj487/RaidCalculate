@@ -31,6 +31,7 @@ import {
   InfoText,
   TextWrapper,
 } from "../components/MaterialCardLayout";
+import { AddCharacterButton } from "../components/AddCharacterCard";
 
 const slideIn = keyframes`
   from {
@@ -1335,14 +1336,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                   </CardBase>
                 )
               )}
-              <CardBase
-                key="add"
-                variant="add"
-                onClick={toggleCharacterListModal}
-                style={{ height: "320px" }}
-              >
-                <PlusIcon />
-              </CardBase>
             </CharacterRow>
           )}
 
@@ -1513,21 +1506,6 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     </MaterialRight>
                   </CardBase>
                 ))}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <CardBase
-                    variant="add"
-                    onClick={toggleCharacterListModal}
-                    style={{ height: "320px" }}
-                  >
-                    <PlusIcon />
-                  </CardBase>
-                </div>
               </MaterialGrid>
             </MaterialRowWrapper>
           )}
@@ -1535,6 +1513,10 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
           <TotalGoldBox>
             총 순이익 골드: {formatNumberWithCommas(totalGold)}
           </TotalGoldBox>
+          <AddCharacterButton onClick={toggleCharacterListModal}>
+            <PlusIcon />
+            캐릭터 수정
+          </AddCharacterButton>
         </>
       )}
 
