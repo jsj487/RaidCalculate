@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -9,6 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 const admin = require("firebase-admin");
+
+const materialsPath = path.join(__dirname, "CraftMaterials.json");
+const materials = JSON.parse(fs.readFileSync(materialsPath, "utf-8"));
 
 const PORT = process.env.PORT || 5000; // 배포 환경에서 사용할 포트
 const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
@@ -181,6 +185,66 @@ app.post("/api/market/items", async (req, res) => {
   }
 });
 
+async function getMarketPriceByNameViaPost(name, categoryCode = 90000) {
+  try {
+    const response = await axios.post(
+      "https://developer-lostark.game.onstove.com/markets/items",
+      {
+        Sort: "GRADE",
+        CategoryCode: categoryCode,
+        ItemName: name,
+        PageNo: 1,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LOST_ARK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const item = response.data.Items?.[0];
+    if (!item) throw new Error("No item found");
+
+    return {
+      name: item.Name,
+      currentMinPrice: item.CurrentMinPrice,
+      recentPrice: item.RecentPrice,
+      yDayAvgPrice: item.YDayAvgPrice,
+      Icon: item.Icon,
+    };
+  } catch (err) {
+    console.error(`[POST ERROR] ${name}`, err.message);
+    return {
+      name,
+      currentMinPrice: null,
+      error: true,
+      message: err.message,
+    };
+  }
+}
+
+app.get("/api/craft-prices", async (req, res) => {
+  const results = await Promise.all(
+    materials.map(async (material) => {
+      const result = await getMarketPriceByNameViaPost(
+        material.name,
+        material.categoryCode
+      );
+      return {
+        name: material.name,
+        type: material.type,
+        requiredAmount: material.amount,
+        currentMinPrice: result?.currentMinPrice || null,
+        error: result?.error || false,
+        message: result?.message || null,
+      };
+    })
+  );
+
+  res.json(results);
+});
+
 app.get("/api/market/items/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -226,6 +290,70 @@ app.get("/api/market/options", async (req, res) => {
     );
     res.status(500).json({ error: "Failed to fetch market options" });
   }
+});
+
+app.get("/api/craft-calc", async (req, res) => {
+  const { type, feeReduction = 0, laborReduction = 0 } = req.query;
+
+  if (!type) {
+    return res
+      .status(400)
+      .json({ error: true, message: "type 쿼리가 필요합니다." });
+  }
+
+  const targetMaterials = materials.filter((m) => m.type === type);
+  if (targetMaterials.length === 0) {
+    return res.status(404).json({
+      error: true,
+      message: "해당 생활 유형에 해당하는 재료가 없습니다.",
+    });
+  }
+
+  const prices = [];
+
+  for (const m of targetMaterials) {
+    const result = await getMarketPriceByNameViaPost(m.name, m.categoryCode);
+    if (result?.currentMinPrice) {
+      const unitPrice = result.currentMinPrice / 100;
+      const total = unitPrice * m.amount;
+
+      prices.push({
+        name: m.name,
+        amount: m.amount,
+        unitPrice,
+        total,
+        icon: result.Icon || null, // ✅ 아이콘 포함
+      });
+    }
+  }
+
+  const fee = 400 * (1 - parseFloat(feeReduction));
+  const materialCost = prices.reduce((sum, p) => sum + p.total, 0);
+  const totalCost = materialCost + fee;
+  const unitCost = totalCost / 10;
+
+  const fusionPriceResult = await getMarketPriceByNameViaPost(
+    "아비도스 융화 재료",
+    50010
+  );
+
+  const marketPrice = fusionPriceResult?.currentMinPrice ?? 0;
+  const recentPrice = fusionPriceResult?.recentPrice ?? 0;
+  const ydayAvgPrice = fusionPriceResult?.yDayAvgPrice ?? 0;
+
+  const profitPerUnit = marketPrice - unitCost;
+  const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : 0;
+
+  res.json({
+    totalCost: Math.round(totalCost),
+    unitCost: Math.round(unitCost),
+    marketPrice,
+    recentPrice,
+    ydayAvgPrice,
+    profitPerUnit: Math.round(profitPerUnit),
+    roi: Math.round(roi * 10) / 10,
+    materials: prices,
+  });
 });
 
 // 정적 파일 제공 (React 빌드 결과물)

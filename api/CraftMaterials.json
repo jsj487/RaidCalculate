@@ -1,0 +1,115 @@
+[
+  {
+    "name": "들꽃",
+    "type": "식물채집",
+    "amount": 86,
+    "CategoryCode": 90200
+  },
+  {
+    "name": "수줍은 들꽃",
+    "type": "식물채집",
+    "amount": 45,
+    "CategoryCode": 90200
+  },
+  {
+    "name": "아비도스 들꽃",
+    "type": "식물채집",
+    "amount": 33,
+    "CategoryCode": 90200
+  },
+
+  {
+    "name": "고대 유물",
+    "type": "고고학",
+    "amount": 86,
+    "CategoryCode": 90700
+  },
+  {
+    "name": "희귀한 유물",
+    "type": "고고학",
+    "amount": 45,
+    "CategoryCode": 90700
+  },
+  {
+    "name": "아비도스 유물",
+    "type": "고고학",
+    "amount": 33,
+    "CategoryCode": 90700
+  },
+
+  {
+    "name": "목재",
+    "type": "벌목",
+    "amount": 86,
+    "CategoryCode": 90300
+  },
+  {
+    "name": "부드러운 목재",
+    "type": "벌목",
+    "amount": 45,
+    "CategoryCode": 90300
+  },
+  {
+    "name": "아비도스 목재",
+    "type": "벌목",
+    "amount": 33,
+    "CategoryCode": 90300
+  },
+
+  {
+    "name": "철광석",
+    "type": "채광",
+    "amount": 86,
+    "CategoryCode": 90400
+  },
+  {
+    "name": "묵직한 철광석",
+    "type": "채광",
+    "amount": 45,
+    "CategoryCode": 90400
+  },
+  {
+    "name": "아비도스 철광석",
+    "type": "채광",
+    "amount": 33,
+    "CategoryCode": 90400
+  },
+
+  {
+    "name": "생선",
+    "type": "낚시",
+    "amount": 86,
+    "CategoryCode": 90600
+  },
+  {
+    "name": "붉은 살 생선",
+    "type": "낚시",
+    "amount": 45,
+    "CategoryCode": 90600
+  },
+  {
+    "name": "아비도스 태양 잉어",
+    "type": "낚시",
+    "amount": 33,
+    "CategoryCode": 90600
+  },
+
+  {
+    "name": "두툼한 생고기",
+    "type": "수렵",
+    "amount": 86,
+    "CategoryCode": 90500
+  },
+  {
+    "name": "다듬은 생고기",
+    "type": "수렵",
+    "amount": 45,
+    "CategoryCode": 90500
+  },
+  {
+    "name": "아비도스 두툼한 생고기",
+    "type": "수렵",
+    "amount": 33,
+    "CategoryCode": 90500
+  }
+]
