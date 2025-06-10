@@ -323,6 +323,7 @@ app.get("/api/craft-calc", async (req, res) => {
         unitPrice,
         total,
         icon: result.Icon || null, // ✅ 아이콘 포함
+        currentMinPrice: result.currentMinPrice,
       });
     }
   }
