@@ -106,12 +106,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             >
               보석 깐부 찾기
             </NavLink>
-            {/* <NavLink
+            <NavLink
               to="/CraftCalc"
               $isActive={location.pathname === "/CraftCalc"}
             >
-              제작 계산기
-            </NavLink> */}
+              제작 계산기(제작중)
+            </NavLink>
             <NavLink to="/Package" $isActive={location.pathname === "/Package"}>
               패키지 계산기
             </NavLink>

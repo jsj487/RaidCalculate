@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
+import { CraftRecipes, CraftRecipe } from "../utils/CraftRecipes";
+
 const CraftContainer = styled.div`
   width: 100%;
   max-width: 800px;
@@ -75,77 +77,50 @@ interface MaterialPrice {
   message?: string;
 }
 
-const craftTypes = ["식물채집", "고고학", "낚시", "수렵", "벌목", "채광"];
-
 const CraftCalc = () => {
-  const lifeTypes = ["식물채집", "고고학", "벌목", "채광", "낚시", "수렵"];
-
-  const [feeReduction, setFeeReduction] = useState<number>(0); // 0 ~ 1
-  const [laborReduction, setLaborReduction] = useState<number>(0); // 0 ~ 1
-  const [selectedType, setSelectedType] = useState<string>("식물채집");
-  const [craftResult, setCraftResult] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [prices, setPrices] = useState<MaterialPrice[]>([]);
-
+  const [craftResult, setCraftResult] = useState<any>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [craftResults, setCraftResults] = useState<Record<string, any>>({});
-  const [loadingTypes, setLoadingTypes] = useState<Set<string>>(new Set());
-  const [expandedType, setExpandedType] = useState<string | null>(null);
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
 
-  const handleToggle = async (type: string) => {
-    if (expandedType === type) {
-      setExpandedType(null);
+  const handleToggle = async (recipe: CraftRecipe) => {
+    const id = recipe.id;
+    if (expandedId === id) {
+      setExpandedId(null);
       return;
     }
 
-    setExpandedType(type);
+    setExpandedId(id);
 
-    if (craftResults[type]) return;
+    if (craftResults[id]) return;
 
-    setLoadingTypes((prev) => new Set(prev).add(type));
+    setLoadingIds((prev) => new Set(prev).add(id));
 
     try {
-      const res = await axios.get("/api/craft-calc", {
-        params: { type },
+      const res = await axios.post("/api/craft-calc", {
+        materials: recipe.materials,
+        fee: recipe.fee,
+        outputCount: recipe.outputCount,
       });
-      setCraftResults((prev) => ({ ...prev, [type]: res.data }));
+
+      console.log("전송할 recipe:", {
+        materials: recipe.materials,
+        fee: recipe.fee,
+        outputCount: recipe.outputCount,
+      });
+
+      setCraftResults((prev) => ({ ...prev, [id]: res.data }));
     } catch (err) {
-      console.error(`Error fetching result for ${type}:`, err);
+      console.error("계산 실패:", err);
     } finally {
-      setLoadingTypes((prev) => {
+      setLoadingIds((prev) => {
         const updated = new Set(prev);
-        updated.delete(type);
+        updated.delete(id);
         return updated;
       });
     }
   };
-
-  const selectedItem = {
-    name: "아비도스 융화 재료",
-    categoryCode: 50010,
-  };
-
-  const fetchCraftCalcResult = async (type: string) => {
-    setIsLoading(true);
-    try {
-      const res = await axios.get("/api/craft-calc", {
-        params: {
-          type,
-          feeReduction,
-          laborReduction,
-        },
-      });
-      setCraftResult(res.data);
-    } catch (err) {
-      console.error("제작 계산 API 호출 실패:", err);
-      setCraftResult(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCraftCalcResult(selectedType);
-  }, []);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -162,20 +137,21 @@ const CraftCalc = () => {
 
   return (
     <CraftContainer>
-      {craftTypes.map((type) => {
-        const isExpanded = expandedType === type;
+      {CraftRecipes.map((recipe) => {
+        const isExpanded = expandedId === recipe.id;
+        const result = craftResults[recipe.id];
 
         return (
           <CraftRow
-            key={type}
+            key={recipe.id}
             expanded={isExpanded}
-            onClick={() => handleToggle(type)}
+            onClick={() => handleToggle(recipe)}
           >
-            <CraftHeader>아비도스 융화 재료 ({type})</CraftHeader>
+            <CraftHeader>{recipe.name}</CraftHeader>
 
             {isExpanded && (
               <CraftDetails onClick={(e) => e.stopPropagation()}>
-                {loadingTypes.has(type) ? (
+                {loadingIds.has(recipe.id) ? (
                   <div>불러오는 중...</div>
                 ) : (
                   <>
@@ -192,66 +168,118 @@ const CraftCalc = () => {
                           <th style={headerStyle}>재료명</th>
                           <th style={headerStyle}>수량</th>
                           <th style={headerStyle}>시세</th>
-                          <th style={headerStyle}>단가</th>
+                          <th style={headerStyle}>개당가격</th>
                           <th style={headerStyle}>총합</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {craftResults[type]?.materials?.map(
-                          (m: any, i: number) => (
-                            <tr key={i}>
-                              <td
+                        {result?.materials?.map((m: any, i: number) => (
+                          <tr key={i}>
+                            <td
+                              style={{
+                                ...cellStyle,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                            >
+                              <img
+                                src={m.icon}
+                                alt={m.name}
                                 style={{
-                                  ...cellStyle,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
+                                  width: "24px",
+                                  height: "24px",
+                                  borderRadius: "4px",
                                 }}
-                              >
-                                <img
-                                  src={m.icon}
-                                  alt={m.name}
-                                  style={{
-                                    width: "24px",
-                                    height: "24px",
-                                    borderRadius: "4px",
-                                  }}
-                                />
-                                {m.name}
-                              </td>
-                              <td style={cellCenter}>{Math.round(m.amount)}</td>
-                              <td style={cellCenter}>
-                                <input
-                                  type="number"
-                                  defaultValue={m.currentMinPrice}
-                                  step="0.01"
-                                  style={{
-                                    width: "70px",
-                                    padding: "4px 6px",
-                                    backgroundColor: "#1a1a1a",
-                                    border: "1px solid #444",
-                                    color: "#ddd",
-                                    borderRadius: "4px",
-                                    textAlign: "right",
-                                  }}
-                                  onChange={(e) => {
-                                    // 선택적으로 상태에 반영하거나 console.log
-                                    console.log(
-                                      `${m.name} 입력 시세:`,
-                                      e.target.value
-                                    );
-                                  }}
-                                />
-                              </td>
-                              <td style={cellCenter}>
-                                {m.unitPrice.toLocaleString()} G
-                              </td>
-                              <td style={cellCenter}>
-                                {m.total.toLocaleString()} G
-                              </td>
-                            </tr>
-                          )
-                        )}
+                              />
+                              {m.name}
+                            </td>
+                            <td style={cellCenter}>{Math.round(m.amount)}</td>
+                            <td style={cellCenter}>
+                              <input
+                                type="number"
+                                defaultValue={m.currentMinPrice}
+                                step="0.01"
+                                style={{
+                                  width: "70px",
+                                  padding: "4px 6px",
+                                  backgroundColor: "#1a1a1a",
+                                  border: "1px solid #444",
+                                  color: "#ddd",
+                                  borderRadius: "4px",
+                                  textAlign: "right",
+                                }}
+                              />
+                            </td>
+                            <td style={cellCenter}>
+                              {m.unitPrice.toLocaleString()} G
+                            </td>
+                            <td style={cellCenter}>
+                              {m.total.toLocaleString()} G
+                            </td>
+                          </tr>
+                        ))}
+                        {/* ✅ 수수료 요약 행 추가 */}
+                        <tr>
+                          {/* 아이콘 + 텍스트 */}
+                          <td
+                            style={{
+                              ...cellStyle,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              fontWeight: "bold",
+                              color: "#ffcc00",
+                            }}
+                          >
+                            <img
+                              src="/img/gold.png"
+                              alt="gold"
+                              style={{ width: "24px", height: "24px" }}
+                            />
+                            제작 수수료
+                          </td>
+
+                          {/* 수량, 시세, 개당가격 자리 맞춤용 빈 칸 */}
+                          <td style={cellCenter}></td>
+                          <td style={cellCenter}></td>
+                          <td style={cellCenter}></td>
+
+                          {/* 수수료 금액 */}
+                          <td
+                            style={{
+                              ...cellCenter,
+                              fontWeight: "bold",
+                              color: "#ffcc00",
+                            }}
+                          >
+                            {recipe.fee.toLocaleString()} G
+                          </td>
+                        </tr>
+
+                        <tr>
+                          <td colSpan={5} style={{ padding: 0 }}>
+                            <div
+                              style={{
+                                borderTop: "2px solid #888",
+                                marginTop: "12px",
+                                marginBottom: "8px",
+                              }}
+                            />
+                            <div
+                              style={{
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                fontSize: "16px",
+                                color: "#fff",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              총 제작 비용 -{" "}
+                              {result?.totalCost?.toLocaleString() ?? "-"} G
+                            </div>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
 
@@ -264,28 +292,27 @@ const CraftCalc = () => {
                       }}
                     >
                       <div>
-                        총 제작 비용:{" "}
-                        {craftResults[type].totalCost.toLocaleString()} G
-                      </div>
-                      <div>
                         개당 제작 단가:{" "}
-                        {craftResults[type].unitCost.toLocaleString()} G
+                        {result?.unitCost?.toLocaleString() ?? "-"} G
                       </div>
                       <div>
                         거래소 시세:{" "}
-                        {craftResults[type].marketPrice.toLocaleString()} G
+                        {result?.marketPrice?.toLocaleString() ?? "-"} G
                       </div>
                       <div>
                         순이익:{" "}
                         <span
                           style={{
                             color:
-                              craftResults[type].profitPerUnit >= 0
+                              result?.profitPerUnit != null &&
+                              result.profitPerUnit >= 0
                                 ? "lightgreen"
                                 : "tomato",
                           }}
                         >
-                          {craftResults[type].profitPerUnit.toLocaleString()} G
+                          {result?.profitPerUnit != null
+                            ? `${result.profitPerUnit.toLocaleString()} G`
+                            : "-"}
                         </span>
                       </div>
                       <div>
@@ -293,13 +320,13 @@ const CraftCalc = () => {
                         <span
                           style={{
                             color:
-                              craftResults[type].roi >= 0
+                              result?.roi != null && result.roi >= 0
                                 ? "lightgreen"
                                 : "tomato",
                             fontWeight: "bold",
                           }}
                         >
-                          {craftResults[type].roi}%
+                          {result?.roi != null ? `${result.roi}%` : "-"}
                         </span>
                       </div>
                     </div>
@@ -312,167 +339,6 @@ const CraftCalc = () => {
       })}
     </CraftContainer>
   );
-
-  // return (
-  //   <div style={{ padding: "20px", maxWidth: 800, margin: "0 auto" }}>
-  //     <h2 style={{ color: "#fff", marginBottom: "12px", fontSize: "24px" }}>
-  //       📦 아비도스 융화 재료 제작 계산기
-  //     </h2>
-
-  //     <div
-  //       style={{
-  //         display: "grid",
-  //         gridTemplateColumns: "1fr 1fr",
-  //         gap: "16px",
-  //         marginTop: "20px",
-  //       }}
-  //     >
-  //       {lifeTypes.map((type) => (
-  //         <div
-  //           key={type}
-  //           onClick={() => {
-  //             setSelectedType(type);
-  //             fetchCraftCalcResult(type);
-  //           }}
-  //           style={{
-  //             padding: "20px",
-  //             borderRadius: "10px",
-  //             backgroundColor: "#2e2e2e",
-  //             cursor: "pointer",
-  //             border:
-  //               selectedType === type ? "2px solid #3a72e8" : "2px solid #444",
-  //             transition: "border 0.3s",
-  //           }}
-  //         >
-  //           <div
-  //             style={{ color: "#fff", fontWeight: "bold", fontSize: "18px" }}
-  //           >
-  //             아비도스 융화 재료 ({type})
-  //           </div>
-  //           <div style={{ color: "#aaa", fontSize: "14px", marginTop: "8px" }}>
-  //             필요한 재료와 수익 계산 보기
-  //           </div>
-  //         </div>
-  //       ))}
-  //     </div>
-
-  //     {isLoading && (
-  //       <div style={{ marginTop: "30px", color: "#ccc" }}>불러오는 중...</div>
-  //     )}
-
-  //     {craftResult && !isLoading && (
-  //       <div style={{ marginTop: "40px" }}>
-  //         <h3 style={{ color: "#fff", marginBottom: "12px" }}>
-  //           📊 제작 결과 – {selectedType}
-  //         </h3>
-
-  //         <table
-  //           style={{
-  //             width: "100%",
-  //             borderCollapse: "collapse",
-  //             backgroundColor: "#2a2a2a",
-  //             color: "white",
-  //           }}
-  //         >
-  //           <thead>
-  //             <tr>
-  //               <th style={headerStyle}>재료명</th>
-  //               <th style={headerStyle}>수량</th>
-  //               <th style={headerStyle}>단가</th>
-  //               <th style={headerStyle}>총합</th>
-  //             </tr>
-  //           </thead>
-  //           <tbody>
-  //             {craftResult.materials?.map((m: any, i: number) => (
-  //               <tr key={i}>
-  //                 <td
-  //                   style={{
-  //                     ...cellStyle,
-  //                     display: "flex",
-  //                     alignItems: "center",
-  //                     gap: "8px",
-  //                   }}
-  //                 >
-  //                   <img
-  //                     src={m.icon || "/img/default.png"}
-  //                     alt={m.name}
-  //                     style={{
-  //                       width: "24px",
-  //                       height: "24px",
-  //                       borderRadius: "4px",
-  //                     }}
-  //                   />
-  //                   {m.name}
-  //                 </td>
-  //                 <td style={cellRight}>{m.amount.toFixed(2)}</td>
-  //                 <td style={cellRight}>{m.unitPrice.toLocaleString()} G</td>
-  //                 <td style={cellRight}>{m.total.toLocaleString()} G</td>
-  //               </tr>
-  //             ))}
-  //           </tbody>
-  //         </table>
-
-  //         {/* 하단 요약 정보 */}
-  //         <div
-  //           style={{
-  //             marginTop: "24px",
-  //             backgroundColor: "#1e1e1e",
-  //             padding: "20px",
-  //             borderRadius: "12px",
-  //             color: "#fff",
-  //             lineHeight: "1.6",
-  //           }}
-  //         >
-  //           <div>
-  //             💰 <strong>총 제작 비용:</strong>{" "}
-  //             {craftResult.totalCost.toLocaleString()} G
-  //           </div>
-  //           <div>
-  //             🧪 <strong>개당 제작 단가:</strong>{" "}
-  //             {craftResult.unitCost.toLocaleString()} G
-  //           </div>
-  //           <div>
-  //             📈 <strong>거래소 시세:</strong>{" "}
-  //             {craftResult.marketPrice.toLocaleString()} G{" "}
-  //             <span
-  //               style={{
-  //                 color:
-  //                   craftResult.marketPrice > craftResult.unitCost
-  //                     ? "lightgreen"
-  //                     : "salmon",
-  //               }}
-  //             >
-  //               {craftResult.marketPrice > craftResult.unitCost
-  //                 ? "▲ 이득"
-  //                 : "▼ 손해"}
-  //             </span>
-  //           </div>
-  //           <div>
-  //             📊 <strong>단위당 이익:</strong>{" "}
-  //             <span
-  //               style={{
-  //                 color: craftResult.profitPerUnit >= 0 ? "skyblue" : "tomato",
-  //               }}
-  //             >
-  //               {craftResult.profitPerUnit.toLocaleString()} G
-  //             </span>
-  //           </div>
-  //           <div>
-  //             📐 <strong>ROI:</strong>{" "}
-  //             <span
-  //               style={{
-  //                 color: craftResult.roi >= 0 ? "lightgreen" : "tomato",
-  //                 fontWeight: "bold",
-  //               }}
-  //             >
-  //               {craftResult.roi}%
-  //             </span>
-  //           </div>
-  //         </div>
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 };
 
 export default CraftCalc;

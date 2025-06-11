@@ -2,7 +2,6 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const path = require("path");
-const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -10,9 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 const admin = require("firebase-admin");
-
-const materialsPath = path.join(__dirname, "CraftMaterials.json");
-const materials = JSON.parse(fs.readFileSync(materialsPath, "utf-8"));
 
 const PORT = process.env.PORT || 5000; // 배포 환경에서 사용할 포트
 const LOST_ARK_API_KEY = process.env.LOST_ARK_API_KEY;
@@ -224,27 +220,6 @@ async function getMarketPriceByNameViaPost(name, categoryCode = 90000) {
   }
 }
 
-app.get("/api/craft-prices", async (req, res) => {
-  const results = await Promise.all(
-    materials.map(async (material) => {
-      const result = await getMarketPriceByNameViaPost(
-        material.name,
-        material.categoryCode
-      );
-      return {
-        name: material.name,
-        type: material.type,
-        requiredAmount: material.amount,
-        currentMinPrice: result?.currentMinPrice || null,
-        error: result?.error || false,
-        message: result?.message || null,
-      };
-    })
-  );
-
-  res.json(results);
-});
-
 app.get("/api/market/items/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -292,26 +267,18 @@ app.get("/api/market/options", async (req, res) => {
   }
 });
 
-app.get("/api/craft-calc", async (req, res) => {
-  const { type, feeReduction = 0, laborReduction = 0 } = req.query;
+app.post("/api/craft-calc", async (req, res) => {
+  const { materials, fee = 0, outputCount = 10 } = req.body;
 
-  if (!type) {
+  if (!Array.isArray(materials) || materials.length === 0) {
     return res
       .status(400)
-      .json({ error: true, message: "type 쿼리가 필요합니다." });
-  }
-
-  const targetMaterials = materials.filter((m) => m.type === type);
-  if (targetMaterials.length === 0) {
-    return res.status(404).json({
-      error: true,
-      message: "해당 생활 유형에 해당하는 재료가 없습니다.",
-    });
+      .json({ error: true, message: "materials가 필요합니다." });
   }
 
   const prices = [];
 
-  for (const m of targetMaterials) {
+  for (const m of materials) {
     const result = await getMarketPriceByNameViaPost(m.name, m.categoryCode);
     if (result?.currentMinPrice) {
       const unitPrice = result.currentMinPrice / 100;
@@ -322,19 +289,20 @@ app.get("/api/craft-calc", async (req, res) => {
         amount: m.amount,
         unitPrice,
         total,
-        icon: result.Icon || null, // ✅ 아이콘 포함
+        icon: result.Icon || null,
         currentMinPrice: result.currentMinPrice,
       });
     }
   }
 
-  const fee = 400 * (1 - parseFloat(feeReduction));
   const materialCost = prices.reduce((sum, p) => sum + p.total, 0);
-  const totalCost = materialCost + fee;
-  const unitCost = totalCost / 10;
+  const totalCost = materialCost + parseFloat(fee);
+  const unitCost = totalCost / outputCount;
 
+  // 제작 결과물 가격 (이건 추후 동적으로 바꾸어도 됨)
+  const resultItem = "아비도스 융화 재료";
   const fusionPriceResult = await getMarketPriceByNameViaPost(
-    "아비도스 융화 재료",
+    resultItem,
     50010
   );
 
