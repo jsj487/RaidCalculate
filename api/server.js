@@ -310,7 +310,15 @@ app.post("/api/craft-calc", async (req, res) => {
   const recentPrice = fusionPriceResult?.recentPrice ?? 0;
   const ydayAvgPrice = fusionPriceResult?.yDayAvgPrice ?? 0;
 
-  const profitPerUnit = marketPrice - unitCost;
+  // 수수료 반영: 올림 처리
+  const feeOnSale = Math.ceil(marketPrice * 0.05);
+  const netSalePrice = marketPrice - feeOnSale;
+
+  const saleProfit = netSalePrice - unitCost;
+  const useProfit = marketPrice - unitCost; // 직접 사용은 수수료 없음
+
+  // 손익
+  const profitPerUnit = netSalePrice - unitCost;
   const roi = unitCost > 0 ? (profitPerUnit / unitCost) * 100 : 0;
 
   res.json({
@@ -321,6 +329,8 @@ app.post("/api/craft-calc", async (req, res) => {
     ydayAvgPrice,
     profitPerUnit: Math.round(profitPerUnit),
     roi: Math.round(roi * 10) / 10,
+    saleProfit: Math.round(saleProfit),
+    useProfit: Math.round(useProfit),
     materials: prices,
   });
 });

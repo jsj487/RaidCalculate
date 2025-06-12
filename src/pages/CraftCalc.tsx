@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 
+import { TooltipIcon, TooltipText } from "../components/common/Tooltip";
 import { CraftRecipes, CraftRecipe } from "../utils/CraftRecipes";
 
 const CraftContainer = styled.div`
@@ -79,7 +80,10 @@ interface MaterialPrice {
 
 const CraftCalc = () => {
   const [prices, setPrices] = useState<MaterialPrice[]>([]);
-  const [craftResult, setCraftResult] = useState<any>(null);
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>(
+    {}
+  );
+  const [updatedResults, setUpdatedResults] = useState<Record<string, any>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [craftResults, setCraftResults] = useState<Record<string, any>>({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
@@ -110,7 +114,24 @@ const CraftCalc = () => {
         outputCount: recipe.outputCount,
       });
 
-      setCraftResults((prev) => ({ ...prev, [id]: res.data }));
+      const profitPerUnit = res.data.profitPerUnit;
+      const unitCost = res.data.unitCost;
+      const costROI =
+        unitCost > 0 ? Math.round((profitPerUnit / unitCost) * 1000) / 10 : 0;
+      const laborROI_percent =
+        recipe.laborCost > 0
+          ? Math.round((profitPerUnit / recipe.laborCost) * 1000) / 10
+          : 0;
+
+      setCraftResults((prev) => ({
+        ...prev,
+        [id]: {
+          ...res.data,
+          costROI,
+          laborROI: Math.round((profitPerUnit / recipe.laborCost) * 10) / 10,
+          laborROI_percent,
+        },
+      }));
     } catch (err) {
       console.error("계산 실패:", err);
     } finally {
@@ -209,6 +230,81 @@ const CraftCalc = () => {
                                   borderRadius: "4px",
                                   textAlign: "right",
                                 }}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value);
+                                  const newPrice = isNaN(value) ? 0 : value;
+
+                                  // 입력값 저장
+                                  setPriceOverrides((prev) => ({
+                                    ...prev,
+                                    [m.name]: newPrice,
+                                  }));
+
+                                  // 실시간 계산
+                                  const updatedMaterials = result.materials.map(
+                                    (mat: any) => {
+                                      const pricePer100 =
+                                        mat.name === m.name
+                                          ? newPrice
+                                          : priceOverrides[mat.name] ??
+                                            mat.currentMinPrice;
+                                      const unitPrice = pricePer100 / 100;
+                                      const total = unitPrice * mat.amount;
+                                      return {
+                                        ...mat,
+                                        currentMinPrice: pricePer100,
+                                        unitPrice,
+                                        total,
+                                      };
+                                    }
+                                  );
+
+                                  const materialCost = updatedMaterials.reduce(
+                                    (sum: number, m: any) => sum + m.total,
+                                    0
+                                  );
+                                  const totalCost = materialCost + recipe.fee;
+                                  const unitCost =
+                                    totalCost / recipe.outputCount;
+                                  const marketPrice = result.marketPrice ?? 0;
+                                  const profitPerUnit = marketPrice - unitCost;
+                                  const feeOnSale = Math.ceil(
+                                    marketPrice * 0.05
+                                  );
+                                  const netSalePrice = marketPrice - feeOnSale;
+
+                                  const saleProfit = netSalePrice - unitCost;
+                                  const useProfit = marketPrice - unitCost;
+
+                                  const costROI =
+                                    unitCost > 0
+                                      ? Math.round(
+                                          (profitPerUnit / unitCost) * 1000
+                                        ) / 10
+                                      : 0;
+                                  const laborROI_percent =
+                                    recipe.laborCost > 0
+                                      ? Math.round(
+                                          (profitPerUnit / recipe.laborCost) *
+                                            1000
+                                        ) / 10
+                                      : 0;
+
+                                  setCraftResults((prev) => ({
+                                    ...prev,
+                                    [recipe.id]: {
+                                      ...prev[recipe.id],
+                                      materials: updatedMaterials,
+                                      totalCost: Math.round(totalCost),
+                                      unitCost: Math.round(unitCost),
+                                      profitPerUnit: Math.round(profitPerUnit),
+                                      costROI,
+                                      laborROI_percent,
+                                      saleProfit: Math.round(saleProfit),
+                                      useProfit: Math.round(useProfit),
+                                    },
+                                  }));
+                                }}
                               />
                             </td>
                             <td style={cellCenter}>
@@ -275,7 +371,7 @@ const CraftCalc = () => {
                                 marginBottom: "8px",
                               }}
                             >
-                              총 제작 비용 -{" "}
+                              총 제작 비용:{" "}
                               {result?.totalCost?.toLocaleString() ?? "-"} G
                             </div>
                           </td>
@@ -300,34 +396,78 @@ const CraftCalc = () => {
                         {result?.marketPrice?.toLocaleString() ?? "-"} G
                       </div>
                       <div>
-                        순이익:{" "}
+                        판매 시 이익 (5% 수수료 적용):{" "}
                         <span
                           style={{
                             color:
-                              result?.profitPerUnit != null &&
-                              result.profitPerUnit >= 0
+                              result?.saleProfit != null &&
+                              result.saleProfit >= 0
                                 ? "lightgreen"
                                 : "tomato",
                           }}
                         >
-                          {result?.profitPerUnit != null
-                            ? `${result.profitPerUnit.toLocaleString()} G`
+                          {result?.saleProfit != null
+                            ? `${result.saleProfit.toLocaleString()} G`
                             : "-"}
                         </span>
                       </div>
+
                       <div>
-                        ROI:{" "}
+                        직접 사용 시 기대가치 (평균 시세 기준):{" "}
                         <span
                           style={{
                             color:
-                              result?.roi != null && result.roi >= 0
+                              result?.useProfit != null && result.useProfit >= 0
                                 ? "lightgreen"
                                 : "tomato",
-                            fontWeight: "bold",
                           }}
                         >
-                          {result?.roi != null ? `${result.roi}%` : "-"}
+                          {result?.useProfit != null
+                            ? `${result.useProfit.toLocaleString()} G`
+                            : "-"}
                         </span>
+                      </div>
+
+                      <div>
+                        원가 이익률:{" "}
+                        <span
+                          style={{
+                            color:
+                              result?.costROI >= 0 ? "lightgreen" : "tomato",
+                          }}
+                        >
+                          {result?.costROI != null ? `${result.costROI}%` : "-"}
+                        </span>
+                        <TooltipIcon>
+                          ?
+                          <TooltipText>
+                            내가 소비한 골드 대비 수익률입니다. <br />
+                            예: 100골드로 130골드 벌면 30%
+                          </TooltipText>
+                        </TooltipIcon>
+                      </div>
+
+                      <div>
+                        활동력 이익률:{" "}
+                        <span
+                          style={{
+                            color:
+                              result?.laborROI_percent >= 0
+                                ? "lightgreen"
+                                : "tomato",
+                          }}
+                        >
+                          {result?.laborROI_percent != null
+                            ? `${result.laborROI_percent}%`
+                            : "-"}
+                        </span>
+                        <TooltipIcon>
+                          ?
+                          <TooltipText>
+                            활동력 대비 수익률입니다. <br />
+                            예: 300 활동력으로 900G 벌면 200% 수익
+                          </TooltipText>
+                        </TooltipIcon>
                       </div>
                     </div>
                   </>

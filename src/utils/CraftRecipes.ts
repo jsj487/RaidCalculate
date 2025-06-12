@@ -9,6 +9,7 @@ export interface CraftRecipe {
   name: string;
   fee: number;
   outputCount: number;
+  laborCost: number;
   materials: CraftMaterial[];
 }
 
@@ -19,6 +20,7 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (식물채집) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "들꽃", amount: 86, categoryCode: 90200 },
       { name: "수줍은 들꽃", amount: 45, categoryCode: 90200 },
@@ -30,6 +32,7 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (고고학) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "고대 유물", amount: 120, categoryCode: 90700 },
       { name: "희귀한 유물", amount: 42, categoryCode: 90700 },
@@ -41,6 +44,7 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (벌목) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "목재", amount: 86, categoryCode: 90300 },
       { name: "부드러운 목재", amount: 45, categoryCode: 90300 },
@@ -52,6 +56,7 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (채광) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "목재", amount: 86, categoryCode: 90300 },
       { name: "부드러운 목재", amount: 45, categoryCode: 90300 },
@@ -63,6 +68,7 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (낚시) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "생선", amount: 86, categoryCode: 90600 },
       { name: "붉은 살 생선", amount: 45, categoryCode: 90600 },
@@ -74,22 +80,11 @@ export const CraftRecipes: CraftRecipe[] = [
     name: "아비도스 융화 재료 (수렵) X10",
     fee: 400,
     outputCount: 10,
+    laborCost: 288,
     materials: [
       { name: "두툼한 생고기", amount: 86, categoryCode: 90500 },
       { name: "다듬은 생고기", amount: 45, categoryCode: 90500 },
       { name: "아비도스 두툼한 생고기", amount: 33, categoryCode: 90500 },
-    ],
-  },
-
-  //오레하 융화 재료
-  {
-    id: "oreha_crystal",
-    name: "오레하 융화 재료",
-    fee: 600,
-    outputCount: 10,
-    materials: [
-      { name: "오레하 광석", amount: 50, categoryCode: 90400 },
-      { name: "정제된 파편", amount: 20, categoryCode: 90500 },
     ],
   },
 ];
