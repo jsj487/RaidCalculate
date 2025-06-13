@@ -78,12 +78,78 @@ interface MaterialPrice {
   message?: string;
 }
 
+function calculateCraftResult({
+  recipe,
+  materials,
+  priceOverrides,
+  outputCount,
+  marketPrice,
+}: {
+  recipe: CraftRecipe;
+  materials: any[];
+  priceOverrides: Record<string, number>;
+  outputCount: number;
+  marketPrice: number;
+}) {
+  // 1. 재료 시세 계산
+  const updatedMaterials = materials.map((m: any) => {
+    const pricePer100 = priceOverrides[m.name] ?? m.currentMinPrice;
+    const unitPrice = pricePer100 / 100;
+    const total = unitPrice * m.amount;
+    return {
+      ...m,
+      unitPrice,
+      total,
+      currentMinPrice: pricePer100,
+    };
+  });
+
+  // 2. 제작 총 수량과 비용 계산
+  const totalProduced = outputCount * recipe.outputCount; // 예: 2회 제작 × 10개 = 20개
+  const materialCost = updatedMaterials.reduce((sum, m) => sum + m.total, 0);
+  const totalCost = (materialCost + recipe.fee) * outputCount;
+  const unitCost = totalCost / totalProduced;
+
+  // 3. 시장 시세 기반 판매 수익
+  const expectedRevenue = marketPrice * totalProduced;
+  const totalFee = Math.ceil(expectedRevenue * 0.05); // 전체 거래 수수료 (올림)
+  const totalNetRevenue = expectedRevenue - totalFee;
+
+  // 4. 최종 수익 계산
+  const totalSaleProfit = totalNetRevenue - totalCost;
+  const totalUseProfit = expectedRevenue - totalCost;
+
+  const profitPerUnit = totalProduced > 0 ? totalSaleProfit / totalProduced : 0;
+
+  // 5. ROI 계산
+  const costROI =
+    unitCost > 0 ? Math.round((profitPerUnit / unitCost) * 1000) / 10 : 0;
+
+  const laborROI_percent =
+    recipe.laborCost > 0
+      ? Math.round((profitPerUnit / recipe.laborCost) * 1000) / 10
+      : 0;
+
+  return {
+    updatedMaterials,
+    totalCost: Math.round(totalCost),
+    unitCost: Math.round(unitCost),
+    profitPerUnit: Math.round(profitPerUnit),
+    costROI,
+    laborROI_percent,
+    totalSaleProfit: Math.round(totalSaleProfit),
+    totalUseProfit: Math.round(totalUseProfit),
+    totalGold: Math.round(totalCost),
+    marketPrice,
+  };
+}
+
 const CraftCalc = () => {
   const [prices, setPrices] = useState<MaterialPrice[]>([]);
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>(
     {}
   );
-  const [updatedResults, setUpdatedResults] = useState<Record<string, any>>({});
+  const [outputCounts, setOutputCounts] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [craftResults, setCraftResults] = useState<Record<string, any>>({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
@@ -176,6 +242,45 @@ const CraftCalc = () => {
                   <div>불러오는 중...</div>
                 ) : (
                   <>
+                    <input
+                      type="number"
+                      value={outputCounts[recipe.id] ?? "1"}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setOutputCounts((prev) => ({
+                          ...prev,
+                          [recipe.id]: value,
+                        }));
+
+                        const parsed = Number(value);
+                        if (isNaN(parsed) || parsed < 1) return; // 계산 스킵
+
+                        const calc = calculateCraftResult({
+                          recipe,
+                          materials: result.materials,
+                          priceOverrides,
+                          outputCount: parsed,
+                          marketPrice: result.marketPrice ?? 0,
+                        });
+
+                        setCraftResults((prev) => ({
+                          ...prev,
+                          [recipe.id]: {
+                            ...prev[recipe.id],
+                            ...calc,
+                          },
+                        }));
+                      }}
+                      style={{
+                        width: "60px",
+                        padding: "4px 6px",
+                        border: "1px solid #444",
+                        backgroundColor: "#1a1a1a",
+                        color: "#ddd",
+                        borderRadius: "4px",
+                        marginLeft: "10px",
+                      }}
+                    />
                     <table
                       style={{
                         width: "100%",
@@ -234,76 +339,41 @@ const CraftCalc = () => {
                                   const value = parseFloat(e.target.value);
                                   const newPrice = isNaN(value) ? 0 : value;
 
-                                  // 입력값 저장
-                                  setPriceOverrides((prev) => ({
-                                    ...prev,
-                                    [m.name]: newPrice,
-                                  }));
+                                  setPriceOverrides((prev) => {
+                                    const updated = {
+                                      ...prev,
+                                      [m.name]: newPrice,
+                                    };
 
-                                  // 실시간 계산
-                                  const updatedMaterials = result.materials.map(
-                                    (mat: any) => {
-                                      const pricePer100 =
-                                        mat.name === m.name
-                                          ? newPrice
-                                          : priceOverrides[mat.name] ??
-                                            mat.currentMinPrice;
-                                      const unitPrice = pricePer100 / 100;
-                                      const total = unitPrice * mat.amount;
-                                      return {
-                                        ...mat,
-                                        currentMinPrice: pricePer100,
-                                        unitPrice,
-                                        total,
-                                      };
-                                    }
-                                  );
+                                    const parsedOutputCount =
+                                      Number(outputCounts[recipe.id]) || 1;
 
-                                  const materialCost = updatedMaterials.reduce(
-                                    (sum: number, m: any) => sum + m.total,
-                                    0
-                                  );
-                                  const totalCost = materialCost + recipe.fee;
-                                  const unitCost =
-                                    totalCost / recipe.outputCount;
-                                  const marketPrice = result.marketPrice ?? 0;
-                                  const profitPerUnit = marketPrice - unitCost;
-                                  const feeOnSale = Math.ceil(
-                                    marketPrice * 0.05
-                                  );
-                                  const netSalePrice = marketPrice - feeOnSale;
+                                    const calc = calculateCraftResult({
+                                      recipe,
+                                      materials: result.materials,
+                                      priceOverrides: updated,
+                                      outputCount: parsedOutputCount,
+                                      marketPrice: result.marketPrice ?? 0,
+                                    });
 
-                                  const saleProfit = netSalePrice - unitCost;
-                                  const useProfit = marketPrice - unitCost;
+                                    setCraftResults((prev) => ({
+                                      ...prev,
+                                      [recipe.id]: {
+                                        ...prev[recipe.id],
+                                        materials: calc.updatedMaterials,
+                                        totalCost: calc.totalCost,
+                                        unitCost: calc.unitCost,
+                                        profitPerUnit: calc.profitPerUnit,
+                                        costROI: calc.costROI,
+                                        laborROI_percent: calc.laborROI_percent,
+                                        totalSaleProfit: calc.totalSaleProfit,
+                                        totalUseProfit: calc.totalUseProfit,
+                                        totalGold: calc.totalGold,
+                                      },
+                                    }));
 
-                                  const costROI =
-                                    unitCost > 0
-                                      ? Math.round(
-                                          (profitPerUnit / unitCost) * 1000
-                                        ) / 10
-                                      : 0;
-                                  const laborROI_percent =
-                                    recipe.laborCost > 0
-                                      ? Math.round(
-                                          (profitPerUnit / recipe.laborCost) *
-                                            1000
-                                        ) / 10
-                                      : 0;
-
-                                  setCraftResults((prev) => ({
-                                    ...prev,
-                                    [recipe.id]: {
-                                      ...prev[recipe.id],
-                                      materials: updatedMaterials,
-                                      totalCost: Math.round(totalCost),
-                                      unitCost: Math.round(unitCost),
-                                      profitPerUnit: Math.round(profitPerUnit),
-                                      costROI,
-                                      laborROI_percent,
-                                      saleProfit: Math.round(saleProfit),
-                                      useProfit: Math.round(useProfit),
-                                    },
-                                  }));
+                                    return updated;
+                                  });
                                 }}
                               />
                             </td>
@@ -400,14 +470,14 @@ const CraftCalc = () => {
                         <span
                           style={{
                             color:
-                              result?.saleProfit != null &&
-                              result.saleProfit >= 0
+                              result?.totalSaleProfit != null &&
+                              result.totalSaleProfit >= 0
                                 ? "lightgreen"
                                 : "tomato",
                           }}
                         >
-                          {result?.saleProfit != null
-                            ? `${result.saleProfit.toLocaleString()} G`
+                          {result?.totalSaleProfit != null
+                            ? `${result.totalSaleProfit.toLocaleString()} G`
                             : "-"}
                         </span>
                       </div>
@@ -417,13 +487,14 @@ const CraftCalc = () => {
                         <span
                           style={{
                             color:
-                              result?.useProfit != null && result.useProfit >= 0
+                              result?.totalUseProfit != null &&
+                              result.totalUseProfit >= 0
                                 ? "lightgreen"
                                 : "tomato",
                           }}
                         >
-                          {result?.useProfit != null
-                            ? `${result.useProfit.toLocaleString()} G`
+                          {result?.totalUseProfit != null
+                            ? `${result.totalUseProfit.toLocaleString()} G`
                             : "-"}
                         </span>
                       </div>
