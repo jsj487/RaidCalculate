@@ -17,7 +17,7 @@ export const CraftRecipes: CraftRecipe[] = [
   //아비도스 융화 재료
   {
     id: "abyssoos_flower",
-    name: "아비도스 융화 재료 (식물채집) X10",
+    name: "아비도스 융화 재료 (식물채집)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
@@ -29,7 +29,7 @@ export const CraftRecipes: CraftRecipe[] = [
   },
   {
     id: "abyssoos_fossil",
-    name: "아비도스 융화 재료 (고고학) X10",
+    name: "아비도스 융화 재료 (고고학)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
@@ -41,7 +41,7 @@ export const CraftRecipes: CraftRecipe[] = [
   },
   {
     id: "abyssoos_wood",
-    name: "아비도스 융화 재료 (벌목) X10",
+    name: "아비도스 융화 재료 (벌목)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
@@ -53,7 +53,7 @@ export const CraftRecipes: CraftRecipe[] = [
   },
   {
     id: "abyssoos_crystal",
-    name: "아비도스 융화 재료 (채광) X10",
+    name: "아비도스 융화 재료 (채광)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
@@ -65,7 +65,7 @@ export const CraftRecipes: CraftRecipe[] = [
   },
   {
     id: "abyssoos_fish",
-    name: "아비도스 융화 재료 (낚시) X10",
+    name: "아비도스 융화 재료 (낚시)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
@@ -77,7 +77,7 @@ export const CraftRecipes: CraftRecipe[] = [
   },
   {
     id: "abyssoos_meet",
-    name: "아비도스 융화 재료 (수렵) X10",
+    name: "아비도스 융화 재료 (수렵)",
     fee: 400,
     outputCount: 10,
     laborCost: 288,
