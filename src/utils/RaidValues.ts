@@ -1174,31 +1174,33 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 700,
-            bonusCost: 450,
+            clearGold: 350, //귀속골드 350
+            bonusCost: 175,
             clearMaterials: [
-              { name: "파괴석 결정", quantity: 200 },
-              { name: "수호석 결정", quantity: 400 },
-              { name: "명예의 파편", quantity: 500 },
+              { name: "파괴석 결정", quantity: 240 },
+              { name: "수호석 결정", quantity: 480 },
+              { name: "명예의 파편", quantity: 750 },
+              { name: "위대한 명예의 돌파석", quantity: 6 },
               { name: "마수의 뼈", quantity: 3 },
               { name: "클리어 메달", quantity: 50 },
             ],
             bonusMaterials: [
               { name: "파괴석 결정", quantity: 360 },
               { name: "수호석 결정", quantity: 720 },
-              { name: "명예의 파편", quantity: 1000 },
+              { name: "명예의 파편", quantity: 1300 },
               { name: "위대한 명예의 돌파석", quantity: 10 },
               { name: "마수의 뼈", quantity: 3 },
             ],
           },
           //하드 - 2관문
           {
-            clearGold: 1100,
-            bonusCost: 600,
+            clearGold: 550, //귀속골드 550
+            bonusCost: 275,
             clearMaterials: [
-              { name: "파괴석 결정", quantity: 240 },
-              { name: "수호석 결정", quantity: 480 },
-              { name: "명예의 파편", quantity: 700 },
+              { name: "파괴석 결정", quantity: 290 },
+              { name: "수호석 결정", quantity: 580 },
+              { name: "명예의 파편", quantity: 1100 },
+              { name: "위대한 명예의 돌파석", quantity: 6 },
               { name: "마수의 뼈", quantity: 3 },
               { name: "혼돈의 돌", quantity: 1 },
               { name: "융합 돌파석", quantity: 16 },
@@ -1207,7 +1209,7 @@ export const RaidValues: RaidValuesType = {
             bonusMaterials: [
               { name: "파괴석 결정", quantity: 480 },
               { name: "수호석 결정", quantity: 960 },
-              { name: "명예의 파편", quantity: 1300 },
+              { name: "명예의 파편", quantity: 1600 },
               { name: "위대한 명예의 돌파석", quantity: 10 },
               { name: "마수의 뼈", quantity: 3 },
               { name: "융합 돌파석", quantity: 12 },
@@ -1220,41 +1222,43 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 500,
-            bonusCost: 300,
+            clearGold: 250, //귀속골드 250
+            bonusCost: 75,
             clearMaterials: [
-              { name: "파괴석 결정", quantity: 150 },
-              { name: "수호석 결정", quantity: 300 },
-              { name: "명예의 파편", quantity: 400 },
+              { name: "파괴석 결정", quantity: 200 },
+              { name: "수호석 결정", quantity: 400 },
+              { name: "명예의 파편", quantity: 600 },
+              { name: "위대한 명예의 돌파석", quantity: 5 },
               { name: "마수의 뼈", quantity: 1 },
               { name: "클리어 메달", quantity: 50 },
             ],
             bonusMaterials: [
-              { name: "파괴석 결정", quantity: 240 },
-              { name: "수호석 결정", quantity: 480 },
-              { name: "명예의 파편", quantity: 400 },
-              { name: "위대한 명예의 돌파석", quantity: 6 },
+              { name: "파괴석 결정", quantity: 280 },
+              { name: "수호석 결정", quantity: 560 },
+              { name: "명예의 파편", quantity: 600 },
+              { name: "위대한 명예의 돌파석", quantity: 7 },
               { name: "마수의 뼈", quantity: 1 },
             ],
           },
           //노말 - 2관문
           {
-            clearGold: 700,
-            bonusCost: 400,
+            clearGold: 350, //귀속골드 350
+            bonusCost: 100,
             clearMaterials: [
-              { name: "파괴석 결정", quantity: 200 },
-              { name: "수호석 결정", quantity: 400 },
-              { name: "명예의 파편", quantity: 600 },
+              { name: "파괴석 결정", quantity: 240 },
+              { name: "수호석 결정", quantity: 480 },
+              { name: "명예의 파편", quantity: 900 },
+              { name: "위대한 명예의 돌파석", quantity: 5 },
               { name: "마수의 뼈", quantity: 2 },
               { name: "혼돈의 돌", quantity: 1 },
               { name: "융합 돌파석", quantity: 8 },
               { name: "클리어 메달", quantity: 70 },
             ],
             bonusMaterials: [
-              { name: "파괴석 결정", quantity: 300 },
-              { name: "수호석 결정", quantity: 600 },
-              { name: "명예의 파편", quantity: 700 },
-              { name: "위대한 명예의 돌파석", quantity: 7 },
+              { name: "파괴석 결정", quantity: 360 },
+              { name: "수호석 결정", quantity: 720 },
+              { name: "명예의 파편", quantity: 900 },
+              { name: "위대한 명예의 돌파석", quantity: 8 },
               { name: "마수의 뼈", quantity: 2 },
               { name: "융합 돌파석", quantity: 6 },
             ],
@@ -1271,50 +1275,53 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 1750,
-            bonusCost: 620,
+            clearGold: 700, //귀속골드 700
+            bonusCost: 350,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 140 },
-              { name: "정제된 수호강석", quantity: 280 },
-              { name: "명예의 파편", quantity: 2400 },
+              { name: "정제된 파괴강석", quantity: 240 },
+              { name: "정제된 수호강석", quantity: 480 },
+              { name: "명예의 파편", quantity: 3400 },
+              { name: "찬란한 명예의 돌파석", quantity: 4 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
               { name: "정제된 파괴강석", quantity: 170 },
               { name: "정제된 수호강석", quantity: 340 },
-              { name: "명예의 파편", quantity: 5000 },
-              { name: "찬란한 명예의 돌파석", quantity: 3 },
+              { name: "명예의 파편", quantity: 4400 },
+              { name: "찬란한 명예의 돌파석", quantity: 8 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
             ],
           },
           //하드 - 2관문
           {
-            clearGold: 2500,
-            bonusCost: 830,
+            clearGold: 1000, //귀속골드 1000
+            bonusCost: 500,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 140 },
-              { name: "정제된 수호강석", quantity: 280 },
-              { name: "명예의 파편", quantity: 3000 },
+              { name: "정제된 파괴강석", quantity: 240 },
+              { name: "정제된 수호강석", quantity: 480 },
+              { name: "명예의 파편", quantity: 3400 },
+              { name: "찬란한 명예의 돌파석", quantity: 4 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "클리어 메달", quantity: 250 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 190 },
-              { name: "정제된 수호강석", quantity: 380 },
-              { name: "명예의 파편", quantity: 5500 },
-              { name: "찬란한 명예의 돌파석", quantity: 4 },
+              { name: "정제된 파괴강석", quantity: 180 },
+              { name: "정제된 수호강석", quantity: 360 },
+              { name: "명예의 파편", quantity: 4400 },
+              { name: "찬란한 명예의 돌파석", quantity: 8 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
             ],
           },
           //하드 - 3관문
           {
-            clearGold: 4750,
-            bonusCost: 1550,
+            clearGold: 1900, //귀속골드 1900
+            bonusCost: 950,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 160 },
-              { name: "정제된 수호강석", quantity: 320 },
-              { name: "명예의 파편", quantity: 3000 },
+              { name: "정제된 파괴강석", quantity: 320 },
+              { name: "정제된 수호강석", quantity: 640 },
+              { name: "명예의 파편", quantity: 5100 },
+              { name: "찬란한 명예의 돌파석", quantity: 5 },
               { name: "빛나는 지혜의 기운", quantity: 8 },
               { name: "빛나는 지혜의 엘릭서", quantity: 2 },
               { name: "혼돈의 돌", quantity: 3 },
@@ -1322,10 +1329,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 450 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 320 },
-              { name: "정제된 수호강석", quantity: 640 },
+              { name: "정제된 파괴강석", quantity: 280 },
+              { name: "정제된 수호강석", quantity: 560 },
               { name: "명예의 파편", quantity: 7000 },
-              { name: "찬란한 명예의 돌파석", quantity: 7 },
+              { name: "찬란한 명예의 돌파석", quantity: 16 },
               { name: "빛나는 지혜의 기운", quantity: 8 },
               { name: "빛나는 지혜의 엘릭서", quantity: 2 },
               { name: "농축 돌파석", quantity: 5 },
@@ -1338,50 +1345,53 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 1500,
-            bonusCost: 600,
+            clearGold: 600, //귀속골드 600
+            bonusCost: 180,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 100 },
-              { name: "정제된 수호강석", quantity: 200 },
-              { name: "명예의 파편", quantity: 2000 },
+              { name: "정제된 파괴강석", quantity: 200 },
+              { name: "정제된 수호강석", quantity: 400 },
+              { name: "명예의 파편", quantity: 3000 },
+              { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 140 },
-              { name: "정제된 수호강석", quantity: 280 },
-              { name: "명예의 파편", quantity: 4000 },
-              { name: "찬란한 명예의 돌파석", quantity: 3 },
+              { name: "정제된 파괴강석", quantity: 150 },
+              { name: "정제된 수호강석", quantity: 300 },
+              { name: "명예의 파편", quantity: 3600 },
+              { name: "찬란한 명예의 돌파석", quantity: 7 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
           },
           //노말 - 2관문
           {
-            clearGold: 2000,
-            bonusCost: 650,
+            clearGold: 800, //귀속골드 800
+            bonusCost: 220,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 130 },
-              { name: "정제된 수호강석", quantity: 260 },
-              { name: "명예의 파편", quantity: 2500 },
+              { name: "정제된 파괴강석", quantity: 200 },
+              { name: "정제된 수호강석", quantity: 400 },
+              { name: "명예의 파편", quantity: 3000 },
+              { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
               { name: "클리어 메달", quantity: 250 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 140 },
-              { name: "정제된 수호강석", quantity: 280 },
-              { name: "명예의 파편", quantity: 4000 },
-              { name: "찬란한 명예의 돌파석", quantity: 3 },
+              { name: "정제된 파괴강석", quantity: 160 },
+              { name: "정제된 수호강석", quantity: 320 },
+              { name: "명예의 파편", quantity: 3600 },
+              { name: "찬란한 명예의 돌파석", quantity: 7 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
           },
           //노말 - 3관문
           {
-            clearGold: 3000,
-            bonusCost: 1000,
+            clearGold: 1200, //귀속골드 1200
+            bonusCost: 300,
             clearMaterials: [
-              { name: "정제된 파괴강석", quantity: 130 },
-              { name: "정제된 수호강석", quantity: 260 },
-              { name: "명예의 파편", quantity: 2500 },
+              { name: "정제된 파괴강석", quantity: 260 },
+              { name: "정제된 수호강석", quantity: 520 },
+              { name: "명예의 파편", quantity: 4500 },
+              { name: "찬란한 명예의 돌파석", quantity: 4 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "빛나는 지혜의 엘릭서", quantity: 1 },
               { name: "혼돈의 돌", quantity: 3 },
@@ -1389,10 +1399,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 450 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 280 },
-              { name: "정제된 수호강석", quantity: 560 },
-              { name: "명예의 파편", quantity: 6500 },
-              { name: "찬란한 명예의 돌파석", quantity: 4 },
+              { name: "정제된 파괴강석", quantity: 230 },
+              { name: "정제된 수호강석", quantity: 460 },
+              { name: "명예의 파편", quantity: 6000 },
+              { name: "찬란한 명예의 돌파석", quantity: 13 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "빛나는 지혜의 엘릭서", quantity: 1 },
               { name: "농축 돌파석", quantity: 3 },
@@ -1407,12 +1417,13 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 1000,
-            bonusCost: 350,
+            clearGold: 450, //귀속골드 450
+            bonusCost: 225,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 80 },
               { name: "정제된 수호강석", quantity: 160 },
               { name: "명예의 파편", quantity: 2500 },
+              { name: "찬란한 명예의 돌파석", quantity: 2 },
               { name: "시련의 빛", quantity: 14 },
               { name: "관조의 빛무리", quantity: 1 },
               { name: "클리어 메달", quantity: 100 },
@@ -1420,7 +1431,7 @@ export const RaidValues: RaidValuesType = {
             bonusMaterials: [
               { name: "정제된 파괴강석", quantity: 70 },
               { name: "정제된 수호강석", quantity: 140 },
-              { name: "명예의 파편", quantity: 1500 },
+              { name: "명예의 파편", quantity: 3400 },
               { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "시련의 빛", quantity: 14 },
               { name: "관조의 빛무리", quantity: 1 },
@@ -1428,20 +1439,21 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 1600,
-            bonusCost: 500,
+            clearGold: 700, //귀속골드 700
+            bonusCost: 350,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 120 },
               { name: "정제된 수호강석", quantity: 240 },
               { name: "명예의 파편", quantity: 3500 },
+              { name: "찬란한 명예의 돌파석", quantity: 2 },
               { name: "시련의 빛", quantity: 16 },
               { name: "관조의 빛무리", quantity: 1 },
               { name: "클리어 메달", quantity: 150 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 90 },
-              { name: "정제된 수호강석", quantity: 180 },
-              { name: "명예의 파편", quantity: 2000 },
+              { name: "정제된 파괴강석", quantity: 80 },
+              { name: "정제된 수호강석", quantity: 160 },
+              { name: "명예의 파편", quantity: 3400 },
               { name: "찬란한 명예의 돌파석", quantity: 4 },
               { name: "시련의 빛", quantity: 16 },
               { name: "관조의 빛무리", quantity: 1 },
@@ -1449,12 +1461,13 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 2200,
-            bonusCost: 700,
+            clearGold: 1000, //귀속골드 1000
+            bonusCost: 500,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 150 },
               { name: "정제된 수호강석", quantity: 300 },
               { name: "명예의 파편", quantity: 5000 },
+              { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "시련의 빛", quantity: 20 },
               { name: "관조의 빛무리", quantity: 3 },
               { name: "심판의 서", quantity: 1 },
@@ -1463,9 +1476,9 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 120 },
-              { name: "정제된 수호강석", quantity: 240 },
-              { name: "명예의 파편", quantity: 2500 },
+              { name: "정제된 파괴강석", quantity: 110 },
+              { name: "정제된 수호강석", quantity: 220 },
+              { name: "명예의 파편", quantity: 5100 },
               { name: "찬란한 명예의 돌파석", quantity: 6 },
               { name: "시련의 빛", quantity: 20 },
               { name: "관조의 빛무리", quantity: 3 },
@@ -1480,64 +1493,66 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 800,
-            bonusCost: 300,
+            clearGold: 375, //귀속골드 375
+            bonusCost: 180,
             clearMaterials: [
-              { name: "파괴강석", quantity: 240 },
-              { name: "수호강석", quantity: 480 },
-              { name: "명예의 파편", quantity: 2000 },
+              { name: "파괴강석", quantity: 260 },
+              { name: "수호강석", quantity: 520 },
+              { name: "명예의 파편", quantity: 2100 },
+              { name: "경이로운 명예의 돌파석", quantity: 3 },
               { name: "시련의 빛", quantity: 11 },
               { name: "클리어 메달", quantity: 100 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 180 },
-              { name: "수호강석", quantity: 360 },
-              { name: "명예의 파편", quantity: 1000 },
-              { name: "경이로운 명예의 돌파석", quantity: 5 },
+              { name: "파괴강석", quantity: 210 },
+              { name: "수호강석", quantity: 420 },
+              { name: "명예의 파편", quantity: 3290 },
+              { name: "경이로운 명예의 돌파석", quantity: 10 },
               { name: "시련의 빛", quantity: 11 },
             ],
           },
           //노말 - 2관문
           {
-            clearGold: 1200,
-            bonusCost: 400,
+            clearGold: 550, //귀속골드 550
+            bonusCost: 200,
             clearMaterials: [
-              { name: "파괴강석", quantity: 280 },
-              { name: "수호강석", quantity: 560 },
+              { name: "파괴강석", quantity: 300 },
+              { name: "수호강석", quantity: 600 },
               { name: "명예의 파편", quantity: 2500 },
+              { name: "경이로운 명예의 돌파석", quantity: 3 },
               { name: "시련의 빛", quantity: 12 },
               { name: "관조의 빛무리", quantity: 1 },
               { name: "클리어 메달", quantity: 150 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 220 },
-              { name: "수호강석", quantity: 440 },
-              { name: "명예의 파편", quantity: 1500 },
-              { name: "경이로운 명예의 돌파석", quantity: 6 },
+              { name: "파괴강석", quantity: 260 },
+              { name: "수호강석", quantity: 520 },
+              { name: "명예의 파편", quantity: 3310 },
+              { name: "경이로운 명예의 돌파석", quantity: 11 },
               { name: "시련의 빛", quantity: 12 },
               { name: "관조의 빛무리", quantity: 1 },
             ],
           },
           //노말 - 3관문
           {
-            clearGold: 1600,
-            bonusCost: 500,
+            clearGold: 725, //귀속골드 725
+            bonusCost: 270,
             clearMaterials: [
-              { name: "파괴강석", quantity: 360 },
-              { name: "수호강석", quantity: 720 },
-              { name: "명예의 파편", quantity: 4000 },
+              { name: "파괴강석", quantity: 400 },
+              { name: "수호강석", quantity: 800 },
+              { name: "명예의 파편", quantity: 4100 },
               { name: "시련의 빛", quantity: 17 },
               { name: "관조의 빛무리", quantity: 2 },
               { name: "심판의 서", quantity: 1 },
-              { name: "심화 돌파석", quantity: 5 },
+              { name: "심화 돌파석", quantity: 15 },
               { name: "혼돈의 돌", quantity: 4 },
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 300 },
-              { name: "수호강석", quantity: 600 },
-              { name: "명예의 파편", quantity: 2000 },
-              { name: "경이로운 명예의 돌파석", quantity: 8 },
+              { name: "파괴강석", quantity: 310 },
+              { name: "수호강석", quantity: 620 },
+              { name: "명예의 파편", quantity: 4990 },
+              { name: "경이로운 명예의 돌파석", quantity: 15 },
               { name: "시련의 빛", quantity: 17 },
               { name: "관조의 빛무리", quantity: 2 },
               { name: "심판의 서", quantity: 1 },
@@ -1550,14 +1565,64 @@ export const RaidValues: RaidValuesType = {
   },
 
   "싱글 레이드": {
+    에기르: {
+      싱글: {
+        minItemLevel: 1660,
+        phases: [
+          //싱글 - 1관문
+          {
+            clearGold: 2375, //귀속골드 2375
+            bonusCost: 1030,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 480 },
+              { name: "운명의 수호석", quantity: 960 },
+              { name: "운명의 파편", quantity: 3600 },
+              { name: "운명의 돌파석", quantity: 4 },
+              { name: "클리어 메달", quantity: 800 },
+              { name: "업화의 쐐기돌", quantity: 4 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 420 },
+              { name: "운명의 수호석", quantity: 840 },
+              { name: "운명의 파편", quantity: 3790 },
+              { name: "운명의 돌파석", quantity: 10 },
+              { name: "업화의 쐐기돌", quantity: 4 },
+            ],
+          },
+          //싱글 - 2관문
+          {
+            clearGold: 5375, //귀속골드 5375
+            bonusCost: 2400,
+            clearMaterials: [
+              { name: "운명의 파괴석", quantity: 580 },
+              { name: "운명의 수호석", quantity: 1160 },
+              { name: "운명의 파편", quantity: 4400 },
+              { name: "운명의 돌파석", quantity: 5 },
+              { name: "클리어 메달", quantity: 1100 },
+              { name: "업화의 쐐기돌", quantity: 6 },
+              { name: "운명의 돌", quantity: 4 },
+              { name: "순환 돌파석", quantity: 9 },
+            ],
+            bonusMaterials: [
+              { name: "운명의 파괴석", quantity: 610 },
+              { name: "운명의 수호석", quantity: 1220 },
+              { name: "운명의 파편", quantity: 6020 },
+              { name: "운명의 돌파석", quantity: 19 },
+              { name: "업화의 쐐기돌", quantity: 6 },
+              { name: "순환 돌파석", quantity: 7 },
+            ],
+          },
+        ],
+      },
+    },
     에키드나: {
       싱글: {
         minItemLevel: 1620,
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 2400,
-            bonusCost: 500,
+            clearGold: 1150, //귀속골드 1150
+            bonusCost: 380,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 240 },
               { name: "정제된 수호강석", quantity: 480 },
@@ -1567,17 +1632,17 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 400 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 400 },
-              { name: "정제된 수호강석", quantity: 800 },
-              { name: "명예의 파편", quantity: 5670 },
-              { name: "찬란한 명예의 돌파석", quantity: 15 },
+              { name: "정제된 파괴강석", quantity: 310 },
+              { name: "정제된 수호강석", quantity: 620 },
+              { name: "명예의 파편", quantity: 4350 },
+              { name: "찬란한 명예의 돌파석", quantity: 12 },
               { name: "아그리스의 비늘", quantity: 3 },
             ],
           },
           //싱글 - 2관문
           {
-            clearGold: 5200,
-            bonusCost: 1100,
+            clearGold: 2500, //귀속골드 2500
+            bonusCost: 840,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 330 },
               { name: "정제된 수호강석", quantity: 660 },
@@ -1589,10 +1654,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 550 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 700 },
-              { name: "정제된 수호강석", quantity: 1400 },
-              { name: "명예의 파편", quantity: 8240 },
-              { name: "찬란한 명예의 돌파석", quantity: 25 },
+              { name: "정제된 파괴강석", quantity: 540 },
+              { name: "정제된 수호강석", quantity: 1080 },
+              { name: "명예의 파편", quantity: 6340 },
+              { name: "찬란한 명예의 돌파석", quantity: 20 },
               { name: "아그리스의 비늘", quantity: 6 },
               { name: "농축 돌파석", quantity: 5 },
             ],
@@ -1606,8 +1671,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 1600,
-            bonusCost: 450,
+            clearGold: 800, //귀속골드 800
+            bonusCost: 360,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 150 },
               { name: "정제된 수호강석", quantity: 300 },
@@ -1618,18 +1683,18 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 250 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 310 },
-              { name: "정제된 수호강석", quantity: 620 },
-              { name: "명예의 파편", quantity: 2770 },
-              { name: "찬란한 명예의 돌파석", quantity: 11 },
+              { name: "정제된 파괴강석", quantity: 250 },
+              { name: "정제된 수호강석", quantity: 500 },
+              { name: "명예의 파편", quantity: 2220 },
+              { name: "찬란한 명예의 돌파석", quantity: 9 },
               { name: "어둠의 불", quantity: 6 },
               { name: "마력의 샘물", quantity: 2 },
             ],
           },
           //싱글 - 2관문
           {
-            clearGold: 2000,
-            bonusCost: 550,
+            clearGold: 1000, //귀속골드 1000
+            bonusCost: 440,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
               { name: "정제된 수호강석", quantity: 360 },
@@ -1640,18 +1705,18 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 300 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 360 },
-              { name: "정제된 수호강석", quantity: 720 },
-              { name: "명예의 파편", quantity: 3590 },
-              { name: "찬란한 명예의 돌파석", quantity: 14 },
+              { name: "정제된 파괴강석", quantity: 290 },
+              { name: "정제된 수호강석", quantity: 580 },
+              { name: "명예의 파편", quantity: 2880 },
+              { name: "찬란한 명예의 돌파석", quantity: 12 },
               { name: "어둠의 불", quantity: 8 },
               { name: "마력의 샘물", quantity: 3 },
             ],
           },
           //싱글 - 3관문
           {
-            clearGold: 2800,
-            bonusCost: 800,
+            clearGold: 1400, //귀속골드 1400
+            bonusCost: 640,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 225 },
               { name: "정제된 수호강석", quantity: 450 },
@@ -1664,10 +1729,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 500 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 480 },
-              { name: "정제된 수호강석", quantity: 960 },
-              { name: "명예의 파편", quantity: 4720 },
-              { name: "찬란한 명예의 돌파석", quantity: 16 },
+              { name: "정제된 파괴강석", quantity: 390 },
+              { name: "정제된 수호강석", quantity: 780 },
+              { name: "명예의 파편", quantity: 3780 },
+              { name: "찬란한 명예의 돌파석", quantity: 13 },
               { name: "어둠의 불", quantity: 12 },
               { name: "마력의 샘물", quantity: 4 },
             ],
@@ -1681,62 +1746,64 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 1200,
-            bonusCost: 250,
+            clearGold: 600, //귀속골드 600
+            bonusCost: 180,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
               { name: "정제된 수호강석", quantity: 400 },
               { name: "명예의 파편", quantity: 3000 },
+              { name: "클리어 메달", quantity: 200 },
               { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 180 },
-              { name: "정제된 수호강석", quantity: 360 },
-              { name: "명예의 파편", quantity: 4500 },
-              { name: "찬란한 명예의 돌파석", quantity: 8 },
+              { name: "정제된 파괴강석", quantity: 150 },
+              { name: "정제된 수호강석", quantity: 300 },
+              { name: "명예의 파편", quantity: 3600 },
+              { name: "찬란한 명예의 돌파석", quantity: 7 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
           },
           //싱글 - 2관문
           {
-            clearGold: 1600,
-            bonusCost: 350,
+            clearGold: 800, //귀속골드 800
+            bonusCost: 220,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
               { name: "정제된 수호강석", quantity: 400 },
               { name: "명예의 파편", quantity: 3000 },
+              { name: "클리어 메달", quantity: 250 },
               { name: "찬란한 명예의 돌파석", quantity: 3 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 200 },
-              { name: "정제된 수호강석", quantity: 400 },
-              { name: "명예의 파편", quantity: 4500 },
-              { name: "찬란한 명예의 돌파석", quantity: 8 },
+              { name: "정제된 파괴강석", quantity: 160 },
+              { name: "정제된 수호강석", quantity: 320 },
+              { name: "명예의 파편", quantity: 3600 },
+              { name: "찬란한 명예의 돌파석", quantity: 7 },
               { name: "빛나는 지혜의 기운", quantity: 2 },
             ],
           },
           //싱글 - 3관문
           {
-            clearGold: 2400,
-            bonusCost: 550,
+            clearGold: 1200, //귀속골드 1200
+            bonusCost: 300,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
               { name: "정제된 수호강석", quantity: 520 },
               { name: "명예의 파편", quantity: 4500 },
+              { name: "클리어 메달", quantity: 450 },
               { name: "찬란한 명예의 돌파석", quantity: 4 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "빛나는 지혜의 엘릭서", quantity: 1 },
               { name: "농축 돌파석", quantity: 5 },
               { name: "혼돈의 돌", quantity: 3 },
-              { name: "클리어 메달", quantity: 450 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 280 },
-              { name: "정제된 수호강석", quantity: 560 },
-              { name: "명예의 파편", quantity: 7500 },
-              { name: "찬란한 명예의 돌파석", quantity: 16 },
+              { name: "정제된 파괴강석", quantity: 230 },
+              { name: "정제된 수호강석", quantity: 460 },
+              { name: "명예의 파편", quantity: 6000 },
+              { name: "찬란한 명예의 돌파석", quantity: 13 },
               { name: "빛나는 지혜의 기운", quantity: 4 },
               { name: "빛나는 지혜의 엘릭서", quantity: 1 },
               { name: "농축 돌파석", quantity: 3 },
@@ -1751,8 +1818,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 800,
-            bonusCost: 225,
+            clearGold: 425, //귀속골드 425
+            bonusCost: 190,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 140 },
               { name: "정제된 수호강석", quantity: 280 },
@@ -1762,17 +1829,17 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 150 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 160 },
-              { name: "정제된 수호강석", quantity: 320 },
-              { name: "명예의 파편", quantity: 4500 },
-              { name: "찬란한 명예의 돌파석", quantity: 7 },
+              { name: "정제된 파괴강석", quantity: 140 },
+              { name: "정제된 수호강석", quantity: 280 },
+              { name: "명예의 파편", quantity: 3830 },
+              { name: "찬란한 명예의 돌파석", quantity: 6 },
               { name: "쇠락의 눈동자", quantity: 3 },
             ],
           },
           //싱글 - 2관문
           {
-            clearGold: 1440,
-            bonusCost: 275,
+            clearGold: 775, //귀속골드 775
+            bonusCost: 230,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
               { name: "정제된 수호강석", quantity: 360 },
@@ -1782,17 +1849,17 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 180 },
-              { name: "정제된 수호강석", quantity: 360 },
-              { name: "명예의 파편", quantity: 4500 },
-              { name: "찬란한 명예의 돌파석", quantity: 8 },
+              { name: "정제된 파괴강석", quantity: 160 },
+              { name: "정제된 수호강석", quantity: 320 },
+              { name: "명예의 파편", quantity: 3880 },
+              { name: "찬란한 명예의 돌파석", quantity: 7 },
               { name: "쇠락의 눈동자", quantity: 3 },
             ],
           },
           //싱글 - 3관문
           {
-            clearGold: 2080,
-            bonusCost: 375,
+            clearGold: 1150, //귀속골드 1150
+            bonusCost: 330,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
               { name: "정제된 수호강석", quantity: 520 },
@@ -1804,10 +1871,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 400 },
             ],
             bonusMaterials: [
-              { name: "정제된 파괴강석", quantity: 260 },
-              { name: "정제된 수호강석", quantity: 520 },
-              { name: "명예의 파편", quantity: 5000 },
-              { name: "찬란한 명예의 돌파석", quantity: 14 },
+              { name: "정제된 파괴강석", quantity: 230 },
+              { name: "정제된 수호강석", quantity: 460 },
+              { name: "명예의 파편", quantity: 4430 },
+              { name: "찬란한 명예의 돌파석", quantity: 13 },
               { name: "쇠락의 눈동자", quantity: 5 },
               { name: "농축 돌파석", quantity: 7 },
             ],
@@ -1821,8 +1888,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 640,
-            bonusCost: 200,
+            clearGold: 375, //귀속골드 375
+            bonusCost: 180,
             clearMaterials: [
               { name: "파괴강석", quantity: 260 },
               { name: "수호강석", quantity: 520 },
@@ -1832,17 +1899,17 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 100 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 220 },
-              { name: "수호강석", quantity: 440 },
-              { name: "명예의 파편", quantity: 3500 },
+              { name: "파괴강석", quantity: 210 },
+              { name: "수호강석", quantity: 420 },
+              { name: "명예의 파편", quantity: 3290 },
               { name: "경이로운 명예의 돌파석", quantity: 10 },
               { name: "시련의 빛", quantity: 11 },
             ],
           },
           //싱글 - 2관문
           {
-            clearGold: 960,
-            bonusCost: 225,
+            clearGold: 550, //귀속골드 550
+            bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 300 },
               { name: "수호강석", quantity: 600 },
@@ -1853,18 +1920,18 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 150 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 280 },
-              { name: "수호강석", quantity: 560 },
-              { name: "명예의 파편", quantity: 3500 },
-              { name: "경이로운 명예의 돌파석", quantity: 12 },
+              { name: "파괴강석", quantity: 260 },
+              { name: "수호강석", quantity: 520 },
+              { name: "명예의 파편", quantity: 3310 },
+              { name: "경이로운 명예의 돌파석", quantity: 11 },
               { name: "시련의 빛", quantity: 12 },
               { name: "관조의 빛무리", quantity: 1 },
             ],
           },
           //싱글 - 3관문
           {
-            clearGold: 1280,
-            bonusCost: 300,
+            clearGold: 725, //귀속골드 725
+            bonusCost: 270,
             clearMaterials: [
               { name: "파괴강석", quantity: 400 },
               { name: "수호강석", quantity: 800 },
@@ -1878,10 +1945,10 @@ export const RaidValues: RaidValuesType = {
               { name: "클리어 메달", quantity: 200 },
             ],
             bonusMaterials: [
-              { name: "파괴강석", quantity: 340 },
-              { name: "수호강석", quantity: 680 },
-              { name: "명예의 파편", quantity: 5500 },
-              { name: "경이로운 명예의 돌파석", quantity: 16 },
+              { name: "파괴강석", quantity: 310 },
+              { name: "수호강석", quantity: 620 },
+              { name: "명예의 파편", quantity: 4990 },
+              { name: "경이로운 명예의 돌파석", quantity: 15 },
               { name: "시련의 빛", quantity: 17 },
               { name: "관조의 빛무리", quantity: 2 },
               { name: "심판의 서", quantity: 1 },
@@ -1897,7 +1964,7 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 800,
+            clearGold: 500, //귀속골드 500
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -1917,7 +1984,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 800,
+            clearGold: 500, //귀속골드 500
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -1937,7 +2004,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 800,
+            clearGold: 500, //귀속골드 500
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 140 },
@@ -1960,7 +2027,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 4관문
           {
-            clearGold: 1280,
+            clearGold: 800, //귀속골드 800
             bonusCost: 375,
             clearMaterials: [
               { name: "파괴강석", quantity: 420 },
@@ -1990,7 +2057,7 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 480,
+            clearGold: 300, //귀속골드 300
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2010,7 +2077,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 720,
+            clearGold: 450, //귀속골드 450
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2030,7 +2097,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 1200,
+            clearGold: 750, //귀속골드 750
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -2060,7 +2127,7 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 480,
+            clearGold: 300, //귀속골드 300
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2080,7 +2147,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 800,
+            clearGold: 500, //귀속골드 500
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -2110,7 +2177,7 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 400,
+            clearGold: 250, //귀속골드 25-
             bonusCost: 75,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 200 },
@@ -2130,7 +2197,7 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 560,
+            clearGold: 350, //귀속골드 350
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
