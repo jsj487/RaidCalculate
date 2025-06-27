@@ -10,6 +10,7 @@ type RaidValuesType = {
         minItemLevel: number;
         phases: Array<{
           clearGold: number;
+          boundGold?: number;
           bonusCost: number;
           clearMaterials: Material[]; // 클리어 시 받는 재료
           bonusMaterials: Material[];
@@ -400,7 +401,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 1150, //귀속 1150
+            clearGold: 1150,
+            boundGold: 1150,
             bonusCost: 380,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 240 },
@@ -420,7 +422,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 2500, //귀속 2500
+            clearGold: 2500,
+            boundGold: 2500,
             bonusCost: 840,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 330 },
@@ -510,7 +513,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 1000, //귀속 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 500,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -532,7 +536,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 1200, //귀속골드 1200
+            clearGold: 1200,
+            boundGold: 1200,
             bonusCost: 600,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -554,7 +559,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 1800, //귀속골드 1800
+            clearGold: 1800,
+            boundGold: 1800,
             bonusCost: 900,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 300 },
@@ -579,7 +585,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 4관문
           {
-            clearGold: 2500, //귀속골드 2500
+            clearGold: 2500,
+            boundGold: 2500,
             bonusCost: 1250,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 320 },
@@ -608,7 +615,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 800, //귀속골드 800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 360,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 150 },
@@ -630,7 +638,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 440,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
@@ -652,7 +661,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 1400, //귀속골드 1400
+            clearGold: 1400,
+            boundGold: 1400,
             bonusCost: 640,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 225 },
@@ -684,7 +694,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 300,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
@@ -704,7 +715,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 500,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
@@ -724,7 +736,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 1400, //귀속골드 1400
+            clearGold: 1400,
+            boundGold: 1400,
             bonusCost: 700,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 320 },
@@ -752,7 +765,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 425, //귀속골드 425
+            clearGold: 425,
+            boundGold: 425,
             bonusCost: 190,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 140 },
@@ -772,7 +786,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 775, //귀속골드 775
+            clearGold: 775,
+            boundGold: 775,
             bonusCost: 230,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
@@ -792,7 +807,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 1150, //귀속골드 1150
+            clearGold: 1150,
+            boundGold: 1150,
             bonusCost: 330,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -822,7 +838,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 300,
             clearMaterials: [
               { name: "파괴강석", quantity: 280 },
@@ -842,7 +859,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 300,
             clearMaterials: [
               { name: "파괴강석", quantity: 320 },
@@ -862,7 +880,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 300,
             clearMaterials: [
               { name: "파괴강석", quantity: 400 },
@@ -885,7 +904,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 4관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 500,
             clearMaterials: [
               { name: "파괴강석", quantity: 800 },
@@ -913,7 +933,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -933,7 +954,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -953,7 +975,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 140 },
@@ -976,7 +999,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 4관문
           {
-            clearGold: 800, //800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 375,
             clearMaterials: [
               { name: "파괴강석", quantity: 420 },
@@ -1006,7 +1030,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 300, //귀속골드 300
+            clearGold: 300,
+            boundGold: 300,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -1026,7 +1051,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 450, //귀속골드 450
+            clearGold: 450,
+            boundGold: 450,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -1046,7 +1072,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 750, //귀속골드 750
+            clearGold: 750,
+            boundGold: 750,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -1076,7 +1103,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 450, //귀속골드 450
+            clearGold: 450,
+            boundGold: 450,
             bonusCost: 225,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -1096,7 +1124,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 750, //귀속골드 750
+            clearGold: 750,
+            boundGold: 750,
             bonusCost: 375,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 340 },
@@ -1124,7 +1153,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 300, //귀속골드 300
+            clearGold: 300,
+            boundGold: 300,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -1144,7 +1174,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -1174,7 +1205,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 350, //귀속골드 350
+            clearGold: 350,
+            boundGold: 350,
             bonusCost: 175,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -1194,7 +1226,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 550, //귀속골드 550
+            clearGold: 550,
+            boundGold: 550,
             bonusCost: 275,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 290 },
@@ -1222,7 +1255,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 250, //귀속골드 250
+            clearGold: 250,
+            boundGold: 250,
             bonusCost: 75,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 200 },
@@ -1242,7 +1276,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 350, //귀속골드 350
+            clearGold: 350,
+            boundGold: 350,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -1275,7 +1310,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 700, //귀속골드 700
+            clearGold: 700,
+            boundGold: 700,
             bonusCost: 350,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 240 },
@@ -1295,7 +1331,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 500,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 240 },
@@ -1315,7 +1352,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 1900, //귀속골드 1900
+            clearGold: 1900,
+            boundGold: 1900,
             bonusCost: 950,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 320 },
@@ -1345,7 +1383,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 180,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
@@ -1365,7 +1404,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 800, //귀속골드 800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 220,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
@@ -1385,7 +1425,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 1200, //귀속골드 1200
+            clearGold: 1200,
+            boundGold: 1200,
             bonusCost: 300,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -1417,7 +1458,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //하드 - 1관문
           {
-            clearGold: 450, //귀속골드 450
+            clearGold: 450,
+            boundGold: 450,
             bonusCost: 225,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 80 },
@@ -1439,7 +1481,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 2관문
           {
-            clearGold: 700, //귀속골드 700
+            clearGold: 700,
+            boundGold: 700,
             bonusCost: 350,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 120 },
@@ -1461,7 +1504,8 @@ export const RaidValues: RaidValuesType = {
           },
           //하드 - 3관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 500,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 150 },
@@ -1493,7 +1537,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //노말 - 1관문
           {
-            clearGold: 375, //귀속골드 375
+            clearGold: 375,
+            boundGold: 375,
             bonusCost: 180,
             clearMaterials: [
               { name: "파괴강석", quantity: 260 },
@@ -1513,7 +1558,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 2관문
           {
-            clearGold: 550, //귀속골드 550
+            clearGold: 550,
+            boundGold: 550,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 300 },
@@ -1535,7 +1581,8 @@ export const RaidValues: RaidValuesType = {
           },
           //노말 - 3관문
           {
-            clearGold: 725, //귀속골드 725
+            clearGold: 725,
+            boundGold: 725,
             bonusCost: 270,
             clearMaterials: [
               { name: "파괴강석", quantity: 400 },
@@ -1571,7 +1618,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 2375, //귀속골드 2375
+            clearGold: 2375,
+            boundGold: 2375,
             bonusCost: 1030,
             clearMaterials: [
               { name: "운명의 파괴석", quantity: 480 },
@@ -1591,7 +1639,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 5375, //귀속골드 5375
+            clearGold: 5375,
+            boundGold: 5375,
             bonusCost: 2400,
             clearMaterials: [
               { name: "운명의 파괴석", quantity: 580 },
@@ -1621,7 +1670,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 1150, //귀속골드 1150
+            clearGold: 1150,
+            boundGold: 1150,
             bonusCost: 380,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 240 },
@@ -1641,7 +1691,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 2500, //귀속골드 2500
+            clearGold: 2500,
+            boundGold: 2500,
             bonusCost: 840,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 330 },
@@ -1671,7 +1722,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 800, //귀속골드 800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 360,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 150 },
@@ -1693,7 +1745,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 1000, //귀속골드 1000
+            clearGold: 1000,
+            boundGold: 1000,
             bonusCost: 440,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
@@ -1715,7 +1768,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 1400, //귀속골드 1400
+            clearGold: 1400,
+            boundGold: 1400,
             bonusCost: 640,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 225 },
@@ -1746,7 +1800,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 600, //귀속골드 600
+            clearGold: 600,
+            boundGold: 600,
             bonusCost: 180,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
@@ -1766,7 +1821,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 800, //귀속골드 800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 220,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 200 },
@@ -1786,7 +1842,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 1200, //귀속골드 1200
+            clearGold: 1200,
+            boundGold: 1200,
             bonusCost: 300,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -1818,7 +1875,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 425, //귀속골드 425
+            clearGold: 425,
+            boundGold: 425,
             bonusCost: 190,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 140 },
@@ -1838,7 +1896,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 775, //귀속골드 775
+            clearGold: 775,
+            boundGold: 775,
             bonusCost: 230,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 180 },
@@ -1858,7 +1917,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 1150, //귀속골드 1150
+            clearGold: 1150,
+            boundGold: 1150,
             bonusCost: 330,
             clearMaterials: [
               { name: "정제된 파괴강석", quantity: 260 },
@@ -1888,7 +1948,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 375, //귀속골드 375
+            clearGold: 375,
+            boundGold: 375,
             bonusCost: 180,
             clearMaterials: [
               { name: "파괴강석", quantity: 260 },
@@ -1908,7 +1969,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 550, //귀속골드 550
+            clearGold: 550,
+            boundGold: 550,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 300 },
@@ -1930,7 +1992,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 725, //귀속골드 725
+            clearGold: 725,
+            boundGold: 725,
             bonusCost: 270,
             clearMaterials: [
               { name: "파괴강석", quantity: 400 },
@@ -1964,7 +2027,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -1984,7 +2048,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴강석", quantity: 120 },
@@ -2004,7 +2069,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴강석", quantity: 140 },
@@ -2027,7 +2093,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 4관문
           {
-            clearGold: 800, //귀속골드 800
+            clearGold: 800,
+            boundGold: 800,
             bonusCost: 375,
             clearMaterials: [
               { name: "파괴강석", quantity: 420 },
@@ -2057,7 +2124,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 300, //귀속골드 300
+            clearGold: 300,
+            boundGold: 300,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2077,7 +2145,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 450, //귀속골드 450
+            clearGold: 450,
+            boundGold: 450,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2097,7 +2166,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 3관문
           {
-            clearGold: 750, //귀속골드 750
+            clearGold: 750,
+            boundGold: 750,
             bonusCost: 200,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -2127,7 +2197,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 300, //귀속골드 300
+            clearGold: 300,
+            boundGold: 300,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },
@@ -2147,7 +2218,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 500, //귀속골드 500
+            clearGold: 500,
+            boundGold: 500,
             bonusCost: 150,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 280 },
@@ -2177,7 +2249,8 @@ export const RaidValues: RaidValuesType = {
         phases: [
           //싱글 - 1관문
           {
-            clearGold: 250, //귀속골드 25-
+            clearGold: 250,
+            boundGold: 250,
             bonusCost: 75,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 200 },
@@ -2197,7 +2270,8 @@ export const RaidValues: RaidValuesType = {
           },
           //싱글 - 2관문
           {
-            clearGold: 350, //귀속골드 350
+            clearGold: 350,
+            boundGold: 350,
             bonusCost: 100,
             clearMaterials: [
               { name: "파괴석 결정", quantity: 240 },

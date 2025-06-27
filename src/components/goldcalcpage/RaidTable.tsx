@@ -273,6 +273,7 @@ interface RaidTableProps {
           minItemLevel: number;
           phases: Array<{
             clearGold: number;
+            boundGold?: number;
             bonusCost: number;
             clearMaterials: Material[];
             bonusMaterials: Material[];
@@ -330,6 +331,7 @@ function RaidTable({
     minItemLevel: number;
     phases: Array<{
       clearGold: number;
+      boundGold?: number;
       bonusCost: number;
       clearMaterials: Material[];
       bonusMaterials: Material[];

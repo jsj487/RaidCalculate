@@ -256,13 +256,28 @@ const CharacterBox = styled.div`
   background-color: #f9f9f9;
 `;
 
-const ImageBox = styled.div`
+const GoldImageBox = styled.div`
   width: 30px;
   height: 30px;
   margin-right: 10px;
   border-radius: 8px;
   background-image: url(${process.env
     .PUBLIC_URL}/img/gold.png); /* 동적 경로 설정 */
+  background-size: contain; /* 비율 유지하며 박스 크기에 맞춤 */
+  background-repeat: no-repeat; /* 이미지 반복 방지 */
+  background-position: center; /* 이미지 중앙 정렬 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const BoundGoldImageBox = styled.div`
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border-radius: 8px;
+  background-image: url(${process.env
+    .PUBLIC_URL}/img/Bound_Gold.png); /* 동적 경로 설정 */
   background-size: contain; /* 비율 유지하며 박스 크기에 맞춤 */
   background-repeat: no-repeat; /* 이미지 반복 방지 */
   background-position: center; /* 이미지 중앙 정렬 */
@@ -837,6 +852,35 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
     }, {} as Record<string, number>);
   };
 
+  function getCharacterBoundGold(characterName: string): number {
+    let totalBoundGold = 0;
+    // toggleStates에서 이 캐릭터가 체크한 raid key만 필터
+    Object.entries(activeTabData.toggleStates || {}).forEach(([key, value]) => {
+      if (value === 0) return; // 미참여는 패스
+      const [raidName, raidLevel, charName, phaseStr] = key.split("-");
+      if (charName !== characterName) return;
+      const phaseIndex = Number(phaseStr);
+
+      // RaidValues에서 해당 phase의 boundGold를 찾음
+      let foundPhase;
+      for (const categoryKey in RaidValues) {
+        const category = RaidValues[categoryKey];
+        if (
+          category[raidName] &&
+          category[raidName][raidLevel] &&
+          category[raidName][raidLevel].phases[phaseIndex]
+        ) {
+          foundPhase = category[raidName][raidLevel].phases[phaseIndex];
+          break;
+        }
+      }
+      if (foundPhase && typeof foundPhase.boundGold === "number") {
+        totalBoundGold += foundPhase.boundGold;
+      }
+    });
+    return totalBoundGold;
+  }
+
   useEffect(() => {
     const updatedRewards = calculateGoldRewards(activeTabData.toggleStates);
   }, [activeTabData.toggleStates]);
@@ -1317,7 +1361,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                     </GoldAdjustmentBox>
 
                     <CharacterBox>
-                      <ImageBox />
+                      <GoldImageBox />
                       <BoxContent>
                         골드:{" "}
                         <strong>
@@ -1328,6 +1372,18 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                                 ?.consumedGold || 0) +
                               (activeTabData.charAdjustments[char.CharacterName]
                                 ?.extraGold || 0)
+                          )}
+                        </strong>
+                      </BoxContent>
+                      {/* Other UI elements */}
+                    </CharacterBox>
+                    <CharacterBox>
+                      <BoundGoldImageBox />
+                      <BoxContent>
+                        귀속 골드:{" "}
+                        <strong>
+                          {formatNumberWithCommas(
+                            getCharacterBoundGold(char.CharacterName)
                           )}
                         </strong>
                       </BoxContent>
@@ -1484,7 +1540,7 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                           />
                         </GoldAdjustmentBox>
                         <CharacterBox>
-                          <ImageBox />
+                          <GoldImageBox />
                           <BoxContent>
                             골드:{" "}
                             <strong>
@@ -1498,6 +1554,17 @@ const GoldCalc = ({ tabId }: { tabId: number }) => {
                                   (activeTabData.charAdjustments[
                                     char.CharacterName
                                   ]?.extraGold || 0)
+                              )}
+                            </strong>
+                          </BoxContent>
+                        </CharacterBox>
+                        <CharacterBox>
+                          <BoundGoldImageBox />
+                          <BoxContent>
+                            귀속 골드:{" "}
+                            <strong>
+                              {formatNumberWithCommas(
+                                getCharacterBoundGold(char.CharacterName)
                               )}
                             </strong>
                           </BoxContent>
