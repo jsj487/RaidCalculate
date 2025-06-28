@@ -468,6 +468,16 @@ const JewelFriend = () => {
       });
       setMatchingStatus("waiting");
     } else {
+      // ==== [여기서 기존 본캐 DB 삭제 추가] ====
+      // 기존 queue에서 내 본캐(닉네임, 서버, 메인클래스)와 동일한 row 모두 삭제
+      await supabase
+        .from("jewel_matching_queue")
+        .delete()
+        .eq("nickname", myData.nickname)
+        .eq("server", myData.server)
+        .eq("main_class", myData.main_class);
+
+      // ==== 이후 새로 insert ====
       const { error: insertError } = await supabase
         .from("jewel_matching_queue")
         .insert(myData);

@@ -240,7 +240,7 @@ const GoldModal = () => {
                                 <React.Fragment key={difficulty}>
                                   <tr>
                                     {/* 난이도 */}
-                                    <TableCell rowSpan={2}>
+                                    <TableCell rowSpan={3}>
                                       {difficulty}
                                     </TableCell>
 
@@ -306,6 +306,71 @@ const GoldModal = () => {
                                         <span style={{ color: "#FF69B4" }}>
                                           ({totalBonusGold.toLocaleString()})
                                         </span>
+                                      </div>
+                                    </TableCell>
+                                  </tr>
+
+                                  {/*귀속골드*/}
+                                  <tr>
+                                    {Array.from({ length: maxPhases }).map(
+                                      (_, idx) => {
+                                        const phase = data.phases[idx];
+                                        return (
+                                          <TableCell key={`boundGold-${idx}`}>
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "5px",
+                                              }}
+                                            >
+                                              <img
+                                                src={`${process.env.PUBLIC_URL}/img/Bound_Gold.png`}
+                                                style={{
+                                                  width: "20px",
+                                                  height: "20px",
+                                                }}
+                                                alt="bound-gold"
+                                              />
+                                              {phase &&
+                                              typeof phase.boundGold ===
+                                                "number"
+                                                ? phase.boundGold.toLocaleString()
+                                                : "-"}
+                                            </div>
+                                          </TableCell>
+                                        );
+                                      }
+                                    )}
+                                    <TableCell>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          gap: "5px",
+                                        }}
+                                      >
+                                        <img
+                                          src={`${process.env.PUBLIC_URL}/img/Bound_Gold.png`}
+                                          style={{
+                                            width: "20px",
+                                            height: "20px",
+                                          }}
+                                          alt="bound-gold"
+                                        />
+                                        {data.phases
+                                          .reduce(
+                                            (sum, phase) =>
+                                              sum +
+                                              (typeof phase.boundGold ===
+                                              "number"
+                                                ? phase.boundGold
+                                                : 0),
+                                            0
+                                          )
+                                          .toLocaleString()}
                                       </div>
                                     </TableCell>
                                   </tr>
