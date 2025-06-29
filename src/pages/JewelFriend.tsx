@@ -79,7 +79,7 @@ const CharacterInputRow = styled.div`
 
 const AddColumn = styled.div`
   width: 200px;
-  height: 340px;
+  height: 370px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -146,7 +146,7 @@ const CharacterColumn = styled.div`
   display: flex;
   flex-direction: column;
   width: 200px;
-  height: 340px;
+  height: 370px;
   background-color: #2a2a2a;
   border: 1px solid #444;
   border-radius: 16px;
@@ -300,8 +300,9 @@ const JewelFriend = () => {
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [queueList, setQueueList] = useState<Record<string, any[]>>({});
   const [queueData, setQueueData] = useState<MatchingUser[]>([]);
-  const [myMatchedCharacter, setMyMatchedCharacter] =
-    useState<CharacterData | null>(null); // 내 부캐 중 매
+  const [subArkPassives, setSubArkPassives] = useState<string[]>([]);
+  const [mainArkPassive, setMainArkPassive] = useState<string>("");
+
   const deletedMatchIdRef = useRef<string | null>(null);
   const myUserInfoRef = useRef<MatchingUser | null>(null);
 
@@ -309,6 +310,7 @@ const JewelFriend = () => {
     nickname: string,
     setCharacter: (char: any) => void,
     setJewels?: (jewels: any[]) => void,
+    setArkPassive?: (arkPassive: string) => void,
     setProfile?: (profile: any) => void
   ) => {
     try {
@@ -330,6 +332,24 @@ const JewelFriend = () => {
       if (setJewels) {
         const jewels = await fetchEquippedGems(matchedChar.CharacterName);
         setJewels(jewels);
+      }
+
+      if (setArkPassive) {
+        try {
+          const arkRes = await axios.get(`${BASE_URL}/characters/arkpassive`, {
+            params: { name: matchedChar.CharacterName },
+          });
+          // API 직접 호출이면 아래처럼 응답에서 Description 추출
+          const effects = arkRes.data?.Effects;
+          let mainDesc = "";
+          if (Array.isArray(effects) && effects.length > 0) {
+            // 가장 첫 번째 Description 사용(직업각인은 항상 첫 Effect에 위치)
+            mainDesc = effects[0].Description;
+          }
+          setArkPassive(mainDesc);
+        } catch (err) {
+          setArkPassive("");
+        }
       }
 
       if (setProfile) {
@@ -814,6 +834,20 @@ const JewelFriend = () => {
     if (savedSubs.length) setSubSearchList(savedSubs);
   }, []);
 
+  function parseArkPassive(description: string): string {
+    if (!description) return "-";
+    // 모든 <FONT ...>값 추출 (첫번째가 각성/진화/도약, 마지막이 직업각인)
+    const allMatches = [...description.matchAll(/<FONT.*?>(.*?)<\/FONT>/g)];
+    if (allMatches.length < 2) return "-";
+    const type = allMatches[0][1].replace(/(<([^>]+)>)/gi, ""); // 깨달음/진화/도약 등
+    // 직업각인명+Lv (Lv 있으면 제거, " Lv.N" 등 불문)
+    let engrave = allMatches[allMatches.length - 1][1]
+      .replace(/ Lv\.\d+/, "") // Lv.1, Lv.2, Lv.3 등 제거
+      .replace(/\s*\d티어/, "") // " 1티어", " 2티어" 등 제거
+      .trim();
+    return `[${type}: ${engrave}]`;
+  }
+
   const fetchMatchingQueue = async () => {
     const { data, error } = await supabase
       .from("jewel_matching_queue")
@@ -868,6 +902,7 @@ const JewelFriend = () => {
       </Helmet>
 
       <Wrapper>
+        {/*매칭완료 UI*/}
         {matchingStatus === "completed" &&
         matchedMainCharacter &&
         matchedSubCharacter ? (
@@ -1051,6 +1086,7 @@ const JewelFriend = () => {
                       mainSearch,
                       setMainCharacter,
                       setMainJewels,
+                      setMainArkPassive,
                       setProfile
                     );
                   }}
@@ -1087,6 +1123,12 @@ const JewelFriend = () => {
                         <div className="job">
                           직업: {mainCharacter.CharacterClassName}
                         </div>
+                        <div
+                          className="arkpassive"
+                          style={{ color: "#83E9FF", marginTop: "3px" }}
+                        >
+                          {parseArkPassive(mainArkPassive)}
+                        </div>
                       </InfoBox>
                     </>
                   ) : (
@@ -1096,6 +1138,7 @@ const JewelFriend = () => {
                         <div className="nickname">-</div>
                         <div className="server">서버: -</div>
                         <div className="job">직업: -</div>
+                        <div className="arkpassive">깨달음: -</div>
                       </InfoBox>
                     </>
                   )}
@@ -1125,6 +1168,13 @@ const JewelFriend = () => {
                           });
                         },
                         setSubJewels,
+                        (arkPassiveDesc) => {
+                          setSubArkPassives((prev) => {
+                            const updated = [...prev];
+                            updated[index] = arkPassiveDesc;
+                            return updated;
+                          });
+                        },
                         setProfile
                       );
                     }}
@@ -1179,6 +1229,12 @@ const JewelFriend = () => {
                           <div className="job">
                             직업: {subCharacterList[index].CharacterClassName}
                           </div>
+                          <div
+                            className="arkpassive"
+                            style={{ color: "#83E9FF", marginTop: "3px" }}
+                          >
+                            {parseArkPassive(subArkPassives[index] || "")}
+                          </div>
                         </InfoBox>
                       </>
                     ) : (
@@ -1188,6 +1244,7 @@ const JewelFriend = () => {
                           <div className="nickname">-</div>
                           <div className="server">서버: -</div>
                           <div className="job">직업: -</div>
+                          <div className="arkpassive">깨달음: -</div>
                         </InfoBox>
                       </>
                     )}
