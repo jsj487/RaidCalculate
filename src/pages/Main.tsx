@@ -19,6 +19,10 @@ const MainImage = styled.div`
   background-size: cover; /* 화면에 꽉 차게 */
   background-position: center; /* 중앙 정렬 */
   background-repeat: no-repeat; /* 반복하지 않음 */
+
+  @media (max-width: 768px) {
+    padding: 0 20px;
+  }
 `;
 
 const MainSearchContainer = styled.div`
@@ -75,6 +79,10 @@ const ReleaseNoteContainer = styled.div`
   width: 640px;
   margin-top: 30px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const NoteItem = styled.div`
@@ -117,6 +125,11 @@ const ModalBox = styled.div`
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 480px) {
+    width: 90%;
+    padding: 20px;
+  }
 `;
 
 const ModalTitle = styled.h1`

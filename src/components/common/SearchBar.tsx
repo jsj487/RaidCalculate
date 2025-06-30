@@ -34,6 +34,11 @@ const SearchInput = styled.input.withConfig({
   @media (max-width: 768px) {
     width: 200px;
   }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    padding: 8px 14px 8px 32px;
+  }
 `;
 
 const SearchButton = styled.div.withConfig({

@@ -17,6 +17,10 @@ const Container = styled.div`
   padding: 30px;
   color: white;
   font-family: sans-serif;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 const Wrapper = styled.div`
@@ -36,6 +40,11 @@ const BraceletBox = styled.div`
   border-radius: 12px;
   width: 500px;
   margin: 0 auto;
+
+  @media (max-width: 480px) {
+    width: 95%;
+    padding: 16px;
+  }
 `;
 
 const BraceletImage = styled.img`
@@ -112,6 +121,11 @@ const LogButton = styled.button`
 
   &:hover {
     background-color: #444;
+  }
+
+  @media (max-width: 480px) {
+    top: 100px;
+    right: 20px;
   }
 `;
 
