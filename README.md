@@ -1,46 +1,44 @@
-# Getting Started with Create React App
+# RaidCalculate
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**RaidCalculate** is a web application built with **React** and **TypeScript**. It provides several utilities for the online game _Lost Ark_, including a weekly raid gold calculator, jewel matching tools and a bracelet option simulator. A lightweight **Node.js/Express** backend bridges the official game APIs and handles Firestore updates.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Weekly Raid Calculator** – manage multiple characters in tabbed views, track gold rewards and materials, and persist state in `localStorage` using React context.
+- **Jewel Friend Matching** – compare gem setups between characters to find optimal trades.
+- **Bracelet Simulator** – generate bracelet options via a probability based algorithm (`GachaGenerator.ts`).
+- **Package / Craft Calculators** – fetch real-time market prices through the Node server for profit analysis.
+- **Scheduling Tools** – (WIP) Firebase Firestore integration for raid event coordination.
 
-### `npm start`
+## Tech Highlights
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React + TypeScript** front‑end with `styled-components` for themeable and responsive UI.
+- **Node.js/Express** server (`api/server.js`) that proxies Lost Ark APIs, calculates crafting profit and updates Firestore.
+- Weighted random option generation in [`src/utils/GachaGenerator.ts`](src/utils/GachaGenerator.ts) for accurate bracelet odds.
+- Global layout and tab data managed via custom React Context providers (`LayoutProvider`, `GoldCalcContext`).
+- Extensive responsive styling and animations (e.g. sliding menu panels and accordions) for smooth mobile and desktop experience.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Development
 
-### `npm test`
+```bash
+npm install
+npm start
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+The dev server runs on `localhost:3000` and proxies API requests to `localhost:5000`.
 
-### `npm run build`
+Tests can be executed with:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm test
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+(Dependencies must be installed beforehand.)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Deployment
 
-### `npm run eject`
+The project is configured for static deployment. Running `npm run build` creates a production build in the `build/` folder.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+This repository demonstrates React state management, API integration and UI optimization techniques for an interactive game utility.
