@@ -13,7 +13,7 @@ const MainImage = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* 화면 전체 높이 */
+  min-height: 100dvh; /* 화면 전체 높이 */
   background-image: url(${process.env
     .PUBLIC_URL}/img/Main_Background.jpg); /* 배경 이미지 경로 */
   background-size: cover; /* 화면에 꽉 차게 */
@@ -31,6 +31,7 @@ const MainSearchWrapper = styled.div`
   width: 100%;
   margin: 0 auto;
   position: relative;
+  max-width: 640px;
 `;
 
 const MainSearchInput = styled.input`
@@ -53,6 +54,11 @@ const MainSearchInput = styled.input`
     outline: none;
     border-color: #888;
   }
+
+  @media ${({ theme }) => theme.device.mobile} {
+    font-size: 16px;
+    padding: 14px 16px 14px 44px;
+  }
 `;
 
 const MainSearchIcon = styled.div`
@@ -72,9 +78,14 @@ const ReleaseNoteContainer = styled.div`
   background-color: #2a2a2a;
   padding: 20px;
   border-radius: 12px;
-  width: 640px;
+  width: 100%;
+  max-width: 640px;
   margin-top: 30px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  @media ${({ theme }) => theme.device.mobile} {
+    padding: 16px;
+  }
 `;
 
 const NoteItem = styled.div`
@@ -100,7 +111,7 @@ const ModalOverlay = styled.div`
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
@@ -112,11 +123,16 @@ const ModalBox = styled.div`
   background-color: #2a2a2a;
   padding: 24px 32px;
   border-radius: 12px;
-  width: 480px;
+  width: 90%;
+  max-width: 480px;
   color: #ddd;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+
+  @media ${({ theme }) => theme.device.mobile} {
+    padding: 16px 20px;
+  }
 `;
 
 const ModalTitle = styled.h1`

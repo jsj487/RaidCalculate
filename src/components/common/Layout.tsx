@@ -20,7 +20,7 @@ const HeaderContent = styled.div`
   margin: 0 auto;
   width: 100%;
 
-  @media (max-width: 768px) {
+  @media ${({ theme }) => theme.device.tablet} {
     flex-direction: column;
     gap: 10px;
   }
@@ -31,7 +31,7 @@ const StyledSearchWrapper = styled.div`
   width: 200px;
   flex-shrink: 0;
 
-  @media (max-width: 768px) {
+  @media ${({ theme }) => theme.device.tablet} {
     margin-left: 0;
     width: 100%;
     margin-top: 10px;
@@ -54,6 +54,11 @@ const LogoLink = styled(Link)`
 const Nav = styled.nav`
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+
+  @media ${({ theme }) => theme.device.tablet} {
+    justify-content: center;
+  }
 `;
 
 const NavLink = styled(Link)<{ $isActive: boolean }>`
@@ -69,6 +74,11 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
   &:hover {
     background-color: #555;
     color: white;
+  }
+
+  @media ${({ theme }) => theme.device.mobile} {
+    font-size: 13px;
+    padding: 6px 12px;
   }
 `;
 

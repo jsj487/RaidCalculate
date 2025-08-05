@@ -25,7 +25,8 @@ import { createGlobalStyle } from "styled-components";
 const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
-    padding: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
     background-color: #262626; /* 추천 배경색 */
     font-family: Arial, sans-serif; /* 선택적 */
   }

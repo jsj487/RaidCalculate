@@ -1,3 +1,11 @@
+const breakpoints = {
+  mobileSmall: "575px",
+  mobile: "767px",
+  tablet: "1024px",
+  laptop: "1439px",
+  desktop: "1440px",
+};
+
 export const theme = {
   colors: {
     background: "#1e1e1e", // 전체 배경
@@ -27,10 +35,12 @@ export const theme = {
   },
   transition: "0.3s ease",
 
-  breakpoints: {
-    sm: "480px",
-    md: "768px",
-    lg: "1024px",
-    xl: "1280px",
+  breakpoints,
+  device: {
+    mobileSmall: `(max-width: ${breakpoints.mobileSmall})`,
+    mobile: `(max-width: ${breakpoints.mobile})`,
+    tablet: `(max-width: ${breakpoints.tablet})`,
+    laptop: `(max-width: ${breakpoints.laptop})`,
+    desktop: `(min-width: ${breakpoints.desktop})`,
   },
 };
