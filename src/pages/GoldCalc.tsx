@@ -222,6 +222,10 @@ const CharacterRow = styled.div`
     gap: 10px;
     margin-top: 10px;
   }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 const CharacterImage = styled.img`
@@ -234,6 +238,10 @@ const CharacterImage = styled.img`
 
   @media (max-width: 768px) {
     height: 180px;
+  }
+
+  @media (max-width: 480px) {
+    height: 150px;
   }
 `;
 
@@ -296,6 +304,11 @@ const GoldAdjustmentBox = styled.div`
   padding: 8px 12px;
   margin-top: 10px;
   gap: 10px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const GoldLabel = styled.label`
@@ -313,6 +326,11 @@ const MaterialGrid = styled.div`
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+  }
+
+  @media (max-width: 480px) {
+    gap: 16px;
+    column-gap: 40px;
   }
 `;
 

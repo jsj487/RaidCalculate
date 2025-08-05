@@ -33,6 +33,10 @@ const BASE_URL =
 const Container = styled.div`
   padding: 40px;
   color: white;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 const Wrapper = styled.div`
@@ -44,6 +48,11 @@ const Wrapper = styled.div`
   /* 추가적으로 콘텐츠 높이에 따라 적당히 여백 줄 수도 있음 */
   padding-top: 80px;
   padding-bottom: 60px;
+
+  @media (max-width: 480px) {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
 `;
 
 const SearchWrapper = styled.div`
@@ -63,6 +72,10 @@ const SearchWrapper = styled.div`
   &:hover {
     background-color: #3a3a3a;
     border-color: #555;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
   }
 `;
 
@@ -99,6 +112,11 @@ const AddColumn = styled.div`
     width: 48px;
     height: 48px;
     fill: #ccc;
+  }
+
+  @media (max-width: 480px) {
+    width: 160px;
+    height: 300px;
   }
 `;
 
@@ -139,6 +157,11 @@ const MatchLayout = styled.div`
   justify-content: center;
   align-items: center; /* 요거 핵심! */
   gap: 60px;
+
+  @media (max-width: 768px) {
+    gap: 20px;
+    flex-wrap: wrap;
+  }
 `;
 
 const CharacterColumn = styled.div`
@@ -155,6 +178,11 @@ const CharacterColumn = styled.div`
   gap: 16px;
   transition: background-color 0.2s, border-color 0.2s;
 
+  @media (max-width: 480px) {
+    width: 160px;
+    height: 320px;
+  }
+
   &:hover {
     border-color: #555;
     background-color: #3a3a3a;
@@ -167,6 +195,10 @@ const CharacterImage = styled.img`
   object-fit: cover;
   border-radius: 8px;
   background-color: black;
+
+  @media (max-width: 480px) {
+    height: 200px;
+  }
 `;
 
 const InfoBox = styled.div`
@@ -195,6 +227,10 @@ const InfoBox = styled.div`
   div {
     margin: 4px 0;
   }
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
 `;
 
 const CharacterImagePlaceholder = styled.div`
@@ -214,6 +250,12 @@ const ButtonTabGroup = styled.div`
   border-radius: 12px;
   background-color: #2a2a2a;
   border: 1px solid #444;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 8px;
+  }
 `;
 
 const TabButton = styled.button<{ $active?: boolean }>`
@@ -231,6 +273,11 @@ const TabButton = styled.button<{ $active?: boolean }>`
     background-color: #3a3a3a;
     color: #ddd;
     border-color: #555;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 14px;
+    font-size: 14px;
   }
 `;
 

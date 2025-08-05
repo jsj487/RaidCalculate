@@ -10,6 +10,10 @@ const Header = styled.header`
   color: white;
   padding: 16px 24px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 480px) {
+    padding: 12px 16px;
+  }
 `;
 
 const HeaderContent = styled.div`
@@ -24,6 +28,10 @@ const HeaderContent = styled.div`
     flex-direction: column;
     gap: 10px;
   }
+
+  @media (max-width: 480px) {
+    padding: 0 12px;
+  }
 `;
 
 const StyledSearchWrapper = styled.div`
@@ -35,6 +43,10 @@ const StyledSearchWrapper = styled.div`
     margin-left: 0;
     width: 100%;
     margin-top: 10px;
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 8px;
   }
 `;
 
@@ -49,11 +61,27 @@ const LogoLink = styled(Link)`
   &:hover {
     color: rgba(255, 255, 255, 0.5);
   }
+
+  @media (max-width: 480px) {
+    font-size: 28px;
+  }
 `;
 
 const Nav = styled.nav`
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 6px;
+  }
 `;
 
 const NavLink = styled(Link)<{ $isActive: boolean }>`
@@ -69,6 +97,11 @@ const NavLink = styled(Link)<{ $isActive: boolean }>`
   &:hover {
     background-color: #555;
     color: white;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 14px;
+    padding: 6px 12px;
   }
 `;
 
